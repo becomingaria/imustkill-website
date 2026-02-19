@@ -41,11 +41,13 @@ let messageHandlers = new Set()
  */
 export const createSession = async (combatState, expiresInMinutes = 480) => {
     if (!HTTP_API_URL) {
-        throw new Error("API URL not configured. Please set REACT_APP_SESSIONS_API_URL environment variable.")
+        throw new Error(
+            "API URL not configured. Please set REACT_APP_SESSIONS_API_URL environment variable.",
+        )
     }
-    
+
     console.log("Creating session at:", `${HTTP_API_URL}/sessions`)
-    
+
     const response = await fetch(`${HTTP_API_URL}/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
