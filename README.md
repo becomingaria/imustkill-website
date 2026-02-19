@@ -45,11 +45,11 @@ The Liveshare feature is powered by AWS (DynamoDB, Lambda, API Gateway). For inf
 
 The site is deployed on Netlify. After deploying the AWS infrastructure, add these environment variables in **Site settings → Environment variables**:
 
-| Variable | Value | Description |
-|----------|-------|-------------|
-| `REACT_APP_SESSIONS_API_URL` | `https://xxx.execute-api.us-east-1.amazonaws.com` | HTTP API endpoint from CDK output |
-| `REACT_APP_WEBSOCKET_API_URL` | `wss://xxx.execute-api.us-east-1.amazonaws.com/live` | WebSocket endpoint from CDK output |
-| `SECRETS_SCAN_OMIT_KEYS` | `REACT_APP_SESSIONS_API_URL,REACT_APP_WEBSOCKET_API_URL` | Required: Prevents Netlify from blocking the build (these are public API endpoints, not secrets) |
+| Variable                      | Value                                                    | Description                                                                                      |
+| ----------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `REACT_APP_SESSIONS_API_URL`  | `https://xxx.execute-api.us-east-1.amazonaws.com`        | HTTP API endpoint from CDK output                                                                |
+| `REACT_APP_WEBSOCKET_API_URL` | `wss://xxx.execute-api.us-east-1.amazonaws.com/live`     | WebSocket endpoint from CDK output                                                               |
+| `SECRETS_SCAN_OMIT_KEYS`      | `REACT_APP_SESSIONS_API_URL,REACT_APP_WEBSOCKET_API_URL` | Required: Prevents Netlify from blocking the build (these are public API endpoints, not secrets) |
 
 ## Getting Started with Development
 

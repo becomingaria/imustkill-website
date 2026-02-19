@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react"
+import { QRCodeSVG } from "qrcode.react"
 import "../components/InitiativeTracker.css" // Import custom styles for form interactions
 import {
     Container,
@@ -3065,6 +3066,27 @@ const InitiativeTrackerPage = () => {
                                     ),
                                 }}
                             />
+
+                            {/* QR Code */}
+                            {liveshareLink && (
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        mt: 2,
+                                        p: 2,
+                                        bgcolor: "white",
+                                        borderRadius: 2,
+                                    }}
+                                >
+                                    <QRCodeSVG
+                                        value={liveshareLink}
+                                        size={180}
+                                        level='M'
+                                        includeMargin={true}
+                                    />
+                                </Box>
+                            )}
 
                             <Typography
                                 variant='body2'
