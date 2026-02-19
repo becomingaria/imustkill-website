@@ -103,12 +103,14 @@ const CombatMechanics = () => {
                         sx={{
                             bgcolor: (theme) =>
                                 theme.palette.mode === "dark"
-                                    ? "#1f1f1f"
-                                    : "#f5f5f5",
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
                             border: (theme) =>
                                 theme.palette.mode === "dark"
-                                    ? "none"
-                                    : "1px solid #ccc",
+                                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                                    : "1px solid rgba(0, 0, 0, 0.1)",
+                            borderRadius: "16px",
+                            backdropFilter: "blur(10px)",
                             padding: "20px",
                             width: "100%",
                             maxWidth: "800px",
@@ -298,7 +300,7 @@ const CombatMechanics = () => {
                                                                     sm: "scale(1.2)",
                                                                 },
                                                                 color: (
-                                                                    theme
+                                                                    theme,
                                                                 ) =>
                                                                     theme
                                                                         .palette
@@ -342,14 +344,23 @@ const CombatMechanics = () => {
                                         sx={{
                                             bgcolor: (theme) =>
                                                 theme.palette.mode === "dark"
-                                                    ? "#2a2a2a"
-                                                    : "#ffffff",
+                                                    ? "rgba(255, 255, 255, 0.03)"
+                                                    : "rgba(0, 0, 0, 0.02)",
                                             padding: "15px",
                                             margin: "15px 0",
                                             border: (theme) =>
                                                 theme.palette.mode === "dark"
-                                                    ? "1px solid #444"
-                                                    : "1px solid #ddd",
+                                                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                                                    : "1px solid rgba(0, 0, 0, 0.1)",
+                                            borderRadius: "12px",
+                                            transition: "all 0.3s ease",
+                                            "&:hover": {
+                                                border: (theme) =>
+                                                    theme.palette.mode ===
+                                                    "dark"
+                                                        ? "1px solid rgba(255, 255, 255, 0.2)"
+                                                        : "1px solid rgba(0, 0, 0, 0.2)",
+                                            },
                                         }}
                                     >
                                         <Typography
@@ -386,14 +397,23 @@ const CombatMechanics = () => {
                                         sx={{
                                             bgcolor: (theme) =>
                                                 theme.palette.mode === "dark"
-                                                    ? "#2a2a2a"
-                                                    : "#ffffff",
+                                                    ? "rgba(255, 255, 255, 0.03)"
+                                                    : "rgba(0, 0, 0, 0.02)",
                                             padding: "15px",
                                             margin: "15px 0",
                                             border: (theme) =>
                                                 theme.palette.mode === "dark"
-                                                    ? "1px solid #444"
-                                                    : "1px solid #ddd",
+                                                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                                                    : "1px solid rgba(0, 0, 0, 0.1)",
+                                            borderRadius: "12px",
+                                            transition: "all 0.3s ease",
+                                            "&:hover": {
+                                                border: (theme) =>
+                                                    theme.palette.mode ===
+                                                    "dark"
+                                                        ? "1px solid rgba(255, 255, 255, 0.2)"
+                                                        : "1px solid rgba(0, 0, 0, 0.2)",
+                                            },
                                         }}
                                     >
                                         <Typography variant='h4' gutterBottom>
@@ -429,14 +449,23 @@ const CombatMechanics = () => {
                                         sx={{
                                             bgcolor: (theme) =>
                                                 theme.palette.mode === "dark"
-                                                    ? "#2a2a2a"
-                                                    : "#ffffff",
+                                                    ? "rgba(255, 255, 255, 0.03)"
+                                                    : "rgba(0, 0, 0, 0.02)",
                                             padding: "15px",
                                             margin: "15px 0",
                                             border: (theme) =>
                                                 theme.palette.mode === "dark"
-                                                    ? "1px solid #444"
-                                                    : "1px solid #ddd",
+                                                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                                                    : "1px solid rgba(0, 0, 0, 0.1)",
+                                            borderRadius: "12px",
+                                            transition: "all 0.3s ease",
+                                            "&:hover": {
+                                                border: (theme) =>
+                                                    theme.palette.mode ===
+                                                    "dark"
+                                                        ? "1px solid rgba(255, 255, 255, 0.2)"
+                                                        : "1px solid rgba(0, 0, 0, 0.2)",
+                                            },
                                         }}
                                     >
                                         <Typography variant='h4' gutterBottom>
@@ -463,14 +492,23 @@ const CombatMechanics = () => {
                                         sx={{
                                             bgcolor: (theme) =>
                                                 theme.palette.mode === "dark"
-                                                    ? "#2a2a2a"
-                                                    : "#ffffff",
+                                                    ? "rgba(255, 255, 255, 0.03)"
+                                                    : "rgba(0, 0, 0, 0.02)",
                                             padding: "15px",
                                             margin: "15px 0",
                                             border: (theme) =>
                                                 theme.palette.mode === "dark"
-                                                    ? "1px solid #444"
-                                                    : "1px solid #ddd",
+                                                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                                                    : "1px solid rgba(0, 0, 0, 0.1)",
+                                            borderRadius: "12px",
+                                            transition: "all 0.3s ease",
+                                            "&:hover": {
+                                                border: (theme) =>
+                                                    theme.palette.mode ===
+                                                    "dark"
+                                                        ? "1px solid rgba(255, 255, 255, 0.2)"
+                                                        : "1px solid rgba(0, 0, 0, 0.2)",
+                                            },
                                         }}
                                     >
                                         <Typography variant='h4' gutterBottom>

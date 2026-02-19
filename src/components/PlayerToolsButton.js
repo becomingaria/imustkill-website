@@ -57,33 +57,41 @@ const PlayerToolsButton = () => {
                 <Button
                     component={Link}
                     to='/player-tools'
-                    variant='contained'
+                    variant='outlined'
                     sx={{
                         width: "100%",
                         maxWidth: { xs: "280px", sm: "300px" },
                         height: { xs: "50px", sm: "60px" },
-                        fontSize: { xs: "16px", sm: "18px" },
-                        bgcolor: "var(--button-bg)",
-                        color: "var(--button-text)",
+                        fontSize: { xs: "13px", sm: "15px" },
+                        fontWeight: "bold",
                         border: (theme) =>
                             theme.palette.mode === "dark"
-                                ? "2px solid #ffffff"
-                                : "2px solid var(--button-bg)",
-                        borderRadius: "8px",
-                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
+                                ? "2px solid rgba(255, 255, 255, 0.3)"
+                                : "2px solid rgba(0, 0, 0, 0.2)",
+                        color: (theme) =>
+                            theme.palette.mode === "dark"
+                                ? "#e0e0e0"
+                                : "#121212",
+                        bgcolor: (theme) =>
+                            theme.palette.mode === "dark"
+                                ? "rgba(255, 255, 255, 0.05)"
+                                : "rgba(0, 0, 0, 0.03)",
+                        backdropFilter: "blur(10px)",
+                        borderRadius: "12px",
                         transition: "all 0.3s ease",
                         "&:hover": {
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "2px solid rgba(255, 255, 255, 0.6)"
+                                    : "2px solid rgba(0, 0, 0, 0.4)",
                             bgcolor: (theme) =>
                                 theme.palette.mode === "dark"
-                                    ? "#e0e0e0"
-                                    : "#e9e9e9",
-                            transform: {
-                                xs: "scale(1.02)",
-                                sm: "scale(1.05) translateX(10px)",
-                            },
-                            boxShadow: "0 8px 16px rgba(0, 0, 0, 0.5)",
+                                    ? "rgba(255, 255, 255, 0.1)"
+                                    : "rgba(0, 0, 0, 0.08)",
+                            transform: "scale(1.02)",
                         },
                         textTransform: "none",
+                        whiteSpace: "nowrap",
                     }}
                 >
                     Return to Player Tools

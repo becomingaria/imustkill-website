@@ -71,7 +71,7 @@ const CharacterCreation = () => {
     }
 
     const statsSection = characterCreationData.sections.find(
-        (section) => section.id === "stats"
+        (section) => section.id === "stats",
     )
 
     return (
@@ -112,20 +112,18 @@ const CharacterCreation = () => {
                     sx={{
                         bgcolor: (theme) =>
                             theme.palette.mode === "dark"
-                                ? "#1f1f1f"
-                                : "#f5f5f5",
+                                ? "rgba(255, 255, 255, 0.05)"
+                                : "rgba(0, 0, 0, 0.03)",
                         padding: { xs: "15px", sm: "20px" },
                         width: "100%",
                         maxWidth: "800px",
                         marginBottom: { xs: "15px", sm: "20px" },
                         border: (theme) =>
                             theme.palette.mode === "dark"
-                                ? "none"
-                                : "1px solid #ccc",
-                        boxShadow: (theme) =>
-                            theme.palette.mode === "dark"
-                                ? "0 4px 8px rgba(0,0,0,0.5)"
-                                : "0 4px 8px rgba(0,0,0,0.1)",
+                                ? "1px solid rgba(255, 255, 255, 0.1)"
+                                : "1px solid rgba(0, 0, 0, 0.1)",
+                        borderRadius: "16px",
+                        backdropFilter: "blur(10px)",
                     }}
                 >
                     <Typography variant='h3' gutterBottom sx={{ mb: 3 }}>
@@ -140,16 +138,23 @@ const CharacterCreation = () => {
                                         p: 2,
                                         border: (theme) =>
                                             theme.palette.mode === "dark"
-                                                ? "1px solid #444"
-                                                : "1px solid #ddd",
-                                        borderRadius: 2,
+                                                ? "1px solid rgba(255, 255, 255, 0.15)"
+                                                : "1px solid rgba(0, 0, 0, 0.1)",
+                                        borderRadius: "12px",
                                         backgroundColor: (theme) =>
                                             theme.palette.mode === "dark"
-                                                ? "#2a2a2a"
-                                                : "#ffffff",
+                                                ? "rgba(255, 255, 255, 0.03)"
+                                                : "rgba(0, 0, 0, 0.02)",
                                         height: "100%",
                                         display: "flex",
                                         flexDirection: "column",
+                                        transition: "all 0.3s ease",
+                                        "&:hover": {
+                                            border: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "1px solid rgba(255, 255, 255, 0.3)"
+                                                    : "1px solid rgba(0, 0, 0, 0.2)",
+                                        },
                                     }}
                                 >
                                     <Typography
@@ -201,8 +206,8 @@ const CharacterCreation = () => {
                             sx={{
                                 bgcolor: (theme) =>
                                     theme.palette.mode === "dark"
-                                        ? "#1f1f1f"
-                                        : "#f5f5f5",
+                                        ? "rgba(255, 255, 255, 0.05)"
+                                        : "rgba(0, 0, 0, 0.03)",
                                 color: (theme) =>
                                     theme.palette.mode === "dark"
                                         ? "#e0e0e0"
@@ -211,6 +216,12 @@ const CharacterCreation = () => {
                                 width: "100%",
                                 maxWidth: "800px",
                                 marginBottom: "20px",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(255, 255, 255, 0.1)"
+                                        : "1px solid rgba(0, 0, 0, 0.1)",
+                                borderRadius: "16px",
+                                backdropFilter: "blur(10px)",
                             }}
                         >
                             <Typography variant='h3' gutterBottom>
@@ -267,7 +278,7 @@ const CharacterCreation = () => {
                                                                     {option}
                                                                 </EnhancedKeywordLinker>
                                                             </ListItem>
-                                                        )
+                                                        ),
                                                     )}
                                                 </List>
                                             )}

@@ -69,11 +69,11 @@ const Powers = () => {
     useEffect(() => {
         localStorage.setItem(
             "powerDeckSelections",
-            JSON.stringify(selectedDecks)
+            JSON.stringify(selectedDecks),
         )
         localStorage.setItem(
             "powerRaritySelections",
-            JSON.stringify(selectedRarities)
+            JSON.stringify(selectedRarities),
         )
     }, [selectedDecks, selectedRarities])
 
@@ -88,7 +88,7 @@ const Powers = () => {
                 const decks = [
                     "All",
                     ...new Set(
-                        data.powers.map((power) => power.deck || "Unknown")
+                        data.powers.map((power) => power.deck || "Unknown"),
                     ),
                 ]
                 setAvailableDecks(decks)
@@ -96,7 +96,7 @@ const Powers = () => {
                 const rarities = [
                     "All",
                     ...new Set(
-                        data.powers.map((power) => power.rarity || "Unknown")
+                        data.powers.map((power) => power.rarity || "Unknown"),
                     ),
                 ]
                 setAvailableRarities(rarities)
@@ -171,7 +171,7 @@ const Powers = () => {
             // If the rarity is already selected, remove it
             if (prevSelectedRarities.includes(rarity)) {
                 newSelectedRarities = prevSelectedRarities.filter(
-                    (r) => r !== rarity
+                    (r) => r !== rarity,
                 )
                 // If removing the last rarity, select "All" again
                 if (newSelectedRarities.length === 0) {
@@ -217,7 +217,7 @@ const Powers = () => {
                 (selectedDecks.includes("All") ||
                     selectedDecks.includes(power.deck)) &&
                 (selectedRarities.includes("All") ||
-                    selectedRarities.includes(power.rarity))
+                    selectedRarities.includes(power.rarity)),
         )
         .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically by name
 
@@ -225,8 +225,7 @@ const Powers = () => {
         <>
             <Container
                 sx={{
-                    color: (theme) =>
-                        theme.palette.mode === "dark" ? "#e0e0e0" : "#121212",
+                    color: "text.primary",
                     padding: { xs: "15px", sm: "20px" },
                     paddingBottom: { xs: "80px", sm: "100px" }, // Adjust this value as needed
                     display: "flex",
@@ -235,16 +234,7 @@ const Powers = () => {
                     minHeight: "100vh",
                 }}
             >
-                <Typography
-                    variant='h1'
-                    gutterBottom
-                    sx={{
-                        color: (theme) =>
-                            theme.palette.mode === "dark"
-                                ? "#e0e0e0"
-                                : "#121212",
-                    }}
-                >
+                <Typography variant='h1' gutterBottom>
                     Powers
                 </Typography>
 
@@ -255,19 +245,16 @@ const Powers = () => {
                         marginBottom: "20px",
                         backgroundColor: (theme) =>
                             theme.palette.mode === "dark"
-                                ? "#1f1f1f"
-                                : "#f5f5f5",
-                        borderRadius: "4px",
+                                ? "rgba(255, 255, 255, 0.05)"
+                                : "rgba(0, 0, 0, 0.03)",
+                        borderRadius: "16px",
                         padding: "16px",
                         position: "relative",
-                        boxShadow: (theme) =>
-                            theme.palette.mode === "dark"
-                                ? "0 2px 8px rgba(0,0,0,0.2)"
-                                : "0 2px 8px rgba(0,0,0,0.1)",
+                        backdropFilter: "blur(10px)",
                         border: (theme) =>
                             theme.palette.mode === "dark"
-                                ? "none"
-                                : "1px solid #ccc",
+                                ? "1px solid rgba(255, 255, 255, 0.1)"
+                                : "1px solid rgba(0, 0, 0, 0.1)",
                     }}
                 >
                     {/* Filter menu header */}
@@ -278,15 +265,11 @@ const Powers = () => {
                             pb: 1,
                             borderBottom: (theme) =>
                                 theme.palette.mode === "dark"
-                                    ? "1px solid #333"
-                                    : "1px solid #ccc",
+                                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                                    : "1px solid rgba(0, 0, 0, 0.1)",
                             display: "flex",
                             alignItems: "center",
                             gap: 1,
-                            color: (theme) =>
-                                theme.palette.mode === "dark"
-                                    ? "#e0e0e0"
-                                    : "#121212",
                         }}
                     >
                         <span
@@ -321,10 +304,17 @@ const Powers = () => {
                                 expanded={deckAccordionExpanded}
                                 onChange={handleDeckAccordionChange}
                                 sx={{
-                                    bgcolor: "#252525",
-                                    color: "#e0e0e0",
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255, 255, 255, 0.05)"
+                                            : "rgba(0, 0, 0, 0.03)",
+                                    color: "inherit",
                                     boxShadow: "none",
-                                    border: "1px solid #333",
+                                    border: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "1px solid rgba(255, 255, 255, 0.1)"
+                                            : "1px solid rgba(0, 0, 0, 0.1)",
+                                    borderRadius: "12px !important",
                                     "&:before": {
                                         display: "none", // Removes the default divider
                                     },
@@ -333,14 +323,17 @@ const Powers = () => {
                                 <AccordionSummary
                                     expandIcon={
                                         <ExpandMoreIcon
-                                            sx={{ color: "#e0e0e0" }}
+                                            sx={{ color: "inherit" }}
                                         />
                                     }
                                     aria-controls='deck-filters-content'
                                     id='deck-filters-header'
                                     sx={{
                                         borderBottom: deckAccordionExpanded
-                                            ? "1px solid #333"
+                                            ? (theme) =>
+                                                  theme.palette.mode === "dark"
+                                                      ? "1px solid rgba(255, 255, 255, 0.1)"
+                                                      : "1px solid rgba(0, 0, 0, 0.1)"
                                             : "none",
                                         minHeight: "48px",
                                         "&.Mui-expanded": {
@@ -365,13 +358,9 @@ const Powers = () => {
                                                 bgcolor: (theme) =>
                                                     theme.palette.mode ===
                                                     "dark"
-                                                        ? "#333"
-                                                        : "#666",
-                                                color: (theme) =>
-                                                    theme.palette.mode ===
-                                                    "dark"
-                                                        ? "#e0e0e0"
-                                                        : "#ffffff",
+                                                        ? "rgba(255, 255, 255, 0.15)"
+                                                        : "rgba(0, 0, 0, 0.1)",
+                                                color: "inherit",
                                                 py: 0.5,
                                                 px: 1,
                                                 borderRadius: "10px",
@@ -397,7 +386,7 @@ const Powers = () => {
                                     >
                                         <Typography
                                             variant='body2'
-                                            sx={{ color: "#999" }}
+                                            sx={{ opacity: 0.7 }}
                                         >
                                             Select decks to filter:
                                         </Typography>
@@ -406,9 +395,10 @@ const Powers = () => {
                                             size='small'
                                             onClick={resetDeckFilters}
                                             sx={{
-                                                color: "#999",
+                                                color: "inherit",
+                                                opacity: 0.7,
                                                 "&:hover": {
-                                                    color: "#e0e0e0",
+                                                    opacity: 1,
                                                     bgcolor:
                                                         "rgba(255,255,255,0.05)",
                                                 },
@@ -424,17 +414,22 @@ const Powers = () => {
                                                 control={
                                                     <Checkbox
                                                         checked={selectedDecks.includes(
-                                                            deck
+                                                            deck,
                                                         )}
                                                         onChange={() =>
                                                             handleDeckToggle(
-                                                                deck
+                                                                deck,
                                                             )
                                                         }
                                                         sx={{
-                                                            color: "#777",
+                                                            color: (theme) =>
+                                                                theme.palette
+                                                                    .mode ===
+                                                                "dark"
+                                                                    ? "rgba(255, 255, 255, 0.4)"
+                                                                    : "rgba(0, 0, 0, 0.4)",
                                                             "&.Mui-checked": {
-                                                                color: "#90caf9",
+                                                                color: "primary.main",
                                                             },
                                                         }}
                                                         size='small'
@@ -444,7 +439,7 @@ const Powers = () => {
                                                     <Typography
                                                         variant='body2'
                                                         sx={{
-                                                            color: "#e0e0e0",
+                                                            color: "inherit",
                                                         }}
                                                     >
                                                         {deck}
@@ -461,10 +456,17 @@ const Powers = () => {
                                 expanded={rarityAccordionExpanded}
                                 onChange={handleRarityAccordionChange}
                                 sx={{
-                                    bgcolor: "#252525",
-                                    color: "#e0e0e0",
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255, 255, 255, 0.05)"
+                                            : "rgba(0, 0, 0, 0.03)",
+                                    color: "inherit",
                                     boxShadow: "none",
-                                    border: "1px solid #333",
+                                    border: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "1px solid rgba(255, 255, 255, 0.1)"
+                                            : "1px solid rgba(0, 0, 0, 0.1)",
+                                    borderRadius: "12px !important",
                                     "&:before": {
                                         display: "none", // Removes the default divider
                                     },
@@ -473,14 +475,17 @@ const Powers = () => {
                                 <AccordionSummary
                                     expandIcon={
                                         <ExpandMoreIcon
-                                            sx={{ color: "#e0e0e0" }}
+                                            sx={{ color: "inherit" }}
                                         />
                                     }
                                     aria-controls='rarity-filters-content'
                                     id='rarity-filters-header'
                                     sx={{
                                         borderBottom: rarityAccordionExpanded
-                                            ? "1px solid #333"
+                                            ? (theme) =>
+                                                  theme.palette.mode === "dark"
+                                                      ? "1px solid rgba(255, 255, 255, 0.1)"
+                                                      : "1px solid rgba(0, 0, 0, 0.1)"
                                             : "none",
                                         minHeight: "48px",
                                         "&.Mui-expanded": {
@@ -505,13 +510,9 @@ const Powers = () => {
                                                 bgcolor: (theme) =>
                                                     theme.palette.mode ===
                                                     "dark"
-                                                        ? "#333"
-                                                        : "#666",
-                                                color: (theme) =>
-                                                    theme.palette.mode ===
-                                                    "dark"
-                                                        ? "#e0e0e0"
-                                                        : "#ffffff",
+                                                        ? "rgba(255, 255, 255, 0.15)"
+                                                        : "rgba(0, 0, 0, 0.1)",
+                                                color: "inherit",
                                                 py: 0.5,
                                                 px: 1,
                                                 borderRadius: "10px",
@@ -537,7 +538,7 @@ const Powers = () => {
                                     >
                                         <Typography
                                             variant='body2'
-                                            sx={{ color: "#999" }}
+                                            sx={{ opacity: 0.7 }}
                                         >
                                             Select rarities to filter:
                                         </Typography>
@@ -546,9 +547,10 @@ const Powers = () => {
                                             size='small'
                                             onClick={resetRarityFilters}
                                             sx={{
-                                                color: "#999",
+                                                color: "inherit",
+                                                opacity: 0.7,
                                                 "&:hover": {
-                                                    color: "#e0e0e0",
+                                                    opacity: 1,
                                                     bgcolor:
                                                         "rgba(255,255,255,0.05)",
                                                 },
@@ -564,17 +566,22 @@ const Powers = () => {
                                                 control={
                                                     <Checkbox
                                                         checked={selectedRarities.includes(
-                                                            rarity
+                                                            rarity,
                                                         )}
                                                         onChange={() =>
                                                             handleRarityToggle(
-                                                                rarity
+                                                                rarity,
                                                             )
                                                         }
                                                         sx={{
-                                                            color: "#777",
+                                                            color: (theme) =>
+                                                                theme.palette
+                                                                    .mode ===
+                                                                "dark"
+                                                                    ? "rgba(255, 255, 255, 0.4)"
+                                                                    : "rgba(0, 0, 0, 0.4)",
                                                             "&.Mui-checked": {
-                                                                color: "#90caf9",
+                                                                color: "primary.main",
                                                             },
                                                         }}
                                                         size='small'
@@ -584,7 +591,7 @@ const Powers = () => {
                                                     <Typography
                                                         variant='body2'
                                                         sx={{
-                                                            color: "#e0e0e0",
+                                                            color: "inherit",
                                                         }}
                                                     >
                                                         {rarity}
@@ -618,7 +625,7 @@ const Powers = () => {
                             >
                                 <Typography
                                     variant='body2'
-                                    sx={{ color: "#999" }}
+                                    sx={{ opacity: 0.7 }}
                                 >
                                     Search powers:
                                 </Typography>
@@ -627,9 +634,10 @@ const Powers = () => {
                                         size='small'
                                         onClick={clearSearchQuery}
                                         sx={{
-                                            color: "#999",
+                                            color: "inherit",
+                                            opacity: 0.7,
                                             "&:hover": {
-                                                color: "#e0e0e0",
+                                                opacity: 1,
                                                 bgcolor:
                                                     "rgba(255,255,255,0.05)",
                                             },
@@ -645,17 +653,27 @@ const Powers = () => {
                                 value={searchQuery}
                                 onChange={handleSearchInputChange}
                                 sx={{
-                                    bgcolor: "#252525",
-                                    borderRadius: "4px",
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255, 255, 255, 0.05)"
+                                            : "rgba(0, 0, 0, 0.03)",
+                                    borderRadius: "12px",
                                     width: "100%",
                                     input: {
-                                        color: "#e0e0e0",
+                                        color: "inherit",
                                     },
                                     fieldset: {
-                                        borderColor: "#444",
+                                        borderColor: (theme) =>
+                                            theme.palette.mode === "dark"
+                                                ? "rgba(255, 255, 255, 0.1)"
+                                                : "rgba(0, 0, 0, 0.1)",
+                                        borderRadius: "12px",
                                     },
                                     "&:hover fieldset": {
-                                        borderColor: "#666 !important",
+                                        borderColor: (theme) =>
+                                            theme.palette.mode === "dark"
+                                                ? "rgba(255, 255, 255, 0.2) !important"
+                                                : "rgba(0, 0, 0, 0.2) !important",
                                     },
                                     flex: 1,
                                 }}
@@ -676,7 +694,7 @@ const Powers = () => {
                         px: 1,
                     }}
                 >
-                    <Typography variant='body2' sx={{ color: "#999" }}>
+                    <Typography variant='body2' sx={{ opacity: 0.7 }}>
                         <strong>{filteredPowers.length}</strong> power
                         {filteredPowers.length !== 1 ? "s" : ""} found
                     </Typography>
@@ -686,16 +704,27 @@ const Powers = () => {
                     sx={{
                         width: "100%",
                         maxWidth: "800px",
-                        bgcolor: "#1f1f1f",
-                        borderRadius: "4px",
+                        bgcolor: (theme) =>
+                            theme.palette.mode === "dark"
+                                ? "rgba(255, 255, 255, 0.05)"
+                                : "rgba(0, 0, 0, 0.03)",
+                        borderRadius: "16px",
                         padding: "10px",
+                        border: (theme) =>
+                            theme.palette.mode === "dark"
+                                ? "1px solid rgba(255, 255, 255, 0.1)"
+                                : "1px solid rgba(0, 0, 0, 0.1)",
+                        backdropFilter: "blur(10px)",
                     }}
                 >
                     {filteredPowers.map((power, index) => (
                         <ListItem
                             key={index}
                             sx={{
-                                borderBottom: "1px solid #333",
+                                borderBottom: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(255, 255, 255, 0.1)"
+                                        : "1px solid rgba(0, 0, 0, 0.1)",
                                 padding: "10px",
                                 "&:last-child": {
                                     borderBottom: "none",

@@ -6,7 +6,7 @@ import useRulesEngine from "../../hooks/useRulesEngine"
 const EnhancedKeywordLinker = ({
     children,
     disabled = false,
-    referencesOnly = false,
+    referencesOnly = true,
 }) => {
     const [allContent, setAllContent] = useState({
         powers: [],
@@ -135,7 +135,7 @@ const EnhancedKeywordLinker = ({
                         type: "reference",
                         title: refData.title,
                     })
-                }
+                },
             )
         }
 
@@ -166,13 +166,13 @@ const EnhancedKeywordLinker = ({
 
         // Split text while preserving spaces, punctuation, special reference tags, and markdown tags
         const parts = mdProcessed.split(
-            /(\s+|[.,!?;:()[\]{}'""-]|<REFERENCE_LINK>.*?<\/REFERENCE_LINK>|<BOLDITALIC>.*?<\/BOLDITALIC>|<BOLD>.*?<\/BOLD>|<ITALIC>.*?<\/ITALIC>)/g
+            /(\s+|[.,!?;:()[\]{}'""-]|<REFERENCE_LINK>.*?<\/REFERENCE_LINK>|<BOLDITALIC>.*?<\/BOLDITALIC>|<BOLD>.*?<\/BOLD>|<ITALIC>.*?<\/ITALIC>)/g,
         )
 
         return parts.map((part, index) => {
             // Handle <BOLDITALIC> tags
             const boldItalicMatch = part.match(
-                /<BOLDITALIC>(.*?)<\/BOLDITALIC>/
+                /<BOLDITALIC>(.*?)<\/BOLDITALIC>/,
             )
             if (boldItalicMatch) {
                 return (
@@ -197,7 +197,7 @@ const EnhancedKeywordLinker = ({
 
             // Handle reference links
             const refMatch = part.match(
-                /<REFERENCE_LINK>(.*?)<\/REFERENCE_LINK>/
+                /<REFERENCE_LINK>(.*?)<\/REFERENCE_LINK>/,
             )
             if (refMatch) {
                 const refId = refMatch[1]

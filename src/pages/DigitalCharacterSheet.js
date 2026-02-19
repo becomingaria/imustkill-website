@@ -75,7 +75,7 @@ const DigitalCharacterSheet = () => {
             } catch (error) {
                 console.error(
                     "Error parsing token states from localStorage:",
-                    error
+                    error,
                 )
             }
         }
@@ -135,7 +135,7 @@ const DigitalCharacterSheet = () => {
                     const characterJSON = JSON.stringify(characterData)
                     const keyword = "Character Data"
                     const textData = new TextEncoder().encode(
-                        keyword + "\0" + characterJSON
+                        keyword + "\0" + characterJSON,
                     )
 
                     // Create chunk: Length (4 bytes) + Type (4 bytes) + Data + CRC (4 bytes)
@@ -144,7 +144,7 @@ const DigitalCharacterSheet = () => {
 
                     // Calculate CRC32 for chunk type + data
                     const crc32 = calculateCRC32(
-                        new Uint8Array([...chunkType, ...textData])
+                        new Uint8Array([...chunkType, ...textData]),
                     )
 
                     // Create the complete chunk
@@ -162,13 +162,13 @@ const DigitalCharacterSheet = () => {
 
                     // Insert the chunk before IEND
                     const newPNG = new Uint8Array(
-                        uint8Array.length + chunk.length
+                        uint8Array.length + chunk.length,
                     )
                     newPNG.set(uint8Array.slice(0, insertPosition), 0)
                     newPNG.set(chunk, insertPosition)
                     newPNG.set(
                         uint8Array.slice(insertPosition),
-                        insertPosition + chunk.length
+                        insertPosition + chunk.length,
                     )
 
                     const newBlob = new Blob([newPNG], { type: "image/png" })
@@ -194,13 +194,13 @@ const DigitalCharacterSheet = () => {
                         const view = new DataView(uint8Array.buffer, offset)
                         const chunkLength = view.getUint32(0, false) // big endian
                         const chunkType = new TextDecoder().decode(
-                            uint8Array.slice(offset + 4, offset + 8)
+                            uint8Array.slice(offset + 4, offset + 8),
                         )
 
                         if (chunkType === "tEXt") {
                             const chunkData = uint8Array.slice(
                                 offset + 8,
-                                offset + 8 + chunkLength
+                                offset + 8 + chunkLength,
                             )
                             const text = new TextDecoder().decode(chunkData)
                             const nullIndex = text.indexOf("\0")
@@ -289,14 +289,14 @@ const DigitalCharacterSheet = () => {
 
             // Embed Cinzel fonts
             const cinzelFontBytes = await fetch(
-                "/fonts/cinzel/Cinzel-Regular.otf"
+                "/fonts/cinzel/Cinzel-Regular.otf",
             ).then((res) => res.arrayBuffer())
             const cinzelDecorativeFontBytes = await fetch(
-                "/fonts/cinzel/CinzelDecorative-Regular.otf"
+                "/fonts/cinzel/CinzelDecorative-Regular.otf",
             ).then((res) => res.arrayBuffer())
             const cinzelFont = await pdfDoc.embedFont(cinzelFontBytes)
             const cinzelDecorativeFont = await pdfDoc.embedFont(
-                cinzelDecorativeFontBytes
+                cinzelDecorativeFontBytes,
             )
 
             // Colors
@@ -428,11 +428,11 @@ const DigitalCharacterSheet = () => {
 
                     // Add checkbox centered over the ATK bubble - this shows the state
                     const atkCheckbox = form.createCheckBox(
-                        `${atkField}AtkChecked`
+                        `${atkField}AtkChecked`,
                     )
                     console.log(
                         `ATK Debug - Field: ${atkField}, IsChecked: ${isChecked}, Character Data:`,
-                        characterData[`${atkField}AtkChecked`]
+                        characterData[`${atkField}AtkChecked`],
                     )
 
                     // Configure ATK checkbox appearance
@@ -444,7 +444,7 @@ const DigitalCharacterSheet = () => {
                     } catch (e) {
                         console.log(
                             `Could not set default appearance for ${atkField} checkbox:`,
-                            e
+                            e,
                         )
                     }
 
@@ -549,7 +549,7 @@ const DigitalCharacterSheet = () => {
                 "Shield Debug - Value:",
                 characterData.shield,
                 "Type:",
-                typeof characterData.shield
+                typeof characterData.shield,
             )
 
             // Configure shield checkbox appearance
@@ -563,7 +563,7 @@ const DigitalCharacterSheet = () => {
             } catch (e) {
                 console.log(
                     "Could not set default appearances for shield checkboxes:",
-                    e
+                    e,
                 )
             }
 
@@ -643,7 +643,7 @@ const DigitalCharacterSheet = () => {
                 "Armor Debug - Value:",
                 characterData.armor,
                 "Type:",
-                typeof characterData.armor
+                typeof characterData.armor,
             )
 
             // Configure armor checkbox appearance
@@ -657,7 +657,7 @@ const DigitalCharacterSheet = () => {
             } catch (e) {
                 console.log(
                     "Could not set default appearances for armor checkboxes:",
-                    e
+                    e,
                 )
             }
 
@@ -862,7 +862,7 @@ const DigitalCharacterSheet = () => {
                         size: 10,
                         font: cinzelFont,
                         color: rgb(0.6, 0.6, 0.6),
-                    }
+                    },
                 )
             }
 
@@ -887,7 +887,7 @@ const DigitalCharacterSheet = () => {
             if (characterSheetRef.current) {
                 // Hide the action buttons temporarily for a cleaner screenshot
                 const actionButtons = document.querySelector(
-                    '[data-testid="action-buttons"]'
+                    '[data-testid="action-buttons"]',
                 )
                 if (actionButtons) {
                     actionButtons.style.display = "none"
@@ -911,7 +911,7 @@ const DigitalCharacterSheet = () => {
                 // Embed character data in the PNG
                 const blobWithData = await embedCharacterDataInPNG(
                     canvas,
-                    characterData
+                    characterData,
                 )
 
                 const fileName = characterData.characterName
@@ -921,7 +921,7 @@ const DigitalCharacterSheet = () => {
                     : "character_sheet.character.png"
                 saveAs(blobWithData, fileName)
                 showAlert(
-                    "Character saved as .character.png with embedded data!"
+                    "Character saved as .character.png with embedded data!",
                 )
             }
         } catch (error) {
@@ -939,9 +939,8 @@ const DigitalCharacterSheet = () => {
                     file.name.endsWith(".png")
                 ) {
                     // Try to extract character data from PNG
-                    const characterData = await extractCharacterDataFromPNG(
-                        file
-                    )
+                    const characterData =
+                        await extractCharacterDataFromPNG(file)
                     if (characterData) {
                         setCharacterData((prev) => ({
                             ...prev,
@@ -951,7 +950,7 @@ const DigitalCharacterSheet = () => {
                     } else {
                         showAlert(
                             "No character data found in this PNG file",
-                            "error"
+                            "error",
                         )
                     }
                 } else {
@@ -993,7 +992,7 @@ const DigitalCharacterSheet = () => {
                 } else {
                     showAlert(
                         "No character data found in this PNG file",
-                        "error"
+                        "error",
                     )
                 }
             } else {
@@ -1046,7 +1045,7 @@ const DigitalCharacterSheet = () => {
             } else {
                 showAlert(
                     "Please drop a .character.png file (or legacy .character/.json file)",
-                    "error"
+                    "error",
                 )
             }
         }
@@ -1181,79 +1180,148 @@ const DigitalCharacterSheet = () => {
                     }}
                 >
                     <Button
-                        variant='contained'
+                        variant='outlined'
                         startIcon={<Save />}
                         onClick={saveToCharacterFile}
                         sx={{
-                            bgcolor: "#8B0000",
-                            "&:hover": { bgcolor: "#660000" },
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "2px solid rgba(255, 255, 255, 0.3)"
+                                    : "2px solid rgba(0, 0, 0, 0.2)",
+                            color: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "#e0e0e0"
+                                    : "#121212",
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
+                            backdropFilter: "blur(10px)",
+                            "&:hover": {
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "2px solid rgba(255, 255, 255, 0.6)"
+                                        : "2px solid rgba(0, 0, 0, 0.4)",
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.1)"
+                                        : "rgba(0, 0, 0, 0.08)",
+                            },
                             borderRadius: "12px",
                             fontSize: "0.9rem",
                             fontFamily: '"Cinzel", serif',
+                            textTransform: "none",
+                            fontWeight: "bold",
                         }}
                     >
                         Save Character
                     </Button>
                     <Button
-                        variant='contained'
+                        variant='outlined'
                         startIcon={<Upload />}
                         onClick={() => fileInputRef.current?.click()}
                         sx={{
-                            bgcolor: "#8B0000",
-                            "&:hover": { bgcolor: "#660000" },
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "2px solid rgba(255, 255, 255, 0.3)"
+                                    : "2px solid rgba(0, 0, 0, 0.2)",
+                            color: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "#e0e0e0"
+                                    : "#121212",
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
+                            backdropFilter: "blur(10px)",
+                            "&:hover": {
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "2px solid rgba(255, 255, 255, 0.6)"
+                                        : "2px solid rgba(0, 0, 0, 0.4)",
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.1)"
+                                        : "rgba(0, 0, 0, 0.08)",
+                            },
                             borderRadius: "12px",
                             fontSize: "0.9rem",
                             fontFamily: '"Cinzel", serif',
+                            textTransform: "none",
+                            fontWeight: "bold",
                         }}
                     >
                         Load Character
                     </Button>
                     <Button
-                        variant='contained'
+                        variant='outlined'
                         startIcon={<PictureAsPdf />}
                         onClick={() => {
                             console.log("=== PDF GENERATION STARTED ===")
                             console.log(
-                                "Current character data at PDF generation:"
+                                "Current character data at PDF generation:",
                             )
                             console.log(
                                 "- bodyAtkChecked:",
-                                characterData.bodyAtkChecked
+                                characterData.bodyAtkChecked,
                             )
                             console.log(
                                 "- agilityAtkChecked:",
-                                characterData.agilityAtkChecked
+                                characterData.agilityAtkChecked,
                             )
                             console.log(
                                 "- focusAtkChecked:",
-                                characterData.focusAtkChecked
+                                characterData.focusAtkChecked,
                             )
                             console.log(
                                 "- shield:",
                                 characterData.shield,
                                 "(type:",
                                 typeof characterData.shield,
-                                ")"
+                                ")",
                             )
                             console.log(
                                 "- armor:",
                                 characterData.armor,
                                 "(type:",
                                 typeof characterData.armor,
-                                ")"
+                                ")",
                             )
                             console.log("Complete data object:", characterData)
                             console.log(
-                                "=== CALLING PDF GENERATION FUNCTION ==="
+                                "=== CALLING PDF GENERATION FUNCTION ===",
                             )
                             saveToFormFillablePDF()
                         }}
                         sx={{
-                            bgcolor: "#8B0000",
-                            "&:hover": { bgcolor: "#660000" },
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "2px solid rgba(255, 255, 255, 0.3)"
+                                    : "2px solid rgba(0, 0, 0, 0.2)",
+                            color: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "#e0e0e0"
+                                    : "#121212",
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
+                            backdropFilter: "blur(10px)",
+                            "&:hover": {
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "2px solid rgba(255, 255, 255, 0.6)"
+                                        : "2px solid rgba(0, 0, 0, 0.4)",
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.1)"
+                                        : "rgba(0, 0, 0, 0.08)",
+                            },
                             borderRadius: "12px",
                             fontSize: "0.9rem",
                             fontFamily: '"Cinzel", serif',
+                            textTransform: "none",
+                            fontWeight: "bold",
                         }}
                     >
                         Form Fillable PDF
@@ -1263,15 +1331,34 @@ const DigitalCharacterSheet = () => {
                         startIcon={<RestartAlt />}
                         onClick={resetSheet}
                         sx={{
-                            borderColor: "#8B0000",
-                            color: "#8B0000",
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "2px solid rgba(255, 255, 255, 0.3)"
+                                    : "2px solid rgba(0, 0, 0, 0.2)",
+                            color: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "#e0e0e0"
+                                    : "#121212",
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
+                            backdropFilter: "blur(10px)",
                             "&:hover": {
-                                borderColor: "#660000",
-                                color: "#660000",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "2px solid rgba(255, 255, 255, 0.6)"
+                                        : "2px solid rgba(0, 0, 0, 0.4)",
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.1)"
+                                        : "rgba(0, 0, 0, 0.08)",
                             },
                             borderRadius: "12px",
                             fontSize: "0.9rem",
                             fontFamily: '"Cinzel", serif',
+                            textTransform: "none",
+                            fontWeight: "bold",
                         }}
                     >
                         Reset
@@ -1435,7 +1522,7 @@ const DigitalCharacterSheet = () => {
                                                     const newValue =
                                                         !currentValue
                                                     console.log(
-                                                        `ATK Bubble Clicked - Field: ${field}, Current Value: ${currentValue}, New Value: ${newValue}`
+                                                        `ATK Bubble Clicked - Field: ${field}, Current Value: ${currentValue}, New Value: ${newValue}`,
                                                     )
 
                                                     setCharacterData((prev) => {
@@ -1448,11 +1535,11 @@ const DigitalCharacterSheet = () => {
                                                             `ATK State Updated - ${field}AtkChecked:`,
                                                             updatedData[
                                                                 `${field}AtkChecked`
-                                                            ]
+                                                            ],
                                                         )
                                                         console.log(
                                                             "Complete character data after ATK update:",
-                                                            updatedData
+                                                            updatedData,
                                                         )
                                                         return updatedData
                                                     })
@@ -1650,7 +1737,7 @@ const DigitalCharacterSheet = () => {
                                         onClick={() => {
                                             console.log(
                                                 "Shield Y button clicked - Current shield value:",
-                                                characterData.shield
+                                                characterData.shield,
                                             )
                                             setCharacterData((prev) => {
                                                 const updatedData = {
@@ -1659,7 +1746,7 @@ const DigitalCharacterSheet = () => {
                                                 }
                                                 console.log(
                                                     "Shield updated to TRUE, complete data:",
-                                                    updatedData
+                                                    updatedData,
                                                 )
                                                 return updatedData
                                             })
@@ -1702,7 +1789,7 @@ const DigitalCharacterSheet = () => {
                                         onClick={() => {
                                             console.log(
                                                 "Shield N button clicked - Current shield value:",
-                                                characterData.shield
+                                                characterData.shield,
                                             )
                                             setCharacterData((prev) => {
                                                 const updatedData = {
@@ -1711,7 +1798,7 @@ const DigitalCharacterSheet = () => {
                                                 }
                                                 console.log(
                                                     "Shield updated to FALSE, complete data:",
-                                                    updatedData
+                                                    updatedData,
                                                 )
                                                 return updatedData
                                             })
@@ -1773,7 +1860,7 @@ const DigitalCharacterSheet = () => {
                                         onClick={() => {
                                             console.log(
                                                 "Armor Y button clicked - Current armor value:",
-                                                characterData.armor
+                                                characterData.armor,
                                             )
                                             setCharacterData((prev) => {
                                                 const updatedData = {
@@ -1782,7 +1869,7 @@ const DigitalCharacterSheet = () => {
                                                 }
                                                 console.log(
                                                     "Armor updated to TRUE, complete data:",
-                                                    updatedData
+                                                    updatedData,
                                                 )
                                                 return updatedData
                                             })
@@ -1824,7 +1911,7 @@ const DigitalCharacterSheet = () => {
                                         onClick={() => {
                                             console.log(
                                                 "Armor N button clicked - Current armor value:",
-                                                characterData.armor
+                                                characterData.armor,
                                             )
                                             setCharacterData((prev) => {
                                                 const updatedData = {
@@ -1833,7 +1920,7 @@ const DigitalCharacterSheet = () => {
                                                 }
                                                 console.log(
                                                     "Armor updated to FALSE, complete data:",
-                                                    updatedData
+                                                    updatedData,
                                                 )
                                                 return updatedData
                                             })
@@ -1963,7 +2050,7 @@ const DigitalCharacterSheet = () => {
                                     <TextField
                                         value={characterData.currentHP}
                                         onChange={handleInputChange(
-                                            "currentHP"
+                                            "currentHP",
                                         )}
                                         variant='standard'
                                         size='small'
@@ -2186,31 +2273,34 @@ const DigitalCharacterSheet = () => {
                             startIcon={<RestartAlt />}
                             onClick={handleResetTokens}
                             sx={{
-                                borderColor: (theme) =>
+                                border: (theme) =>
                                     theme.palette.mode === "dark"
-                                        ? "#ffffff"
-                                        : "#8B0000",
+                                        ? "2px solid rgba(255, 255, 255, 0.3)"
+                                        : "2px solid rgba(0, 0, 0, 0.2)",
                                 color: (theme) =>
                                     theme.palette.mode === "dark"
-                                        ? "#ffffff"
-                                        : "#8B0000",
+                                        ? "#e0e0e0"
+                                        : "#121212",
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.05)"
+                                        : "rgba(0, 0, 0, 0.03)",
+                                backdropFilter: "blur(10px)",
                                 "&:hover": {
-                                    borderColor: (theme) =>
+                                    border: (theme) =>
                                         theme.palette.mode === "dark"
-                                            ? "#e0e0e0"
-                                            : "#660000",
-                                    color: (theme) =>
-                                        theme.palette.mode === "dark"
-                                            ? "#e0e0e0"
-                                            : "#660000",
+                                            ? "2px solid rgba(255, 255, 255, 0.6)"
+                                            : "2px solid rgba(0, 0, 0, 0.4)",
                                     bgcolor: (theme) =>
                                         theme.palette.mode === "dark"
-                                            ? "rgba(255, 255, 255, 0.05)"
-                                            : "rgba(139, 0, 0, 0.05)",
+                                            ? "rgba(255, 255, 255, 0.1)"
+                                            : "rgba(0, 0, 0, 0.08)",
                                 },
                                 borderRadius: "12px",
                                 fontSize: "0.9rem",
                                 fontFamily: '"Cinzel", serif',
+                                textTransform: "none",
+                                fontWeight: "bold",
                             }}
                         >
                             Reset Tokens

@@ -1,18 +1,174 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { Link } from "react-router-dom"
 import {
     Container,
     Typography,
-    Paper,
     TextField,
     FormControl,
     InputLabel,
     Select,
     MenuItem,
     Box,
+    Grid,
 } from "@mui/material"
 import GMToolsButton from "../components/GMToolsButton"
-import Section from "../components/Section"
+
+// Custom hook for detecting when an element is in viewport
+const useInView = (options = {}) => {
+    const ref = useRef(null)
+    const [isInView, setIsInView] = useState(false)
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsInView(true)
+                }
+            },
+            {
+                threshold: options.threshold || 0.2,
+                rootMargin: options.rootMargin || "0px",
+            },
+        )
+
+        const currentRef = ref.current
+        if (currentRef) {
+            observer.observe(currentRef)
+        }
+
+        return () => {
+            if (currentRef) {
+                observer.unobserve(currentRef)
+            }
+        }
+    }, [options.threshold, options.rootMargin])
+
+    return [ref, isInView]
+}
+
+// Animated slide component
+const Slide = ({ children, delay = 0 }) => {
+    const [ref, isInView] = useInView({ threshold: 0.1 })
+
+    return (
+        <Box
+            ref={ref}
+            sx={{
+                opacity: isInView ? 1 : 0,
+                transform: isInView ? "translateY(0)" : "translateY(40px)",
+                transition: `all 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
+                width: "100%",
+            }}
+        >
+            {children}
+        </Box>
+    )
+}
+
+// Monster card component
+const MonsterCard = ({ monster, index }) => {
+    return (
+        <Slide delay={Math.min(index * 50, 300)}>
+            <Link
+                to={`/monsters/${monster.Name}`}
+                style={{ textDecoration: "none" }}
+            >
+                <Box
+                    sx={{
+                        padding: { xs: "16px", sm: "24px" },
+                        borderRadius: "16px",
+                        bgcolor: (theme) =>
+                            theme.palette.mode === "dark"
+                                ? "rgba(255, 255, 255, 0.05)"
+                                : "rgba(0, 0, 0, 0.03)",
+                        backdropFilter: "blur(10px)",
+                        border: (theme) =>
+                            theme.palette.mode === "dark"
+                                ? "1px solid rgba(255, 255, 255, 0.1)"
+                                : "1px solid rgba(0, 0, 0, 0.1)",
+                        transition: "all 0.3s ease",
+                        cursor: "pointer",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        "&:hover": {
+                            transform: "translateY(-4px) scale(1.02)",
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "1px solid rgba(255, 255, 255, 0.25)"
+                                    : "1px solid rgba(0, 0, 0, 0.2)",
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.08)"
+                                    : "rgba(0, 0, 0, 0.05)",
+                        },
+                    }}
+                >
+                    <Typography
+                        variant='h5'
+                        sx={{
+                            fontWeight: "bold",
+                            marginBottom: "12px",
+                            color: "text.primary",
+                            fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                        }}
+                    >
+                        {monster.Name}
+                    </Typography>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 0.5,
+                            flexGrow: 1,
+                        }}
+                    >
+                        <Typography
+                            variant='body2'
+                            sx={{ opacity: 0.7, color: "text.primary" }}
+                        >
+                            Attack: {monster.Attack}
+                        </Typography>
+                        <Typography
+                            variant='body2'
+                            sx={{ opacity: 0.7, color: "text.primary" }}
+                        >
+                            Damage: {monster.Damage}
+                        </Typography>
+                        <Typography
+                            variant='body2'
+                            sx={{ opacity: 0.7, color: "text.primary" }}
+                        >
+                            HP: {monster["Hit Points Multiplier"]}
+                        </Typography>
+                    </Box>
+                    {monster.Immunities && monster.Immunities !== "None" && (
+                        <Box
+                            sx={{
+                                marginTop: "12px",
+                                padding: "4px 10px",
+                                borderRadius: "8px",
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.1)"
+                                        : "rgba(0, 0, 0, 0.06)",
+                                display: "inline-block",
+                                alignSelf: "flex-start",
+                            }}
+                        >
+                            <Typography
+                                variant='caption'
+                                sx={{ opacity: 0.8, color: "text.primary" }}
+                            >
+                                Immune: {monster.Immunities}
+                            </Typography>
+                        </Box>
+                    )}
+                </Box>
+            </Link>
+        </Slide>
+    )
+}
 
 const Monsters = () => {
     const [monstersData, setMonstersData] = useState([])
@@ -39,7 +195,7 @@ const Monsters = () => {
     useEffect(() => {
         let filtered = monstersData.filter((monster) => {
             const matchesSearch = monster.Name.toLowerCase().includes(
-                searchTerm.toLowerCase()
+                searchTerm.toLowerCase(),
             )
 
             let matchesDamageType = true
@@ -96,56 +252,86 @@ const Monsters = () => {
         <>
             <Container
                 sx={{
-                    color: (theme) =>
-                        theme.palette.mode === "dark" ? "#e0e0e0" : "#121212",
-                    padding: "20px",
+                    color: "text.primary",
+                    padding: { xs: "15px", sm: "20px" },
+                    paddingBottom: { xs: "80px", sm: "100px" },
                     display: "flex",
-                    paddingBottom: "100px", // Adjust this value as needed
                     flexDirection: "column",
                     alignItems: "center",
                     minHeight: "100vh",
                 }}
             >
-                <Typography
-                    variant='h1'
-                    gutterBottom
+                {/* Hero Section */}
+                <Box
                     sx={{
-                        color: (theme) =>
-                            theme.palette.mode === "dark"
-                                ? "#e0e0e0"
-                                : "#121212",
+                        minHeight: "40vh",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        textAlign: "center",
+                        marginBottom: { xs: "30px", sm: "40px" },
                     }}
                 >
-                    Bestiary
-                </Typography>
-                <Paper
-                    sx={{
-                        bgcolor: (theme) =>
-                            theme.palette.mode === "dark"
-                                ? "#1f1f1f"
-                                : "#f5f5f5",
-                        padding: "20px",
-                        width: "100%",
-                        maxWidth: "800px",
-                        marginBottom: "20px",
-                        border: (theme) =>
-                            theme.palette.mode === "dark"
-                                ? "none"
-                                : "1px solid #ccc",
-                    }}
-                >
-                    <Section>
-                        <Typography variant='h2' gutterBottom>
-                            Monsters
+                    <Slide>
+                        <Typography
+                            variant='h1'
+                            sx={{
+                                fontSize: {
+                                    xs: "2.5rem",
+                                    sm: "3.5rem",
+                                    md: "4.5rem",
+                                },
+                                fontWeight: "bold",
+                                marginBottom: "16px",
+                            }}
+                        >
+                            🐾 Bestiary
                         </Typography>
+                    </Slide>
+                    <Slide delay={200}>
+                        <Typography
+                            variant='h5'
+                            sx={{
+                                fontSize: { xs: "1rem", sm: "1.25rem" },
+                                maxWidth: "600px",
+                                lineHeight: 1.6,
+                                opacity: 0.8,
+                            }}
+                        >
+                            The creatures that lurk in darkness. Study them
+                            well—your life depends on it.
+                        </Typography>
+                    </Slide>
+                </Box>
 
-                        {/* Filter and Sort Controls */}
+                {/* Filter Controls */}
+                <Slide delay={300}>
+                    <Box
+                        sx={{
+                            width: "100%",
+                            maxWidth: "1200px",
+                            marginBottom: { xs: "30px", sm: "40px" },
+                            padding: { xs: "16px", sm: "24px" },
+                            borderRadius: "16px",
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
+                            backdropFilter: "blur(10px)",
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                                    : "1px solid rgba(0, 0, 0, 0.1)",
+                        }}
+                    >
                         <Box
                             sx={{
-                                marginBottom: "20px",
                                 display: "flex",
                                 gap: 2,
                                 flexWrap: "wrap",
+                                justifyContent: "center",
+                                alignItems: "center",
                             }}
                         >
                             <TextField
@@ -154,15 +340,49 @@ const Monsters = () => {
                                 size='small'
                                 value={searchTerm}
                                 onChange={handleSearchChange}
-                                sx={{ minWidth: 200 }}
+                                sx={{
+                                    minWidth: { xs: "100%", sm: 220 },
+                                    "& .MuiOutlinedInput-root": {
+                                        borderRadius: "12px",
+                                        "& fieldset": {
+                                            borderColor: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "rgba(255, 255, 255, 0.15)"
+                                                    : "rgba(0, 0, 0, 0.15)",
+                                        },
+                                        "&:hover fieldset": {
+                                            borderColor: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "rgba(255, 255, 255, 0.3)"
+                                                    : "rgba(0, 0, 0, 0.3)",
+                                        },
+                                    },
+                                }}
                             />
 
-                            <FormControl size='small' sx={{ minWidth: 150 }}>
+                            <FormControl
+                                size='small'
+                                sx={{
+                                    minWidth: {
+                                        xs: "calc(50% - 8px)",
+                                        sm: 160,
+                                    },
+                                }}
+                            >
                                 <InputLabel>Sort by</InputLabel>
                                 <Select
                                     value={sortBy}
                                     label='Sort by'
                                     onChange={handleSortChange}
+                                    sx={{
+                                        borderRadius: "12px",
+                                        "& fieldset": {
+                                            borderColor: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "rgba(255, 255, 255, 0.15)"
+                                                    : "rgba(0, 0, 0, 0.15)",
+                                        },
+                                    }}
                                 >
                                     <MenuItem value='name'>Name (A-Z)</MenuItem>
                                     <MenuItem value='attack'>
@@ -172,17 +392,34 @@ const Monsters = () => {
                                         Damage (High-Low)
                                     </MenuItem>
                                     <MenuItem value='hitPoints'>
-                                        Hit Points (High-Low)
+                                        HP (High-Low)
                                     </MenuItem>
                                 </Select>
                             </FormControl>
 
-                            <FormControl size='small' sx={{ minWidth: 180 }}>
-                                <InputLabel>Filter by Immunities</InputLabel>
+                            <FormControl
+                                size='small'
+                                sx={{
+                                    minWidth: {
+                                        xs: "calc(50% - 8px)",
+                                        sm: 180,
+                                    },
+                                }}
+                            >
+                                <InputLabel>Immunities</InputLabel>
                                 <Select
                                     value={damageTypeFilter}
-                                    label='Filter by Immunities'
+                                    label='Immunities'
                                     onChange={handleDamageTypeChange}
+                                    sx={{
+                                        borderRadius: "12px",
+                                        "& fieldset": {
+                                            borderColor: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "rgba(255, 255, 255, 0.15)"
+                                                    : "rgba(0, 0, 0, 0.15)",
+                                        },
+                                    }}
                                 >
                                     <MenuItem value='all'>All</MenuItem>
                                     <MenuItem value='Physical'>
@@ -195,50 +432,47 @@ const Monsters = () => {
                             </FormControl>
                         </Box>
 
-                        <div
-                            className='monster-listinator'
-                            style={{ marginTop: "20px" }}
+                        <Typography
+                            variant='body2'
+                            sx={{
+                                textAlign: "center",
+                                marginTop: 2,
+                                opacity: 0.6,
+                            }}
                         >
-                            {filteredMonsters.map((monster, index) => (
-                                <Link
-                                    to={`/monsters/${monster.Name}`}
-                                    key={index}
-                                    className='monster-link'
-                                    style={{
-                                        display: "block",
-                                        textDecoration: "none",
-                                        padding: "10px",
-                                        borderRadius: "4px",
-                                        transition:
-                                            "background-color 0.3s, color 0.3s",
-                                    }}
-                                >
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <Typography
-                                            variant='body1'
-                                            sx={{ fontWeight: "bold" }}
-                                        >
-                                            {monster.Name}
-                                        </Typography>
-                                        <Typography
-                                            variant='body2'
-                                            sx={{ opacity: 0.7 }}
-                                        >
-                                            Attack: {monster.Attack} | Damage:{" "}
-                                            {monster.Damage}
-                                        </Typography>
-                                    </Box>
-                                </Link>
-                            ))}
-                        </div>
-                    </Section>
-                </Paper>
+                            {filteredMonsters.length} creature
+                            {filteredMonsters.length !== 1 ? "s" : ""} found
+                        </Typography>
+                    </Box>
+                </Slide>
+
+                {/* Monster Grid */}
+                <Box sx={{ width: "100%", maxWidth: "1200px" }}>
+                    <Grid container spacing={3}>
+                        {filteredMonsters.map((monster, index) => (
+                            <Grid item xs={12} sm={6} md={4} key={monster.Name}>
+                                <MonsterCard monster={monster} index={index} />
+                            </Grid>
+                        ))}
+                    </Grid>
+
+                    {filteredMonsters.length === 0 && (
+                        <Box
+                            sx={{
+                                textAlign: "center",
+                                padding: "60px 20px",
+                                opacity: 0.6,
+                            }}
+                        >
+                            <Typography variant='h5'>
+                                No monsters found
+                            </Typography>
+                            <Typography variant='body1' sx={{ mt: 1 }}>
+                                Try adjusting your search or filters
+                            </Typography>
+                        </Box>
+                    )}
+                </Box>
             </Container>
 
             <GMToolsButton />

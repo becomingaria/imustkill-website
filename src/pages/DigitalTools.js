@@ -18,26 +18,31 @@ const DigitalTools = () => {
         width: "100%",
         height: "50px",
         fontSize: "16px",
-        bgcolor: "var(--button-bg)",
-        color: "var(--button-text)",
+        fontWeight: "bold",
+        textTransform: "none",
+        borderRadius: "12px",
         border: (theme) =>
             theme.palette.mode === "dark"
-                ? "2px solid #ffffff"
-                : "2px solid var(--button-bg)",
-        borderRadius: "8px",
-        boxShadow: (theme) =>
+                ? "2px solid rgba(255, 255, 255, 0.3)"
+                : "2px solid rgba(0, 0, 0, 0.2)",
+        color: (theme) =>
+            theme.palette.mode === "dark" ? "#e0e0e0" : "#121212",
+        bgcolor: (theme) =>
             theme.palette.mode === "dark"
-                ? "0 4px 8px rgba(0, 0, 0, 0.3)"
-                : "0 4px 8px rgba(0, 0, 0, 0.15)",
+                ? "rgba(255, 255, 255, 0.05)"
+                : "rgba(0, 0, 0, 0.03)",
+        backdropFilter: "blur(10px)",
         transition: "all 0.3s ease",
         "&:hover": {
-            bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "#e0e0e0" : "#e9e9e9",
-            transform: "scale(1.05)",
-            boxShadow: (theme) =>
+            border: (theme) =>
                 theme.palette.mode === "dark"
-                    ? "0 8px 16px rgba(0, 0, 0, 0.5)"
-                    : "0 8px 16px rgba(0, 0, 0, 0.25)",
+                    ? "2px solid rgba(255, 255, 255, 0.6)"
+                    : "2px solid rgba(0, 0, 0, 0.4)",
+            bgcolor: (theme) =>
+                theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.1)"
+                    : "rgba(0, 0, 0, 0.08)",
+            transform: "scale(1.02)",
         },
     })
 
@@ -48,19 +53,20 @@ const DigitalTools = () => {
         backgroundColor: (theme) =>
             theme.palette.mode === "dark"
                 ? "rgba(255, 255, 255, 0.05)"
-                : "rgba(0, 0, 0, 0.05)",
+                : "rgba(0, 0, 0, 0.03)",
         border: (theme) =>
             theme.palette.mode === "dark"
                 ? "1px solid rgba(255, 255, 255, 0.1)"
                 : "1px solid rgba(0, 0, 0, 0.1)",
-        borderRadius: 2,
+        borderRadius: "16px",
+        backdropFilter: "blur(10px)",
         transition: "all 0.3s ease",
         "&:hover": {
             transform: "translateY(-4px)",
-            boxShadow: (theme) =>
+            border: (theme) =>
                 theme.palette.mode === "dark"
-                    ? "0 8px 24px rgba(0, 0, 0, 0.5)"
-                    : "0 8px 24px rgba(0, 0, 0, 0.15)",
+                    ? "1px solid rgba(255, 255, 255, 0.2)"
+                    : "1px solid rgba(0, 0, 0, 0.2)",
         },
     })
 
@@ -194,14 +200,14 @@ const DigitalTools = () => {
                                         <Button
                                             component={Link}
                                             to={tool.path}
-                                            variant='contained'
+                                            variant='outlined'
                                             sx={getButtonStyles()}
                                         >
                                             Open Tool
                                         </Button>
                                     ) : (
                                         <Button
-                                            variant='contained'
+                                            variant='outlined'
                                             disabled
                                             sx={{
                                                 ...getButtonStyles(),

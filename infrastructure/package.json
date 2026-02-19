@@ -1,0 +1,29 @@
+{
+    "name": "imk-live-sessions-infrastructure",
+    "version": "1.0.0",
+    "description": "AWS CDK infrastructure for I Must Kill live session sharing",
+    "main": "lib/imk-stack.js",
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc -w",
+        "cdk": "cdk",
+        "deploy": "cdk deploy --require-approval never",
+        "destroy": "cdk destroy",
+        "synth": "cdk synth",
+        "diff": "cdk diff",
+        "bootstrap": "cdk bootstrap"
+    },
+    "devDependencies": {
+        "@aws-sdk/client-apigatewaymanagementapi": "^3.500.0",
+        "@aws-sdk/client-dynamodb": "^3.500.0",
+        "@aws-sdk/util-dynamodb": "^3.500.0",
+        "@types/node": "^20.0.0",
+        "aws-cdk": "^2.120.0",
+        "typescript": "^5.3.0"
+    },
+    "dependencies": {
+        "aws-cdk-lib": "^2.120.0",
+        "constructs": "^10.3.0",
+        "esbuild": "^0.19.0"
+    }
+}

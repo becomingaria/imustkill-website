@@ -1,0 +1,1487 @@
+{
+ "Description": "I Must Kill - Live Session Sharing Infrastructure",
+ "Resources": {
+  "InitiativeSessionsBB87C22B": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "id",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "isActive",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "createdAt",
+      "AttributeType": "N"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "active-sessions",
+      "KeySchema": [
+       {
+        "AttributeName": "isActive",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "createdAt",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "id",
+      "KeyType": "HASH"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": false
+    },
+    "TableName": "imk-initiative-sessions",
+    "TimeToLiveSpecification": {
+     "AttributeName": "ttl",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/InitiativeSessions/Resource"
+   }
+  },
+  "WebSocketConnections8A9A9887": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "connectionId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "sessionId",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "session-connections",
+      "KeySchema": [
+       {
+        "AttributeName": "sessionId",
+        "KeyType": "HASH"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "connectionId",
+      "KeyType": "HASH"
+     }
+    ],
+    "TableName": "imk-websocket-connections",
+    "TimeToLiveSpecification": {
+     "AttributeName": "ttl",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/WebSocketConnections/Resource"
+   }
+  },
+  "SessionsHandlerServiceRoleD26433F9": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHandler/ServiceRole/Resource"
+   }
+  },
+  "SessionsHandlerServiceRoleDefaultPolicyAAC4EC7E": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "InitiativeSessionsBB87C22B",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "InitiativeSessionsBB87C22B",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "WebSocketConnections8A9A9887",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "WebSocketConnections8A9A9887",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "execute-api:ManageConnections",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:execute-api:us-east-1:544623438535:",
+          {
+           "Ref": "SessionsWebSocketApiCF33738B"
+          },
+          "/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "SessionsHandlerServiceRoleDefaultPolicyAAC4EC7E",
+    "Roles": [
+     {
+      "Ref": "SessionsHandlerServiceRoleD26433F9"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHandler/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "SessionsHandler0955C787": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "arm64"
+    ],
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-544623438535-us-east-1",
+     "S3Key": "c2fc0ce071414531e56c090774bc4603cb29fd7c75e59f00f7ff9b67f7a8fc64.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "SESSIONS_TABLE": {
+       "Ref": "InitiativeSessionsBB87C22B"
+      },
+      "CONNECTIONS_TABLE": {
+       "Ref": "WebSocketConnections8A9A9887"
+      },
+      "NODE_OPTIONS": "--enable-source-maps",
+      "WEBSOCKET_ENDPOINT": {
+       "Fn::Join": [
+        "",
+        [
+         {
+          "Ref": "SessionsWebSocketApiCF33738B"
+         },
+         ".execute-api.us-east-1.amazonaws.com/live"
+        ]
+       ]
+      }
+     }
+    },
+    "FunctionName": "imk-sessions-handler",
+    "Handler": "index.handler",
+    "MemorySize": 256,
+    "Role": {
+     "Fn::GetAtt": [
+      "SessionsHandlerServiceRoleD26433F9",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 10
+   },
+   "DependsOn": [
+    "SessionsHandlerServiceRoleDefaultPolicyAAC4EC7E",
+    "SessionsHandlerServiceRoleD26433F9"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHandler/Resource",
+    "aws:asset:path": "asset.c2fc0ce071414531e56c090774bc4603cb29fd7c75e59f00f7ff9b67f7a8fc64",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "SessionsHandlerLogRetentionD3A1309A": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "SessionsHandler0955C787"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 7
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHandler/LogRetention/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "logs:DeleteRetentionPolicy",
+        "logs:PutRetentionPolicy"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "Roles": [
+     {
+      "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Handler": "index.handler",
+    "Runtime": "nodejs22.x",
+    "Timeout": 900,
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-544623438535-us-east-1",
+     "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip"
+    },
+    "Role": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource",
+    "aws:asset:path": "asset.2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "SessionsHttpApiD5040933": {
+   "Type": "AWS::ApiGatewayV2::Api",
+   "Properties": {
+    "CorsConfiguration": {
+     "AllowHeaders": [
+      "Content-Type",
+      "Authorization"
+     ],
+     "AllowMethods": [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE",
+      "OPTIONS"
+     ],
+     "AllowOrigins": [
+      "*"
+     ],
+     "MaxAge": 3600
+    },
+    "Description": "I Must Kill - Initiative Session Management API",
+    "Name": "imk-sessions-api",
+    "ProtocolType": "HTTP"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHttpApi/Resource"
+   }
+  },
+  "SessionsHttpApiDefaultStage10DD8AA9": {
+   "Type": "AWS::ApiGatewayV2::Stage",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsHttpApiD5040933"
+    },
+    "AutoDeploy": true,
+    "StageName": "$default"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHttpApi/DefaultStage/Resource"
+   }
+  },
+  "SessionsHttpApiPOSTsessionsSessionsIntegration4884EEFE": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsHttpApiD5040933"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::GetAtt": [
+      "SessionsHandler0955C787",
+      "Arn"
+     ]
+    },
+    "PayloadFormatVersion": "2.0"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHttpApi/POST--sessions/SessionsIntegration/Resource"
+   }
+  },
+  "SessionsHttpApiPOSTsessionsSessionsIntegrationPermission8EBCA2C8": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "SessionsHandler0955C787",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:544623438535:",
+       {
+        "Ref": "SessionsHttpApiD5040933"
+       },
+       "/*/*/sessions"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHttpApi/POST--sessions/SessionsIntegration-Permission"
+   }
+  },
+  "SessionsHttpApiPOSTsessions9827D5FE": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsHttpApiD5040933"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "POST /sessions",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "SessionsHttpApiPOSTsessionsSessionsIntegration4884EEFE"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHttpApi/POST--sessions/Resource"
+   }
+  },
+  "SessionsHttpApiGETsessionssessionIdSessionsIntegrationPermission8F6CA08F": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "SessionsHandler0955C787",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:544623438535:",
+       {
+        "Ref": "SessionsHttpApiD5040933"
+       },
+       "/*/*/sessions/{sessionId}"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHttpApi/GET--sessions--{sessionId}/SessionsIntegration-Permission"
+   }
+  },
+  "SessionsHttpApiGETsessionssessionId81DA688A": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsHttpApiD5040933"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "GET /sessions/{sessionId}",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "SessionsHttpApiPOSTsessionsSessionsIntegration4884EEFE"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHttpApi/GET--sessions--{sessionId}/Resource"
+   }
+  },
+  "SessionsHttpApiPUTsessionssessionIdSessionsIntegrationPermission5858825D": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "SessionsHandler0955C787",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:544623438535:",
+       {
+        "Ref": "SessionsHttpApiD5040933"
+       },
+       "/*/*/sessions/{sessionId}"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHttpApi/PUT--sessions--{sessionId}/SessionsIntegration-Permission"
+   }
+  },
+  "SessionsHttpApiPUTsessionssessionIdD03D4DB2": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsHttpApiD5040933"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "PUT /sessions/{sessionId}",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "SessionsHttpApiPOSTsessionsSessionsIntegration4884EEFE"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHttpApi/PUT--sessions--{sessionId}/Resource"
+   }
+  },
+  "SessionsHttpApiDELETEsessionssessionIdSessionsIntegrationPermission89B2D426": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "SessionsHandler0955C787",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:544623438535:",
+       {
+        "Ref": "SessionsHttpApiD5040933"
+       },
+       "/*/*/sessions/{sessionId}"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHttpApi/DELETE--sessions--{sessionId}/SessionsIntegration-Permission"
+   }
+  },
+  "SessionsHttpApiDELETEsessionssessionId582F7C38": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsHttpApiD5040933"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "DELETE /sessions/{sessionId}",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "SessionsHttpApiPOSTsessionsSessionsIntegration4884EEFE"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsHttpApi/DELETE--sessions--{sessionId}/Resource"
+   }
+  },
+  "WebSocketHandlerServiceRole79B07D0E": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/WebSocketHandler/ServiceRole/Resource"
+   }
+  },
+  "WebSocketHandlerServiceRoleDefaultPolicyF180304B": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "InitiativeSessionsBB87C22B",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "WebSocketConnections8A9A9887",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "InitiativeSessionsBB87C22B",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "WebSocketConnections8A9A9887",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "execute-api:ManageConnections",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:execute-api:us-east-1:544623438535:",
+          {
+           "Ref": "SessionsWebSocketApiCF33738B"
+          },
+          "/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "WebSocketHandlerServiceRoleDefaultPolicyF180304B",
+    "Roles": [
+     {
+      "Ref": "WebSocketHandlerServiceRole79B07D0E"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/WebSocketHandler/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "WebSocketHandler47C0AA1A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "arm64"
+    ],
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-544623438535-us-east-1",
+     "S3Key": "512caae59005e66da8b6090bd37333a6fbe7cb5c59edfa9247e8f1b807f78cbe.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "SESSIONS_TABLE": {
+       "Ref": "InitiativeSessionsBB87C22B"
+      },
+      "CONNECTIONS_TABLE": {
+       "Ref": "WebSocketConnections8A9A9887"
+      },
+      "NODE_OPTIONS": "--enable-source-maps"
+     }
+    },
+    "FunctionName": "imk-websocket-handler",
+    "Handler": "index.handler",
+    "MemorySize": 256,
+    "Role": {
+     "Fn::GetAtt": [
+      "WebSocketHandlerServiceRole79B07D0E",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 10
+   },
+   "DependsOn": [
+    "WebSocketHandlerServiceRoleDefaultPolicyF180304B",
+    "WebSocketHandlerServiceRole79B07D0E"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/WebSocketHandler/Resource",
+    "aws:asset:path": "asset.512caae59005e66da8b6090bd37333a6fbe7cb5c59edfa9247e8f1b807f78cbe",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "WebSocketHandlerLogRetention7648D10D": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "WebSocketHandler47C0AA1A"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 7
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/WebSocketHandler/LogRetention/Resource"
+   }
+  },
+  "SessionsWebSocketApiCF33738B": {
+   "Type": "AWS::ApiGatewayV2::Api",
+   "Properties": {
+    "Description": "I Must Kill - Real-time Session Updates",
+    "Name": "imk-sessions-websocket",
+    "ProtocolType": "WEBSOCKET",
+    "RouteSelectionExpression": "$request.body.action"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/Resource"
+   }
+  },
+  "SessionsWebSocketApiconnectRouteConnectIntegrationPermission7ACE6E2C": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "WebSocketHandler47C0AA1A",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:544623438535:",
+       {
+        "Ref": "SessionsWebSocketApiCF33738B"
+       },
+       "/*$connect"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/$connect-Route/ConnectIntegration-Permission"
+   }
+  },
+  "SessionsWebSocketApiconnectRouteConnectIntegration427C6CED": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "WebSocketHandler47C0AA1A",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/$connect-Route/ConnectIntegration/Resource"
+   }
+  },
+  "SessionsWebSocketApiconnectRoute95D35A01": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "$connect",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "SessionsWebSocketApiconnectRouteConnectIntegration427C6CED"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/$connect-Route/Resource"
+   }
+  },
+  "SessionsWebSocketApidisconnectRouteDisconnectIntegrationPermissionBDF3AD47": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "WebSocketHandler47C0AA1A",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:544623438535:",
+       {
+        "Ref": "SessionsWebSocketApiCF33738B"
+       },
+       "/*$disconnect"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/$disconnect-Route/DisconnectIntegration-Permission"
+   }
+  },
+  "SessionsWebSocketApidisconnectRouteDisconnectIntegration3ECA263A": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "WebSocketHandler47C0AA1A",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/$disconnect-Route/DisconnectIntegration/Resource"
+   }
+  },
+  "SessionsWebSocketApidisconnectRouteDDBB7F4F": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "$disconnect",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "SessionsWebSocketApidisconnectRouteDisconnectIntegration3ECA263A"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/$disconnect-Route/Resource"
+   }
+  },
+  "SessionsWebSocketApidefaultRouteDefaultIntegrationPermission7A077597": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "WebSocketHandler47C0AA1A",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:544623438535:",
+       {
+        "Ref": "SessionsWebSocketApiCF33738B"
+       },
+       "/*$default"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/$default-Route/DefaultIntegration-Permission"
+   }
+  },
+  "SessionsWebSocketApidefaultRouteDefaultIntegration89EA24B8": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "WebSocketHandler47C0AA1A",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/$default-Route/DefaultIntegration/Resource"
+   }
+  },
+  "SessionsWebSocketApidefaultRouteDCF85645": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "$default",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "SessionsWebSocketApidefaultRouteDefaultIntegration89EA24B8"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/$default-Route/Resource"
+   }
+  },
+  "SessionsWebSocketApisubscribeRouteSubscribeIntegrationPermissionD7E270AC": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "WebSocketHandler47C0AA1A",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:544623438535:",
+       {
+        "Ref": "SessionsWebSocketApiCF33738B"
+       },
+       "/*subscribe"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/subscribe-Route/SubscribeIntegration-Permission"
+   }
+  },
+  "SessionsWebSocketApisubscribeRouteSubscribeIntegrationF0850F2A": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "WebSocketHandler47C0AA1A",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/subscribe-Route/SubscribeIntegration/Resource"
+   }
+  },
+  "SessionsWebSocketApisubscribeRoute86EF90B9": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "subscribe",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "SessionsWebSocketApisubscribeRouteSubscribeIntegrationF0850F2A"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/subscribe-Route/Resource"
+   }
+  },
+  "SessionsWebSocketApiunsubscribeRouteUnsubscribeIntegrationPermissionE86EF790": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "WebSocketHandler47C0AA1A",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:544623438535:",
+       {
+        "Ref": "SessionsWebSocketApiCF33738B"
+       },
+       "/*unsubscribe"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/unsubscribe-Route/UnsubscribeIntegration-Permission"
+   }
+  },
+  "SessionsWebSocketApiunsubscribeRouteUnsubscribeIntegrationEBA62786": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "WebSocketHandler47C0AA1A",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/unsubscribe-Route/UnsubscribeIntegration/Resource"
+   }
+  },
+  "SessionsWebSocketApiunsubscribeRoute8DDECB2F": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "unsubscribe",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "SessionsWebSocketApiunsubscribeRouteUnsubscribeIntegrationEBA62786"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/unsubscribe-Route/Resource"
+   }
+  },
+  "SessionsWebSocketApipingRoutePingIntegrationPermissionD1EAB793": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "WebSocketHandler47C0AA1A",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:544623438535:",
+       {
+        "Ref": "SessionsWebSocketApiCF33738B"
+       },
+       "/*ping"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/ping-Route/PingIntegration-Permission"
+   }
+  },
+  "SessionsWebSocketApipingRoutePingIntegration751FD19A": {
+   "Type": "AWS::ApiGatewayV2::Integration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "IntegrationType": "AWS_PROXY",
+    "IntegrationUri": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+       {
+        "Fn::GetAtt": [
+         "WebSocketHandler47C0AA1A",
+         "Arn"
+        ]
+       },
+       "/invocations"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/ping-Route/PingIntegration/Resource"
+   }
+  },
+  "SessionsWebSocketApipingRouteCDD2C0E7": {
+   "Type": "AWS::ApiGatewayV2::Route",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "AuthorizationType": "NONE",
+    "RouteKey": "ping",
+    "Target": {
+     "Fn::Join": [
+      "",
+      [
+       "integrations/",
+       {
+        "Ref": "SessionsWebSocketApipingRoutePingIntegration751FD19A"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/SessionsWebSocketApi/ping-Route/Resource"
+   }
+  },
+  "WebSocketStageC46B7E43": {
+   "Type": "AWS::ApiGatewayV2::Stage",
+   "Properties": {
+    "ApiId": {
+     "Ref": "SessionsWebSocketApiCF33738B"
+    },
+    "AutoDeploy": true,
+    "StageName": "live"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/WebSocketStage/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/11QTWvDMAz9Lb07Wkguu7aBscHYRjrYsSiJGpwPO0RySwn578P2GkZP7z1J70l2Bln+DOkOr5zUTZ8MuoLlKFj3Cq98WpqbwdE2FSzfWA2kirMJZFUDjlWDJ2Mb6hg+Arw4U4u2RmkcYSltNAT8soOub15GtirOT8hMwrD3oDiHg6t7kgMy/cXDUpzNlurNNI+aWVuzqsG2DO+2LUnIhAGcdItCV7xdMlheRab9pL3Ng5dHwTbcFIkvldZJZG9GqJ3xvupBxrkfqo7WH+kTN/HQ++/cimHjuqqS2Lq5JhVe7avatGHBvVGczaeTycmq/O9Cx0+XLIMshXTXsdbJ7IzokaCM+Au0BMslxAEAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "ImkLiveSessionsStack/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "HttpApiUrl": {
+   "Description": "HTTP API URL for session management",
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "SessionsHttpApiD5040933"
+      },
+      ".execute-api.us-east-1.",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/"
+     ]
+    ]
+   },
+   "Export": {
+    "Name": "ImkHttpApiUrl"
+   }
+  },
+  "WebSocketUrl": {
+   "Description": "WebSocket URL for real-time updates",
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "wss://",
+      {
+       "Ref": "SessionsWebSocketApiCF33738B"
+      },
+      ".execute-api.us-east-1.",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/live"
+     ]
+    ]
+   },
+   "Export": {
+    "Name": "ImkWebSocketUrl"
+   }
+  },
+  "SessionsTableName": {
+   "Description": "DynamoDB table name for sessions",
+   "Value": {
+    "Ref": "InitiativeSessionsBB87C22B"
+   }
+  },
+  "ConnectionsTableName": {
+   "Description": "DynamoDB table name for WebSocket connections",
+   "Value": {
+    "Ref": "WebSocketConnections8A9A9887"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

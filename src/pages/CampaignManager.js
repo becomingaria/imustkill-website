@@ -79,7 +79,7 @@ const CampaignManager = () => {
                     const partyJSON = JSON.stringify(partyData)
                     const keyword = "Party Data"
                     const textData = new TextEncoder().encode(
-                        keyword + "\0" + partyJSON
+                        keyword + "\0" + partyJSON,
                     )
 
                     // Create chunk: Length (4 bytes) + Type (4 bytes) + Data + CRC (4 bytes)
@@ -88,7 +88,7 @@ const CampaignManager = () => {
 
                     // Calculate CRC32 for chunk type + data
                     const crc32 = calculateCRC32(
-                        new Uint8Array([...chunkType, ...textData])
+                        new Uint8Array([...chunkType, ...textData]),
                     )
 
                     // Create the complete chunk
@@ -106,13 +106,13 @@ const CampaignManager = () => {
 
                     // Insert the chunk before IEND
                     const newPNG = new Uint8Array(
-                        uint8Array.length + chunk.length
+                        uint8Array.length + chunk.length,
                     )
                     newPNG.set(uint8Array.slice(0, insertPosition), 0)
                     newPNG.set(chunk, insertPosition)
                     newPNG.set(
                         uint8Array.slice(insertPosition),
-                        insertPosition + chunk.length
+                        insertPosition + chunk.length,
                     )
 
                     const newBlob = new Blob([newPNG], { type: "image/png" })
@@ -138,13 +138,13 @@ const CampaignManager = () => {
                         const view = new DataView(uint8Array.buffer, offset)
                         const chunkLength = view.getUint32(0, false) // big endian
                         const chunkType = new TextDecoder().decode(
-                            uint8Array.slice(offset + 4, offset + 8)
+                            uint8Array.slice(offset + 4, offset + 8),
                         )
 
                         if (chunkType === "tEXt") {
                             const chunkData = uint8Array.slice(
                                 offset + 8,
-                                offset + 8 + chunkLength
+                                offset + 8 + chunkLength,
                             )
                             const text = new TextDecoder().decode(chunkData)
                             const nullIndex = text.indexOf("\0")
@@ -189,13 +189,13 @@ const CampaignManager = () => {
                         const view = new DataView(uint8Array.buffer, offset)
                         const chunkLength = view.getUint32(0, false) // big endian
                         const chunkType = new TextDecoder().decode(
-                            uint8Array.slice(offset + 4, offset + 8)
+                            uint8Array.slice(offset + 4, offset + 8),
                         )
 
                         if (chunkType === "tEXt") {
                             const chunkData = uint8Array.slice(
                                 offset + 8,
-                                offset + 8 + chunkLength
+                                offset + 8 + chunkLength,
                             )
                             const text = new TextDecoder().decode(chunkData)
                             const nullIndex = text.indexOf("\0")
@@ -256,9 +256,8 @@ const CampaignManager = () => {
                     }
 
                     // Try to extract character data
-                    const characterData = await extractCharacterDataFromPNG(
-                        file
-                    )
+                    const characterData =
+                        await extractCharacterDataFromPNG(file)
                     if (characterData) {
                         const newCharacter = {
                             id: Date.now().toString(),
@@ -278,7 +277,7 @@ const CampaignManager = () => {
                     } else {
                         showAlert(
                             "No character data found in this PNG file",
-                            "error"
+                            "error",
                         )
                     }
                 } else {
@@ -300,7 +299,7 @@ const CampaignManager = () => {
     const confirmDelete = () => {
         if (characterToDelete) {
             setCharacters((prev) =>
-                prev.filter((char) => char.id !== characterToDelete)
+                prev.filter((char) => char.id !== characterToDelete),
             )
             setGmNotes((prev) => {
                 const newNotes = { ...prev }
@@ -343,8 +342,8 @@ const CampaignManager = () => {
                               [field]: value,
                           },
                       }
-                    : char
-            )
+                    : char,
+            ),
         )
     }
 
@@ -358,7 +357,7 @@ const CampaignManager = () => {
             if (campaignSheetRef.current) {
                 // Hide the action buttons temporarily for a cleaner screenshot
                 const actionButtons = document.querySelector(
-                    '[data-testid="action-buttons"]'
+                    '[data-testid="action-buttons"]',
                 )
                 if (actionButtons) {
                     actionButtons.style.display = "none"
@@ -390,7 +389,7 @@ const CampaignManager = () => {
                 // Embed party data in the PNG
                 const blobWithData = await embedPartyDataInPNG(
                     canvas,
-                    partyData
+                    partyData,
                 )
 
                 const fileName = `${partyName
@@ -402,7 +401,7 @@ const CampaignManager = () => {
             } else {
                 showAlert(
                     "Error: Could not find campaign sheet to save",
-                    "error"
+                    "error",
                 )
             }
         } catch (error) {
@@ -438,14 +437,14 @@ const CampaignManager = () => {
             // Open Initiative Tracker in new tab with combat data
             const newTab = window.open(
                 `/initiative-tracker?combat=${combatDataKey}`,
-                "_blank"
+                "_blank",
             )
             if (newTab) {
                 showAlert("Combat started in new tab!")
             } else {
                 showAlert(
                     "Please allow popups to open Combat Tracker",
-                    "warning"
+                    "warning",
                 )
             }
         } catch (error) {
@@ -495,7 +494,7 @@ const CampaignManager = () => {
             } else {
                 showAlert(
                     "Please drop a .character.png or .party.png file",
-                    "error"
+                    "error",
                 )
             }
         }
@@ -611,86 +610,158 @@ const CampaignManager = () => {
                     }}
                 >
                     <Button
-                        variant='contained'
+                        variant='outlined'
                         startIcon={<Add />}
                         onClick={handleAddCharacter}
                         sx={{
-                            bgcolor: "#8B0000",
-                            "&:hover": { bgcolor: "#660000" },
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "1px solid rgba(255, 255, 255, 0.15)"
+                                    : "1px solid rgba(0, 0, 0, 0.15)",
+                            color: "inherit",
                             borderRadius: "12px",
+                            backdropFilter: "blur(10px)",
                             fontSize: "0.9rem",
                             fontFamily: '"Cinzel", serif',
+                            transition: "all 0.3s ease",
+                            "&:hover": {
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.1)"
+                                        : "rgba(0, 0, 0, 0.06)",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(255, 255, 255, 0.3)"
+                                        : "1px solid rgba(0, 0, 0, 0.25)",
+                            },
                         }}
                     >
                         Add Character
                     </Button>
                     <Button
-                        variant='contained'
+                        variant='outlined'
                         startIcon={<Save />}
                         onClick={() => {
                             if (!partyName.trim()) {
                                 showAlert(
                                     "Please enter a party name before saving",
-                                    "warning"
+                                    "warning",
                                 )
                                 return
                             }
                             if (characters.length === 0) {
                                 showAlert(
                                     "Please add at least one character before saving",
-                                    "warning"
+                                    "warning",
                                 )
                                 return
                             }
                             savePartyFile()
                         }}
                         sx={{
-                            bgcolor:
-                                !partyName.trim() || characters.length === 0
-                                    ? "#666666"
-                                    : "#8B0000",
-                            "&:hover": {
-                                bgcolor:
-                                    !partyName.trim() || characters.length === 0
-                                        ? "#777777"
-                                        : "#660000",
-                            },
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "1px solid rgba(255, 255, 255, 0.15)"
+                                    : "1px solid rgba(0, 0, 0, 0.15)",
+                            color: "inherit",
                             borderRadius: "12px",
+                            backdropFilter: "blur(10px)",
                             fontSize: "0.9rem",
                             fontFamily: '"Cinzel", serif',
+                            transition: "all 0.3s ease",
+                            opacity:
+                                !partyName.trim() || characters.length === 0
+                                    ? 0.6
+                                    : 1,
+                            "&:hover": {
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.1)"
+                                        : "rgba(0, 0, 0, 0.06)",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(255, 255, 255, 0.3)"
+                                        : "1px solid rgba(0, 0, 0, 0.25)",
+                            },
                         }}
                     >
                         {!partyName.trim()
                             ? "Enter Party Name"
                             : characters.length === 0
-                            ? "Add Characters First"
-                            : "Save Party"}
+                              ? "Add Characters First"
+                              : "Save Party"}
                     </Button>
                     <Button
-                        variant='contained'
+                        variant='outlined'
                         startIcon={<Upload />}
                         onClick={() => fileInputRef.current?.click()}
                         sx={{
-                            bgcolor: "#4A5568",
-                            "&:hover": { bgcolor: "#2D3748" },
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "1px solid rgba(255, 255, 255, 0.15)"
+                                    : "1px solid rgba(0, 0, 0, 0.15)",
+                            color: "inherit",
                             borderRadius: "12px",
+                            backdropFilter: "blur(10px)",
                             fontSize: "0.9rem",
                             fontFamily: '"Cinzel", serif',
+                            transition: "all 0.3s ease",
+                            "&:hover": {
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.1)"
+                                        : "rgba(0, 0, 0, 0.06)",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(255, 255, 255, 0.3)"
+                                        : "1px solid rgba(0, 0, 0, 0.25)",
+                            },
                         }}
                     >
                         Load Party
                     </Button>
                     <Button
-                        variant='contained'
+                        variant='outlined'
                         startIcon={<PlayArrow />}
                         onClick={startCombat}
                         disabled={characters.length === 0}
                         sx={{
-                            bgcolor: "#2E7D32",
-                            "&:hover": { bgcolor: "#1B5E20" },
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "1px solid rgba(255, 255, 255, 0.15)"
+                                    : "1px solid rgba(0, 0, 0, 0.15)",
+                            color: "inherit",
                             borderRadius: "12px",
+                            backdropFilter: "blur(10px)",
                             fontSize: "0.9rem",
                             fontFamily: '"Cinzel", serif',
+                            transition: "all 0.3s ease",
+                            "&:hover": {
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.1)"
+                                        : "rgba(0, 0, 0, 0.06)",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(255, 255, 255, 0.3)"
+                                        : "1px solid rgba(0, 0, 0, 0.25)",
+                            },
                         }}
                     >
                         Start Combat
@@ -700,15 +771,24 @@ const CampaignManager = () => {
                         startIcon={<RestartAlt />}
                         onClick={resetCampaign}
                         sx={{
-                            borderColor: "#8B0000",
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "1px solid rgba(139, 0, 0, 0.5)"
+                                    : "1px solid rgba(139, 0, 0, 0.4)",
                             color: "#8B0000",
-                            "&:hover": {
-                                borderColor: "#660000",
-                                color: "#660000",
-                            },
                             borderRadius: "12px",
+                            backdropFilter: "blur(10px)",
                             fontSize: "0.9rem",
                             fontFamily: '"Cinzel", serif',
+                            transition: "all 0.3s ease",
+                            "&:hover": {
+                                bgcolor: "rgba(139, 0, 0, 0.1)",
+                                border: "1px solid rgba(139, 0, 0, 0.7)",
+                            },
                         }}
                     >
                         Reset
@@ -863,7 +943,7 @@ const CampaignManager = () => {
                                         <IconButton
                                             onClick={() =>
                                                 handleDeleteCharacter(
-                                                    character.id
+                                                    character.id,
                                                 )
                                             }
                                             sx={{
@@ -970,7 +1050,7 @@ const CampaignManager = () => {
                                                                         character.id,
                                                                         field,
                                                                         e.target
-                                                                            .value
+                                                                            .value,
                                                                     )
                                                                 }
                                                                 variant='outlined'
@@ -1057,7 +1137,7 @@ const CampaignManager = () => {
                                                             handleCharacterDataChange(
                                                                 character.id,
                                                                 "currentHP",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         variant='outlined'
@@ -1105,7 +1185,7 @@ const CampaignManager = () => {
                                                             handleCharacterDataChange(
                                                                 character.id,
                                                                 "maxHP",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         variant='outlined'
@@ -1165,7 +1245,7 @@ const CampaignManager = () => {
                                                                 character.id,
                                                                 "shield",
                                                                 !character.data
-                                                                    .shield
+                                                                    .shield,
                                                             )
                                                         }
                                                         sx={{
@@ -1220,7 +1300,7 @@ const CampaignManager = () => {
                                                                 character.id,
                                                                 "armor",
                                                                 !character.data
-                                                                    .armor
+                                                                    .armor,
                                                             )
                                                         }
                                                         sx={{
@@ -1280,7 +1360,7 @@ const CampaignManager = () => {
                                                 onChange={(e) =>
                                                     handleGmNotesChange(
                                                         character.id,
-                                                        e.target.value
+                                                        e.target.value,
                                                     )
                                                 }
                                                 sx={{
@@ -1341,7 +1421,7 @@ const CampaignManager = () => {
                                                 onChange={(e) =>
                                                     handleCombatNotesChange(
                                                         character.id,
-                                                        e.target.value
+                                                        e.target.value,
                                                     )
                                                 }
                                                 sx={{

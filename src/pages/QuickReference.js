@@ -101,12 +101,25 @@ const QuickReference = () => {
                                 sx={{
                                     bgcolor: (theme) =>
                                         theme.palette.mode === "dark"
-                                            ? "#1f1f1f"
-                                            : "#f5f5f5",
+                                            ? "rgba(255, 255, 255, 0.05)"
+                                            : "rgba(0, 0, 0, 0.03)",
                                     padding: "20px",
                                     height: "100%",
                                     display: "flex",
                                     flexDirection: "column",
+                                    border: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "1px solid rgba(255, 255, 255, 0.1)"
+                                            : "1px solid rgba(0, 0, 0, 0.1)",
+                                    borderRadius: "16px",
+                                    backdropFilter: "blur(10px)",
+                                    transition: "all 0.3s ease",
+                                    "&:hover": {
+                                        border: (theme) =>
+                                            theme.palette.mode === "dark"
+                                                ? "1px solid rgba(255, 255, 255, 0.2)"
+                                                : "1px solid rgba(0, 0, 0, 0.2)",
+                                    },
                                 }}
                             >
                                 <Box
@@ -146,7 +159,7 @@ const QuickReference = () => {
                                                                 {item.uses.map(
                                                                     (
                                                                         use,
-                                                                        useIndex
+                                                                        useIndex,
                                                                     ) => (
                                                                         <Chip
                                                                             key={
@@ -166,7 +179,7 @@ const QuickReference = () => {
                                                                                 mb: 0.5,
                                                                             }}
                                                                         />
-                                                                    )
+                                                                    ),
                                                                 )}
                                                             </Box>
                                                         )}
@@ -180,7 +193,7 @@ const QuickReference = () => {
                                                                 >
                                                                     Examples:{" "}
                                                                     {item.examples.join(
-                                                                        ", "
+                                                                        ", ",
                                                                     )}
                                                                 </Typography>
                                                             </Box>
@@ -225,10 +238,16 @@ const QuickReference = () => {
                     sx={{
                         bgcolor: (theme) =>
                             theme.palette.mode === "dark"
-                                ? "#1f1f1f"
-                                : "#f5f5f5",
+                                ? "rgba(255, 255, 255, 0.05)"
+                                : "rgba(0, 0, 0, 0.03)",
                         padding: "20px",
                         mt: 3,
+                        border: (theme) =>
+                            theme.palette.mode === "dark"
+                                ? "1px solid rgba(255, 255, 255, 0.1)"
+                                : "1px solid rgba(0, 0, 0, 0.1)",
+                        borderRadius: "16px",
+                        backdropFilter: "blur(10px)",
                     }}
                 >
                     <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>

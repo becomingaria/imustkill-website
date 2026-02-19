@@ -5,6 +5,7 @@
 [build.environment]
   # Environment variables for build
   CI = "false"
+  NODE_VERSION = "22"
   
 # Configure secrets scanning
 [secrets]

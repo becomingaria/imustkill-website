@@ -18,7 +18,7 @@ export const useRulesEngine = () => {
                 const db = await dbResp.json()
 
                 const catFiles = Object.entries(
-                    db.rulesDatabase.categories
+                    db.rulesDatabase.categories,
                 ).map(async ([key, cat]) => {
                     const r = await fetch(`/${cat.file}`)
                     return [key, await r.json()]
@@ -43,7 +43,7 @@ export const useRulesEngine = () => {
     /* ───────────────── Clean-ups ────────────────────────────────── */
     if (rulesData.database?.quickReference) {
         Object.values(rulesData.database.quickReference).forEach((items) =>
-            items.forEach((i) => delete i["%Source"])
+            items.forEach((i) => delete i["%Source"]),
         )
     }
 
@@ -94,8 +94,8 @@ export const useRulesEngine = () => {
                             section: i.term || i.stat || i.type,
                             id: i.term || i.stat || i.type,
                             isQuickReference: true,
-                        })
-                    )
+                        }),
+                    ),
             )
 
         /* categories */
@@ -128,7 +128,7 @@ export const useRulesEngine = () => {
                         path: `/${catKey}`,
                         section: sub.title,
                         id: sub.id,
-                    })
+                    }),
                 )
 
                 /* ── stats in character-creation/stats ── */
@@ -167,7 +167,7 @@ export const useRulesEngine = () => {
                         id: a.name.toLowerCase().replace(/\s+/g, "-"),
                         isSourceLinked: true, // ← NEW
                         sourceNames: sec["%Source"] || [], // ← NEW
-                    })
+                    }),
                 )
 
                 /* other blocks unchanged … */
@@ -181,7 +181,7 @@ export const useRulesEngine = () => {
                         path: `/${catKey}`,
                         section: t.name,
                         examples: t.examples || [],
-                    })
+                    }),
                 )
                 ;(sec.conditions ?? []).forEach((c) =>
                     content.push({
@@ -192,7 +192,7 @@ export const useRulesEngine = () => {
                         keywords: c.keywords || [],
                         path: `/${catKey}`,
                         section: c.name,
-                    })
+                    }),
                 )
                 ;(sec.equipment ?? []).forEach((e) =>
                     content.push({
@@ -203,7 +203,7 @@ export const useRulesEngine = () => {
                         keywords: e.keywords || [],
                         path: `/${catKey}`,
                         section: e.name,
-                    })
+                    }),
                 )
                 ;(sec.phases ?? []).forEach((p) =>
                     content.push({
@@ -217,7 +217,7 @@ export const useRulesEngine = () => {
                         ],
                         path: `/${catKey}`,
                         section: p.name,
-                    })
+                    }),
                 )
             })
         })
@@ -252,7 +252,7 @@ export const useRulesEngine = () => {
                     score += 10
                 score +=
                     item.keywords.filter((k) =>
-                        k.toLowerCase().includes(query.toLowerCase())
+                        k.toLowerCase().includes(query.toLowerCase()),
                     ).length * 5
                 if (
                     item.description.toLowerCase().includes(query.toLowerCase())
@@ -262,7 +262,7 @@ export const useRulesEngine = () => {
                     item.keywords.some(
                         (k) =>
                             k.startsWith("@") &&
-                            k.toLowerCase().includes(query.toLowerCase())
+                            k.toLowerCase().includes(query.toLowerCase()),
                     )
                 )
                     score += 1000
@@ -271,7 +271,7 @@ export const useRulesEngine = () => {
                     item.sourceNames?.some(
                         (s) =>
                             s.replace(/^[@%]/, "").toLowerCase() ===
-                            query.toLowerCase()
+                            query.toLowerCase(),
                     )
                 ) {
                     score += 5000
@@ -290,9 +290,9 @@ export const useRulesEngine = () => {
                                 sec.id === item.id &&
                                 sec["%Source"]?.some((src) =>
                                     terms.includes(
-                                        src.replace(/^[@%]/, "").toLowerCase()
-                                    )
-                                )
+                                        src.replace(/^[@%]/, "").toLowerCase(),
+                                    ),
+                                ),
                         )
                         if (hit) {
                             score += 20000
@@ -337,7 +337,7 @@ export const useRulesEngine = () => {
                             sec.actions?.some(
                                 (a) =>
                                     a.name.toLowerCase() ===
-                                    item.title.toLowerCase()
+                                    item.title.toLowerCase(),
                             ) &&
                             sec["%Source"]?.some((src) =>
                                 terms.some(
@@ -345,9 +345,9 @@ export const useRulesEngine = () => {
                                         src
                                             .replace(/^[@%]/, "")
                                             .toLowerCase() ===
-                                        term.replace(/^[@%]/, "").toLowerCase()
-                                )
-                            )
+                                        term.replace(/^[@%]/, "").toLowerCase(),
+                                ),
+                            ),
                     )
                 }
 
@@ -363,15 +363,15 @@ export const useRulesEngine = () => {
                     if (
                         sec["%Source"]?.some((src) =>
                             terms.includes(
-                                src.replace(/^[@%]/, "").toLowerCase()
-                            )
+                                src.replace(/^[@%]/, "").toLowerCase(),
+                            ),
                         )
                     )
                         return true
 
                     if (
                         sec.content?.some((c) =>
-                            terms.includes(c.name?.toLowerCase())
+                            terms.includes(c.name?.toLowerCase()),
                         )
                     )
                         return true
@@ -384,7 +384,7 @@ export const useRulesEngine = () => {
                 .sort((a, b) =>
                     b.relevanceScore !== a.relevanceScore
                         ? b.relevanceScore - a.relevanceScore
-                        : a.title.localeCompare(b.title)
+                        : a.title.localeCompare(b.title),
                 )
                 .slice(0, 20)
 
@@ -393,7 +393,7 @@ export const useRulesEngine = () => {
                 const idx = sorted.findIndex(
                     (i) =>
                         i.id === canonicalStatSection.id &&
-                        i.category === canonicalStatSection.category
+                        i.category === canonicalStatSection.category,
                 )
                 if (idx > 0) {
                     const [c] = sorted.splice(idx, 1)
@@ -412,31 +412,107 @@ export const useRulesEngine = () => {
                     .sort((a, b) =>
                         b.relevanceScore !== a.relevanceScore
                             ? b.relevanceScore - a.relevanceScore
-                            : a.title.localeCompare(b.title)
+                            : a.title.localeCompare(b.title),
                     )
                     .slice(0, 20)
             }
 
             return sorted
         },
-        [searchableContent, rulesData]
+        [searchableContent, rulesData],
     )
 
     /* ───────────────── Helpers (unchanged) ─────────────────────── */
     const getRule = useCallback(
         (cat, id) =>
             rulesData[cat]?.[Object.keys(rulesData[cat])[0]]?.sections?.find(
-                (s) => s.id === id
+                (s) => s.id === id,
             ) || null,
-        [rulesData]
+        [rulesData],
     )
 
     const getCategoryRules = useCallback(
         (cat) => rulesData[cat] && Object.values(rulesData[cat])[0],
-        [rulesData]
+        [rulesData],
     )
 
-    const getKeywordSuggestions = useCallback(() => [], [])
+    const getKeywordSuggestions = useCallback(
+        (query) => {
+            if (!query || query.length < 2) return []
+
+            const lowerQuery = query.toLowerCase()
+            const suggestions = new Set()
+
+            // Add matching rule titles
+            searchableContent.forEach((item) => {
+                if (item.title.toLowerCase().includes(lowerQuery)) {
+                    suggestions.add(item.title)
+                }
+                // Add matching keywords
+                item.keywords?.forEach((keyword) => {
+                    const cleanKeyword = keyword.replace(/^[@%]/, "")
+                    if (cleanKeyword.toLowerCase().includes(lowerQuery)) {
+                        suggestions.add(cleanKeyword)
+                    }
+                })
+            })
+
+            // Add page names for navigation
+            const pages = [
+                "Character Creation",
+                "Combat Mechanics",
+                "Death and Resting",
+                "Progression",
+                "Casting",
+                "Powers",
+                "Equipment",
+                "Monsters",
+                "Quick Reference",
+                "Running the Game",
+                "Player Tools",
+                "GM Tools",
+            ]
+            pages.forEach((page) => {
+                if (page.toLowerCase().includes(lowerQuery)) {
+                    suggestions.add(page)
+                }
+            })
+
+            // Add reference IDs
+            if (rulesData.database?.referenceIds) {
+                Object.entries(rulesData.database.referenceIds).forEach(
+                    ([refId, refData]) => {
+                        const cleanId = refId.replace(/^[@%]/, "")
+                        if (
+                            cleanId.toLowerCase().includes(lowerQuery) ||
+                            refData.title.toLowerCase().includes(lowerQuery)
+                        ) {
+                            suggestions.add(refData.title)
+                        }
+                    },
+                )
+            }
+
+            // Sort suggestions by relevance (exact match first, then starts with, then contains)
+            return Array.from(suggestions)
+                .sort((a, b) => {
+                    const aLower = a.toLowerCase()
+                    const bLower = b.toLowerCase()
+                    const aExact = aLower === lowerQuery
+                    const bExact = bLower === lowerQuery
+                    const aStarts = aLower.startsWith(lowerQuery)
+                    const bStarts = bLower.startsWith(lowerQuery)
+
+                    if (aExact && !bExact) return -1
+                    if (!aExact && bExact) return 1
+                    if (aStarts && !bStarts) return -1
+                    if (!aStarts && bStarts) return 1
+                    return a.localeCompare(b)
+                })
+                .slice(0, 10)
+        },
+        [searchableContent, rulesData],
+    )
 
     const getSourceMap = useCallback(() => {
         if (!rulesData.database) return new Map()

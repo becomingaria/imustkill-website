@@ -585,7 +585,7 @@ const CombatantCard = ({
                                     const length = e.currentTarget.value.length
                                     e.currentTarget.setSelectionRange(
                                         length,
-                                        length
+                                        length,
                                     )
                                 }
                             }, 0)
@@ -674,12 +674,12 @@ const CombatantCard = ({
                                 control={
                                     <Checkbox
                                         checked={combatant.statuses.includes(
-                                            status
+                                            status,
                                         )}
                                         onChange={(e) =>
                                             handleStatusChange(
                                                 status,
-                                                e.target.checked
+                                                e.target.checked,
                                             )
                                         }
                                         size='small'
@@ -862,7 +862,7 @@ const InitiativeTrackerPage = () => {
         // Global error handler for window errors
         const handleWindowError = (event) => {
             const message = String(
-                event.message || event.error?.message || ""
+                event.message || event.error?.message || "",
             ).toLowerCase()
             if (
                 message.includes("resizeobserver") ||
@@ -883,7 +883,7 @@ const InitiativeTrackerPage = () => {
         // Global unhandled rejection handler
         const handleUnhandledRejection = (event) => {
             const message = String(
-                event.reason?.message || event.reason || ""
+                event.reason?.message || event.reason || "",
             ).toLowerCase()
             if (
                 message.includes("resizeobserver") ||
@@ -917,7 +917,7 @@ const InitiativeTrackerPage = () => {
         window.addEventListener(
             "unhandledrejection",
             handleUnhandledRejection,
-            true
+            true,
         )
 
         return () => {
@@ -927,7 +927,7 @@ const InitiativeTrackerPage = () => {
             window.removeEventListener(
                 "unhandledrejection",
                 handleUnhandledRejection,
-                true
+                true,
             )
             if (OriginalResizeObserver) {
                 window.ResizeObserver = OriginalResizeObserver
@@ -957,7 +957,7 @@ const InitiativeTrackerPage = () => {
 
                 // Calculate distance from center
                 const distanceFromCenter = Math.abs(
-                    carouselCenter - viewportCenter
+                    carouselCenter - viewportCenter,
                 )
                 const threshold = viewportHeight * 0.3 // Increased to 30% of viewport height for even stronger snap zone
 
@@ -1065,7 +1065,7 @@ const InitiativeTrackerPage = () => {
         }),
         useSensor(KeyboardSensor, {
             coordinateGetter: () => null, // Disable keyboard drag coordination
-        })
+        }),
     )
 
     // Add keyboard event listener for '+' key to open add dialog
@@ -1156,10 +1156,10 @@ const InitiativeTrackerPage = () => {
         const monsters = combatantsArray.filter((c) => c.type === "Monster")
         const npcs = combatantsArray.filter((c) => c.type === "NPC")
         const environment = combatantsArray.filter(
-            (c) => c.type === "Environment"
+            (c) => c.type === "Environment",
         )
         const players = combatantsArray.filter(
-            (c) => c.type === "Player Character"
+            (c) => c.type === "Player Character",
         )
 
         // Add a DANGER card before player characters if there are any players
@@ -1340,8 +1340,8 @@ const InitiativeTrackerPage = () => {
     const updateCombatant = (id, updates) => {
         setCombatants((prev) =>
             prev.map((combatant) =>
-                combatant.id === id ? { ...combatant, ...updates } : combatant
-            )
+                combatant.id === id ? { ...combatant, ...updates } : combatant,
+            ),
         )
     }
 
@@ -1349,7 +1349,7 @@ const InitiativeTrackerPage = () => {
     const deleteCombatant = (id) => {
         setCombatants((prev) => {
             const newCombatants = prev.filter(
-                (combatant) => combatant.id !== id
+                (combatant) => combatant.id !== id,
             )
 
             // Use helper function to get ordered combatants with spacers
@@ -1397,7 +1397,7 @@ const InitiativeTrackerPage = () => {
         // Find positions in the real combatants array
         const combatantRealIndex = combatants.findIndex((c) => c.id === id)
         const prevCombatantRealIndex = combatants.findIndex(
-            (c) => c.id === realPrevCombatant.id
+            (c) => c.id === realPrevCombatant.id,
         )
 
         if (combatantRealIndex === -1 || prevCombatantRealIndex === -1) return
@@ -1448,7 +1448,7 @@ const InitiativeTrackerPage = () => {
         // Find positions in the real combatants array
         const combatantRealIndex = combatants.findIndex((c) => c.id === id)
         const nextCombatantRealIndex = combatants.findIndex(
-            (c) => c.id === realNextCombatant.id
+            (c) => c.id === realNextCombatant.id,
         )
 
         if (combatantRealIndex === -1 || nextCombatantRealIndex === -1) return
@@ -1506,14 +1506,14 @@ const InitiativeTrackerPage = () => {
                                 notes: character.gmNotes || "",
                                 // Store additional character data for reference
                                 characterData: character,
-                            })
+                            }),
                         )
 
                         setCombatants(loadedCombatants)
                         setCurrentTurn(0)
                         showAlert(
                             `Loaded ${loadedCombatants.length} characters from Campaign Manager!`,
-                            "success"
+                            "success",
                         )
 
                         // Clean up the sessionStorage data after loading
@@ -1521,7 +1521,7 @@ const InitiativeTrackerPage = () => {
                     } else {
                         showAlert(
                             "No character data found in combat session",
-                            "warning"
+                            "warning",
                         )
                     }
                 } else {
@@ -1530,7 +1530,7 @@ const InitiativeTrackerPage = () => {
             } catch (error) {
                 console.error(
                     "Error loading combat data from sessionStorage:",
-                    error
+                    error,
                 )
                 showAlert("Error loading combat data", "error")
             }
@@ -1571,7 +1571,7 @@ const InitiativeTrackerPage = () => {
                     const combatJSON = JSON.stringify(combatData)
                     const keyword = "Combat Data"
                     const textData = new TextEncoder().encode(
-                        keyword + "\0" + combatJSON
+                        keyword + "\0" + combatJSON,
                     )
 
                     // Create chunk: Length (4 bytes) + Type (4 bytes) + Data + CRC (4 bytes)
@@ -1580,7 +1580,7 @@ const InitiativeTrackerPage = () => {
 
                     // Calculate CRC32 for chunk type + data
                     const crc32 = calculateCRC32(
-                        new Uint8Array([...chunkType, ...textData])
+                        new Uint8Array([...chunkType, ...textData]),
                     )
 
                     // Create the complete chunk
@@ -1598,13 +1598,13 @@ const InitiativeTrackerPage = () => {
 
                     // Insert the chunk before IEND
                     const newPNG = new Uint8Array(
-                        uint8Array.length + chunk.length
+                        uint8Array.length + chunk.length,
                     )
                     newPNG.set(uint8Array.slice(0, insertPosition), 0)
                     newPNG.set(chunk, insertPosition)
                     newPNG.set(
                         uint8Array.slice(insertPosition),
-                        insertPosition + chunk.length
+                        insertPosition + chunk.length,
                     )
 
                     const newBlob = new Blob([newPNG], { type: "image/png" })
@@ -1631,13 +1631,13 @@ const InitiativeTrackerPage = () => {
                         const view = new DataView(uint8Array.buffer, offset)
                         const chunkLength = view.getUint32(0, false) // big endian
                         const chunkType = new TextDecoder().decode(
-                            uint8Array.slice(offset + 4, offset + 8)
+                            uint8Array.slice(offset + 4, offset + 8),
                         )
 
                         if (chunkType === "tEXt") {
                             const chunkData = uint8Array.slice(
                                 offset + 8,
-                                offset + 8 + chunkLength
+                                offset + 8 + chunkLength,
                             )
                             const text = new TextDecoder().decode(chunkData)
                             const nullIndex = text.indexOf("\0")
@@ -1688,7 +1688,7 @@ const InitiativeTrackerPage = () => {
                 // Embed combat data in the PNG
                 const blobWithData = await embedCombatDataInPNG(
                     canvas,
-                    combatData
+                    combatData,
                 )
 
                 const fileName = `combat_tracker_${
@@ -1816,7 +1816,7 @@ const InitiativeTrackerPage = () => {
                 "Using expiration:",
                 useExpiration,
                 "minutes:",
-                useExpiration ? expirationTime : "none"
+                useExpiration ? expirationTime : "none",
             )
 
             // Add detailed error handling with proper try/catch
@@ -1824,7 +1824,7 @@ const InitiativeTrackerPage = () => {
                 console.log("About to call createInitiativeSession...")
                 const sessionId = await createInitiativeSession(
                     combatData,
-                    useExpiration ? expirationTime : null
+                    useExpiration ? expirationTime : null,
                 )
                 console.log("Session created with ID:", sessionId)
 
@@ -1842,18 +1842,18 @@ const InitiativeTrackerPage = () => {
                 if (useExpiration) {
                     showAlert(
                         `Live sharing session created! It will expire in ${expirationTime} minutes.`,
-                        "success"
+                        "success",
                     )
                 } else {
                     showAlert(
                         "Live sharing session created! You can share the link.",
-                        "success"
+                        "success",
                     )
                 }
             } catch (innerError) {
                 console.error(
                     "Detailed error in createInitiativeSession:",
-                    innerError
+                    innerError,
                 )
                 if (innerError.message)
                     console.error("Error message:", innerError.message)
@@ -1869,7 +1869,7 @@ const InitiativeTrackerPage = () => {
                 `Failed to create live sharing session: ${
                     error.message || error
                 }`,
-                "error"
+                "error",
             )
         } finally {
             setLiveshareLoading(false)
@@ -1889,7 +1889,7 @@ const InitiativeTrackerPage = () => {
                 setLiveshareDialogOpen(false)
                 showAlert(
                     "Liveshare session deactivated successfully.",
-                    "success"
+                    "success",
                 )
             }
 
@@ -1999,17 +1999,17 @@ const InitiativeTrackerPage = () => {
                     }).catch((error) => {
                         console.error(
                             "Error deactivating liveshare on visibility change:",
-                            error
+                            error,
                         )
                     })
 
                     console.log(
-                        "Liveshare session deactivation requested on page close"
+                        "Liveshare session deactivation requested on page close",
                     )
                 } catch (error) {
                     console.error(
                         "Error deactivating liveshare on visibility change:",
-                        error
+                        error,
                     )
                 }
             }
@@ -2054,7 +2054,7 @@ const InitiativeTrackerPage = () => {
             window.removeEventListener("beforeunload", handleBeforeUnload)
             document.removeEventListener(
                 "visibilitychange",
-                handleVisibilityChange
+                handleVisibilityChange,
             )
             window.removeEventListener("unload", handleUnload)
         }
@@ -2062,13 +2062,16 @@ const InitiativeTrackerPage = () => {
 
     // Periodic cleanup of expired sessions every 10 minutes
     useEffect(() => {
-        const cleanupInterval = setInterval(async () => {
-            try {
-                await cleanupExpiredSessions()
-            } catch (error) {
-                console.warn("Periodic cleanup failed:", error)
-            }
-        }, 10 * 60 * 1000) // 10 minutes
+        const cleanupInterval = setInterval(
+            async () => {
+                try {
+                    await cleanupExpiredSessions()
+                } catch (error) {
+                    console.warn("Periodic cleanup failed:", error)
+                }
+            },
+            10 * 60 * 1000,
+        ) // 10 minutes
 
         return () => clearInterval(cleanupInterval)
     }, [])
@@ -2081,7 +2084,7 @@ const InitiativeTrackerPage = () => {
         if (sessionId) {
             // Try to load from sessionStorage first
             const storedData = sessionStorage.getItem(
-                `combat_data_${sessionId}`
+                `combat_data_${sessionId}`,
             )
             if (storedData) {
                 try {
@@ -2092,7 +2095,7 @@ const InitiativeTrackerPage = () => {
                 } catch (error) {
                     console.error(
                         "Error parsing combat data from sessionStorage:",
-                        error
+                        error,
                     )
                 }
             } else {
@@ -2201,44 +2204,104 @@ const InitiativeTrackerPage = () => {
                         }}
                     >
                         <Button
-                            variant='contained'
+                            variant='outlined'
                             startIcon={<AddIcon />}
                             onClick={() => setAddDialogOpen(true)}
                             sx={{
-                                backgroundColor: "#4caf50",
-                                "&:hover": { backgroundColor: "#45a049" },
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.05)"
+                                        : "rgba(0, 0, 0, 0.03)",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(255, 255, 255, 0.15)"
+                                        : "1px solid rgba(0, 0, 0, 0.15)",
+                                color: "inherit",
+                                borderRadius: "12px",
+                                backdropFilter: "blur(10px)",
+                                transition: "all 0.3s ease",
+                                "&:hover": {
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255, 255, 255, 0.1)"
+                                            : "rgba(0, 0, 0, 0.06)",
+                                    border: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "1px solid rgba(255, 255, 255, 0.3)"
+                                            : "1px solid rgba(0, 0, 0, 0.25)",
+                                },
                             }}
                         >
                             Add Combatant (Press + key)
                         </Button>
 
                         <Button
-                            variant='contained'
+                            variant='outlined'
                             startIcon={<SaveIcon />}
                             onClick={saveCombatState}
                             disabled={combatants.length === 0}
                             sx={{
-                                backgroundColor: "#2196f3",
-                                "&:hover": { backgroundColor: "#1976d2" },
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.05)"
+                                        : "rgba(0, 0, 0, 0.03)",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(255, 255, 255, 0.15)"
+                                        : "1px solid rgba(0, 0, 0, 0.15)",
+                                color: "inherit",
+                                borderRadius: "12px",
+                                backdropFilter: "blur(10px)",
+                                transition: "all 0.3s ease",
+                                "&:hover": {
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255, 255, 255, 0.1)"
+                                            : "rgba(0, 0, 0, 0.06)",
+                                    border: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "1px solid rgba(255, 255, 255, 0.3)"
+                                            : "1px solid rgba(0, 0, 0, 0.25)",
+                                },
                             }}
                         >
                             Save Combat
                         </Button>
 
                         <Button
-                            variant='contained'
+                            variant='outlined'
                             startIcon={<UploadIcon />}
                             onClick={() => fileInputRef.current?.click()}
                             sx={{
-                                backgroundColor: "#ff9800",
-                                "&:hover": { backgroundColor: "#f57c00" },
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.05)"
+                                        : "rgba(0, 0, 0, 0.03)",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(255, 255, 255, 0.15)"
+                                        : "1px solid rgba(0, 0, 0, 0.15)",
+                                color: "inherit",
+                                borderRadius: "12px",
+                                backdropFilter: "blur(10px)",
+                                transition: "all 0.3s ease",
+                                "&:hover": {
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255, 255, 255, 0.1)"
+                                            : "rgba(0, 0, 0, 0.06)",
+                                    border: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "1px solid rgba(255, 255, 255, 0.3)"
+                                            : "1px solid rgba(0, 0, 0, 0.25)",
+                                },
                             }}
                         >
                             Load Combat
                         </Button>
 
                         <Button
-                            variant='contained'
+                            variant='outlined'
                             startIcon={
                                 liveshareLoading ? (
                                     <CircularProgress
@@ -2258,21 +2321,35 @@ const InitiativeTrackerPage = () => {
                                 combatants.length === 0 || liveshareLoading
                             }
                             sx={{
-                                backgroundColor: isLiveshareActive
-                                    ? "#4caf50"
-                                    : "#673ab7",
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.05)"
+                                        : "rgba(0, 0, 0, 0.03)",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(255, 255, 255, 0.15)"
+                                        : "1px solid rgba(0, 0, 0, 0.15)",
+                                color: "inherit",
+                                borderRadius: "12px",
+                                backdropFilter: "blur(10px)",
+                                transition: "all 0.3s ease",
                                 "&:hover": {
-                                    backgroundColor: isLiveshareActive
-                                        ? "#43a047"
-                                        : "#5e35b1",
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255, 255, 255, 0.1)"
+                                            : "rgba(0, 0, 0, 0.06)",
+                                    border: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "1px solid rgba(255, 255, 255, 0.3)"
+                                            : "1px solid rgba(0, 0, 0, 0.25)",
                                 },
                             }}
                         >
                             {liveshareLoading
                                 ? "Creating..."
                                 : isLiveshareActive
-                                ? "View Shared Link"
-                                : "Share Live"}
+                                  ? "View Shared Link"
+                                  : "Share Live"}
                         </Button>
 
                         {/* Stop Sharing button - only visible when liveshare is active */}
@@ -2283,13 +2360,21 @@ const InitiativeTrackerPage = () => {
                                 onClick={handleStopSharing}
                                 disabled={liveshareLoading}
                                 sx={{
-                                    borderColor: "#ff9800",
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255, 255, 255, 0.05)"
+                                            : "rgba(0, 0, 0, 0.03)",
+                                    border: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "1px solid rgba(255, 152, 0, 0.4)"
+                                            : "1px solid rgba(255, 152, 0, 0.5)",
                                     color: "#ff9800",
+                                    borderRadius: "12px",
+                                    backdropFilter: "blur(10px)",
+                                    transition: "all 0.3s ease",
                                     "&:hover": {
-                                        borderColor: "#f57c00",
-                                        color: "#f57c00",
-                                        backgroundColor:
-                                            "rgba(255, 152, 0, 0.04)",
+                                        bgcolor: "rgba(255, 152, 0, 0.1)",
+                                        border: "1px solid rgba(255, 152, 0, 0.6)",
                                     },
                                 }}
                             >
@@ -2303,12 +2388,21 @@ const InitiativeTrackerPage = () => {
                             onClick={resetCombat}
                             disabled={combatants.length === 0}
                             sx={{
-                                borderColor: "#f44336",
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.05)"
+                                        : "rgba(0, 0, 0, 0.03)",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(244, 67, 54, 0.4)"
+                                        : "1px solid rgba(244, 67, 54, 0.5)",
                                 color: "#f44336",
+                                borderRadius: "12px",
+                                backdropFilter: "blur(10px)",
+                                transition: "all 0.3s ease",
                                 "&:hover": {
-                                    borderColor: "#d32f2f",
-                                    color: "#d32f2f",
-                                    backgroundColor: "rgba(244, 67, 54, 0.04)",
+                                    bgcolor: "rgba(244, 67, 54, 0.1)",
+                                    border: "1px solid rgba(244, 67, 54, 0.6)",
                                 },
                             }}
                         >
@@ -2399,7 +2493,7 @@ const InitiativeTrackerPage = () => {
                                 >
                                     <SortableContext
                                         items={orderedCombatants.map(
-                                            (c) => c.id
+                                            (c) => c.id,
                                         )}
                                         strategy={horizontalListSortingStrategy}
                                     >
@@ -2418,7 +2512,7 @@ const InitiativeTrackerPage = () => {
                                                 if (
                                                     relativePosition <
                                                     -Math.floor(
-                                                        totalCombatants / 2
+                                                        totalCombatants / 2,
                                                     )
                                                 ) {
                                                     relativePosition +=
@@ -2426,7 +2520,7 @@ const InitiativeTrackerPage = () => {
                                                 } else if (
                                                     relativePosition >
                                                     Math.floor(
-                                                        totalCombatants / 2
+                                                        totalCombatants / 2,
                                                     )
                                                 ) {
                                                     relativePosition -=
@@ -2441,23 +2535,23 @@ const InitiativeTrackerPage = () => {
                                                 // Increased radius calculation for more spread-out layout
                                                 const baseRadius = Math.max(
                                                     350,
-                                                    totalCombatants * 50
+                                                    totalCombatants * 50,
                                                 ) // Increased base radius and multiplier
                                                 const maxRadius = Math.min(
                                                     600,
-                                                    totalCombatants * 120
+                                                    totalCombatants * 120,
                                                 ) // Allow much larger radius
                                                 const radius = Math.min(
                                                     maxRadius,
-                                                    baseRadius
+                                                    baseRadius,
                                                 )
                                                 const x =
                                                     Math.sin(
-                                                        (angle * Math.PI) / 180
+                                                        (angle * Math.PI) / 180,
                                                     ) * radius
                                                 const z =
                                                     Math.cos(
-                                                        (angle * Math.PI) / 180
+                                                        (angle * Math.PI) / 180,
                                                     ) * radius
 
                                                 // Scale and opacity based on position - adjusted for wider spacing
@@ -2465,9 +2559,9 @@ const InitiativeTrackerPage = () => {
                                                     0.5, // Increased minimum scale
                                                     1 -
                                                         Math.abs(
-                                                            relativePosition
+                                                            relativePosition,
                                                         ) *
-                                                            0.08 // Reduced scale reduction rate
+                                                            0.08, // Reduced scale reduction rate
                                                 )
 
                                                 // Set z-index based on position
@@ -2527,18 +2621,18 @@ const InitiativeTrackerPage = () => {
                                                             }
                                                             onMoveUp={() =>
                                                                 moveCombatantUp(
-                                                                    combatant.id
+                                                                    combatant.id,
                                                                 )
                                                             }
                                                             onMoveDown={() =>
                                                                 moveCombatantDown(
-                                                                    combatant.id
+                                                                    combatant.id,
                                                                 )
                                                             }
                                                         />
                                                     </Box>
                                                 )
-                                            }
+                                            },
                                         )}
                                     </SortableContext>
 
@@ -2595,7 +2689,7 @@ const InitiativeTrackerPage = () => {
                                                         },
                                                     }}
                                                 />
-                                            )
+                                            ),
                                         )}
                                     </Box>
 
@@ -2632,7 +2726,7 @@ const InitiativeTrackerPage = () => {
                                             // Helper function to find next non-spacer card (DANGER cards are OK)
                                             const findNextNonSpacerIndex = (
                                                 startIndex,
-                                                direction
+                                                direction,
                                             ) => {
                                                 let nextIndex = startIndex
                                                 const length =
@@ -2672,7 +2766,7 @@ const InitiativeTrackerPage = () => {
                                             const prevIndex =
                                                 findNextNonSpacerIndex(
                                                     currentTurn,
-                                                    "left"
+                                                    "left",
                                                 )
                                             setCurrentTurn(prevIndex)
                                         }}
@@ -2709,7 +2803,7 @@ const InitiativeTrackerPage = () => {
                                             // Helper function to find next non-spacer card (DANGER cards are OK)
                                             const findNextNonSpacerIndex = (
                                                 startIndex,
-                                                direction
+                                                direction,
                                             ) => {
                                                 let nextIndex = startIndex
                                                 const length =
@@ -2749,7 +2843,7 @@ const InitiativeTrackerPage = () => {
                                             const nextIndex =
                                                 findNextNonSpacerIndex(
                                                     currentTurn,
-                                                    "right"
+                                                    "right",
                                                 )
                                             setCurrentTurn(nextIndex)
                                         }}
@@ -2991,11 +3085,11 @@ const InitiativeTrackerPage = () => {
                                                 <IconButton
                                                     onClick={() => {
                                                         navigator.clipboard.writeText(
-                                                            liveshareLink
+                                                            liveshareLink,
                                                         )
                                                         showAlert(
                                                             "Link copied to clipboard!",
-                                                            "success"
+                                                            "success",
                                                         )
                                                     }}
                                                     edge='end'

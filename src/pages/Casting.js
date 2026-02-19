@@ -98,12 +98,14 @@ const Casting = () => {
                         sx={{
                             bgcolor: (theme) =>
                                 theme.palette.mode === "dark"
-                                    ? "#1f1f1f"
-                                    : "#f5f5f5",
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
                             border: (theme) =>
                                 theme.palette.mode === "dark"
-                                    ? "none"
-                                    : "1px solid #ccc",
+                                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                                    : "1px solid rgba(0, 0, 0, 0.1)",
+                            borderRadius: "16px",
+                            backdropFilter: "blur(10px)",
                             padding: "20px",
                             width: "100%",
                             maxWidth: "800px",

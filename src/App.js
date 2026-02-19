@@ -2,6 +2,8 @@ import React from "react"
 import { Routes, Route, Outlet } from "react-router-dom"
 import { Box } from "@mui/material"
 import HomePage from "./pages/HomePage.js"
+import About from "./pages/About.js"
+import GettingStarted from "./pages/GettingStarted.js"
 import CharacterCreation from "./pages/CharacterCreation.js"
 import Equipment from "./pages/Equipment.js"
 import CombatMechanics from "./pages/CombatMechanics.js"
@@ -22,6 +24,7 @@ import DigitalCharacterSheet from "./pages/DigitalCharacterSheet.js"
 import InitiativeTracker from "./pages/InitiativeTrackerPage.js"
 import CampaignManager from "./pages/CampaignManager.js"
 import LiveGameView from "./pages/LiveGameView.js"
+import StyleGuide from "./pages/StyleGuide.js"
 import Sparks from "./components/Sparks/Sparks.jsx"
 import BackButton from "./components/BackButton/BackButton.js"
 import ThemeToggle from "./components/ThemeToggle/ThemeToggle.js"
@@ -41,6 +44,11 @@ function App() {
             <ThemeToggle />
             <Routes>
                 <Route path='/' element={<Outlet />}>
+                    <Route path='about' element={<About />} />
+                    <Route
+                        path='getting-started'
+                        element={<GettingStarted />}
+                    />
                     <Route
                         path='character-creation'
                         element={<CharacterCreation />}
@@ -94,6 +102,7 @@ function App() {
                         path='digital-character-sheet'
                         element={<DigitalCharacterSheet />}
                     />
+                    <Route path='style-guide' element={<StyleGuide />} />
                     <Route path='/' element={<HomePage />} />
                 </Route>
             </Routes>
