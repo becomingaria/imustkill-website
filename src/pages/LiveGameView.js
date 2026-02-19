@@ -20,11 +20,7 @@ import {
     ArrowBack as ArrowBackIcon,
     ArrowForward as ArrowForwardIcon,
 } from "@mui/icons-material"
-import {
-    subscribeToInitiativeSession,
-    getInitiativeSession,
-    cleanupExpiredSessions,
-} from "../utils/supabaseClient"
+import { subscribeToSession, getSession, disconnect } from "../utils/awsClient"
 import "../components/InitiativeTracker.css" // Import the same styles used in the tracker
 
 // Read-only version of the CombatantCard that looks identical but is non-interactive
@@ -432,7 +428,7 @@ const ReadOnlyCombatantCard = ({ combatant, isActive, combatantCount = 1 }) => {
                                     <Checkbox
                                         checked={
                                             combatant.statuses?.includes(
-                                                status
+                                                status,
                                             ) || false
                                         }
                                         disabled
@@ -495,7 +491,6 @@ const LiveGameView = () => {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [sessionData, setSessionData] = useState(null)
-    const [subscription, setSubscription] = useState(null)
     const [currentTurn, setCurrentTurn] = useState(0)
     const trackerRef = useRef(null) // Reference for the carousel element
 
@@ -509,44 +504,37 @@ const LiveGameView = () => {
             try {
                 setLoading(true)
 
-                // Clean up expired sessions first
-                try {
-                    await cleanupExpiredSessions()
-                } catch (cleanupError) {
-                    console.warn(
-                        "Could not clean up expired sessions:",
-                        cleanupError
-                    )
-                }
-
                 // Get initial data
-                const data = await getInitiativeSession(sessionId)
+                const data = await getSession(sessionId)
                 if (!data) throw new Error("Session not found or expired")
 
                 console.log("Session data received:", data)
 
                 // Check which property contains our state data
-                if (data.combat_state) {
-                    setSessionData(data.combat_state)
-                    setCurrentTurn(data.combat_state.currentTurn || 0)
-                } else if (data.data) {
-                    // Fallback to 'data' if that's what the database is using
-                    setSessionData(data.data)
-                    setCurrentTurn(data.data.currentTurn || 0)
+                if (data.combatState) {
+                    setSessionData(data.combatState)
+                    setCurrentTurn(data.combatState.currentTurn || 0)
                 } else {
                     throw new Error("Session data structure is invalid")
                 }
 
-                // Subscribe to real-time updates
-                const subscription = subscribeToInitiativeSession(
+                // Subscribe to real-time updates via WebSocket
+                await subscribeToSession(
                     sessionId,
                     (updatedData) => {
                         setSessionData(updatedData)
                         setCurrentTurn(updatedData.currentTurn || 0)
-                    }
+                    },
+                    (err) => {
+                        console.error("WebSocket error:", err)
+                        setError(err.message)
+                    },
+                    (message) => {
+                        console.log("Session closed:", message)
+                        setError("Session has been ended by the host")
+                    },
                 )
 
-                setSubscription(subscription)
                 setLoading(false)
             } catch (err) {
                 console.error("Error loading session:", err)
@@ -559,28 +547,11 @@ const LiveGameView = () => {
             loadSession()
         }
 
-        // Clean up subscription
+        // Clean up WebSocket connection
         return () => {
-            if (subscription) {
-                subscription.unsubscribe()
-            }
+            disconnect()
         }
-        // We deliberately exclude subscription from deps as it's created within this hook
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sessionId])
-
-    // Periodic cleanup of expired sessions every 5 minutes
-    useEffect(() => {
-        const cleanupInterval = setInterval(async () => {
-            try {
-                await cleanupExpiredSessions()
-            } catch (error) {
-                console.warn("Periodic cleanup failed:", error)
-            }
-        }, 5 * 60 * 1000) // 5 minutes
-
-        return () => clearInterval(cleanupInterval)
-    }, [])
 
     // Enhanced scroll gravity effect that works even when carousel is mounted later
     useEffect(() => {
@@ -604,7 +575,7 @@ const LiveGameView = () => {
 
                 // Calculate distance from center
                 const distanceFromCenter = Math.abs(
-                    carouselCenter - viewportCenter
+                    carouselCenter - viewportCenter,
                 )
                 const threshold = viewportHeight * 0.3 // Increased to 30% of viewport height for even stronger snap zone
 
@@ -897,11 +868,11 @@ const LiveGameView = () => {
                                     (relativePosition / totalCombatants) * 360
                                 const baseRadius = Math.max(
                                     350,
-                                    totalCombatants * 50
+                                    totalCombatants * 50,
                                 )
                                 const maxRadius = Math.min(
                                     600,
-                                    totalCombatants * 120
+                                    totalCombatants * 120,
                                 )
                                 const radius = Math.min(maxRadius, baseRadius)
                                 const x =
@@ -912,7 +883,7 @@ const LiveGameView = () => {
                                 // Scale and opacity based on position (same as InitiativeTrackerPage)
                                 const scale = Math.max(
                                     0.5,
-                                    1 - Math.abs(relativePosition) * 0.08
+                                    1 - Math.abs(relativePosition) * 0.08,
                                 )
 
                                 // Set z-index based on position (same as InitiativeTrackerPage)

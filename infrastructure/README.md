@@ -91,15 +91,9 @@ Replace the URLs with the values from the CDK output.
 
 ## Usage
 
-### Switch from Supabase to AWS
+### API Reference
 
-In your components, replace:
-
-```javascript
-import { supabase } from "../utils/supabaseClient"
-```
-
-with:
+#### Create Session
 
 ```javascript
 import {
@@ -108,13 +102,7 @@ import {
     updateSession,
     subscribeToSession,
 } from "../utils/awsClient"
-```
 
-### API Reference
-
-#### Create Session
-
-```javascript
 const { sessionId, expiresAt } = await createSession(
     combatState,
     expiresInMinutes,

@@ -39,12 +39,7 @@ import {
     Share as ShareIcon,
     ContentCopy as CopyIcon,
 } from "@mui/icons-material"
-import {
-    createInitiativeSession,
-    updateInitiativeSession,
-    deactivateInitiativeSession,
-    cleanupExpiredSessions,
-} from "../utils/supabaseClient"
+import { createSession, updateSession, deleteSession } from "../utils/awsClient"
 import {
     DndContext,
     closestCenter,
@@ -1821,10 +1816,10 @@ const InitiativeTrackerPage = () => {
 
             // Add detailed error handling with proper try/catch
             try {
-                console.log("About to call createInitiativeSession...")
-                const sessionId = await createInitiativeSession(
+                console.log("About to call createSession...")
+                const { sessionId } = await createSession(
                     combatData,
-                    useExpiration ? expirationTime : null,
+                    useExpiration ? expirationTime : 480,
                 )
                 console.log("Session created with ID:", sessionId)
 
@@ -1851,10 +1846,7 @@ const InitiativeTrackerPage = () => {
                     )
                 }
             } catch (innerError) {
-                console.error(
-                    "Detailed error in createInitiativeSession:",
-                    innerError,
-                )
+                console.error("Detailed error in createSession:", innerError)
                 if (innerError.message)
                     console.error("Error message:", innerError.message)
                 if (innerError.code)
@@ -1882,7 +1874,7 @@ const InitiativeTrackerPage = () => {
             setLiveshareLoading(true)
 
             if (liveshareId) {
-                await deactivateInitiativeSession(liveshareId)
+                await deleteSession(liveshareId)
                 setLiveshareId("")
                 setLiveshareLink("")
                 setIsLiveshareActive(false)
@@ -1906,7 +1898,7 @@ const InitiativeTrackerPage = () => {
         deactivateSession()
     }
 
-    // Update Supabase when combat state changes if Liveshare is active
+    // Update AWS when combat state changes if Liveshare is active
     useEffect(() => {
         // Use the memoized getCombatantsInTurnOrder function for dependency safety
         const orderedCombatants = getCombatantsInTurnOrder()
@@ -1921,7 +1913,7 @@ const InitiativeTrackerPage = () => {
                         lastUpdated: new Date().toISOString(),
                     }
 
-                    await updateInitiativeSession(liveshareId, combatData)
+                    await updateSession(liveshareId, combatData)
                 } catch (error) {
                     console.error("Error updating Liveshare session:", error)
                 }
@@ -1982,19 +1974,13 @@ const InitiativeTrackerPage = () => {
                 isPageClosing
             ) {
                 // Use fetch with keepalive for reliable delivery even when page is closing
-                const deactivateUrl = `${process.env.REACT_APP_SUPABASE_URL}/rest/v1/initiative_sessions?id=eq.${liveshareId}`
+                const deactivateUrl = `${process.env.REACT_APP_SESSIONS_API_URL}/sessions/${liveshareId}`
 
                 try {
-                    const headers = {
-                        "Content-Type": "application/json",
-                        apikey: process.env.REACT_APP_SUPABASE_ANON_KEY,
-                        Authorization: `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`,
-                    }
-
                     // Use fetch with keepalive to ensure the request completes
                     fetch(deactivateUrl, {
                         method: "DELETE",
-                        headers: headers,
+                        headers: { "Content-Type": "application/json" },
                         keepalive: true, // This ensures the request completes even if page closes
                     }).catch((error) => {
                         console.error(
@@ -2020,25 +2006,20 @@ const InitiativeTrackerPage = () => {
             if (isLiveshareActive && liveshareId) {
                 try {
                     // Try to make a synchronous request as a last resort
-                    const deactivateUrl = `${process.env.REACT_APP_SUPABASE_URL}/rest/v1/initiative_sessions?id=eq.${liveshareId}`
-                    const headers = {
-                        "Content-Type": "application/json",
-                        apikey: process.env.REACT_APP_SUPABASE_ANON_KEY,
-                        Authorization: `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`,
-                    }
+                    const deactivateUrl = `${process.env.REACT_APP_SESSIONS_API_URL}/sessions/${liveshareId}`
 
                     // Use fetch with keepalive as a final attempt
                     fetch(deactivateUrl, {
                         method: "DELETE",
-                        headers: headers,
+                        headers: { "Content-Type": "application/json" },
                         keepalive: true,
                     }).catch(() => {
-                        // Silently fail - the session will expire naturally
+                        // Silently fail - the session will expire naturally via TTL
                     })
 
                     console.log("Final liveshare deactivation attempt")
                 } catch (error) {
-                    // Silently fail - the session will expire naturally
+                    // Silently fail - the session will expire naturally via TTL
                     console.error("Error in final deactivation attempt:", error)
                 }
             }
@@ -2059,22 +2040,6 @@ const InitiativeTrackerPage = () => {
             window.removeEventListener("unload", handleUnload)
         }
     }, [isLiveshareActive, liveshareId])
-
-    // Periodic cleanup of expired sessions every 10 minutes
-    useEffect(() => {
-        const cleanupInterval = setInterval(
-            async () => {
-                try {
-                    await cleanupExpiredSessions()
-                } catch (error) {
-                    console.warn("Periodic cleanup failed:", error)
-                }
-            },
-            10 * 60 * 1000,
-        ) // 10 minutes
-
-        return () => clearInterval(cleanupInterval)
-    }, [])
 
     // Handle URL parameter for loading combat data from sessionStorage when opened from Campaign Manager
     useEffect(() => {
@@ -2099,8 +2064,7 @@ const InitiativeTrackerPage = () => {
                     )
                 }
             } else {
-                // If not found in sessionStorage, attempt to load from Supabase
-                // (This part is now handled in the Liveshare functionality)
+                // If not found in sessionStorage, session data will be loaded via the Liveshare functionality
             }
         }
     }, [])

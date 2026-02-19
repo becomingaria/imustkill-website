@@ -32,13 +32,14 @@ This website includes comprehensive references for:
 
 The Initiative Tracker includes a Liveshare feature that allows Game Masters to create a real-time view-only link to share with players:
 
--   **Real-time Updates**: All changes made by the GM are instantly visible to viewers
+-   **Real-time Updates**: All changes made by the GM are instantly visible to viewers via WebSocket
 -   **View-Only Access**: Shared links provide read-only access to prevent unwanted changes
 -   **Expiration Controls**: Set automatic expiration times for shared links (30 minutes to 8 hours)
 -   **Manual Controls**: Stop sharing at any time with a single click
 -   **Easily Sharable**: Copy links to clipboard or open in a new tab directly from the interface
+-   **Auto-Cleanup**: Sessions automatically expire via DynamoDB TTL - no database maintenance required
 
-For setup instructions, see [LIVESHARE_SETUP.md](./LIVESHARE_SETUP.md).
+The Liveshare feature is powered by AWS (DynamoDB, Lambda, API Gateway). For infrastructure setup, see [infrastructure/README.md](./infrastructure/README.md).
 
 ## Getting Started with Development
 
