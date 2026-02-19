@@ -6,38 +6,38 @@ This website serves as a digital reference for the "I Must Kill" tabletop role-p
 
 "I Must Kill" is a dark fantasy tabletop role-playing game where players take on the role of Hunters tasked with tracking down and eliminating supernatural threats in a world shrouded in mystery. The game features:
 
--   **Simple but deadly combat mechanics** where every decision matters
--   **Stat-based character creation** focusing on Body, Agility, Focus, and Fate
--   **Equipment and power decks** that provide players with tools and abilities
--   **Monster hunting adventures** that test players' skills and strategy
--   **Insight mechanics** where greater perception reveals the true nature of threats
+- **Simple but deadly combat mechanics** where every decision matters
+- **Stat-based character creation** focusing on Body, Agility, Focus, and Fate
+- **Equipment and power decks** that provide players with tools and abilities
+- **Monster hunting adventures** that test players' skills and strategy
+- **Insight mechanics** where greater perception reveals the true nature of threats
 
 ## Website Features
 
 This website includes comprehensive references for:
 
--   **Character Creation** - Guide to creating your Hunter
--   **Character Sheet** - Digital reference sheet for your character
--   **Equipment Deck** - Browse and randomly generate equipment for your character
--   **Initiative Tracker** - Track combat initiative with real-time sharing capability (Liveshare)
--   **Combat Mechanics** - Rules for attacks, dodges, bracing, and more
--   **Death and Resting** - How recovery and death work in the game
--   **Progression** - Character advancement rules
--   **Casting** - Magic system rules and mechanics
--   **Powers** - Searchable database of powers by name, deck, and rarity
--   **Running the Game** - Resources for Game Masters
--   **Monsters** - Bestiary with detailed monster information (GM access only)
+- **Character Creation** - Guide to creating your Hunter
+- **Character Sheet** - Digital reference sheet for your character
+- **Equipment Deck** - Browse and randomly generate equipment for your character
+- **Initiative Tracker** - Track combat initiative with real-time sharing capability (Liveshare)
+- **Combat Mechanics** - Rules for attacks, dodges, bracing, and more
+- **Death and Resting** - How recovery and death work in the game
+- **Progression** - Character advancement rules
+- **Casting** - Magic system rules and mechanics
+- **Powers** - Searchable database of powers by name, deck, and rarity
+- **Running the Game** - Resources for Game Masters
+- **Monsters** - Bestiary with detailed monster information (GM access only)
 
 ## Liveshare Feature
 
 The Initiative Tracker includes a Liveshare feature that allows Game Masters to create a real-time view-only link to share with players:
 
--   **Real-time Updates**: All changes made by the GM are instantly visible to viewers via WebSocket
--   **View-Only Access**: Shared links provide read-only access to prevent unwanted changes
--   **Expiration Controls**: Set automatic expiration times for shared links (30 minutes to 8 hours)
--   **Manual Controls**: Stop sharing at any time with a single click
--   **Easily Sharable**: Copy links to clipboard or open in a new tab directly from the interface
--   **Auto-Cleanup**: Sessions automatically expire via DynamoDB TTL - no database maintenance required
+- **Real-time Updates**: All changes made by the GM are instantly visible to viewers via WebSocket
+- **View-Only Access**: Shared links provide read-only access to prevent unwanted changes
+- **Expiration Controls**: Set automatic expiration times for shared links (30 minutes to 8 hours)
+- **Manual Controls**: Stop sharing at any time with a single click
+- **Easily Sharable**: Copy links to clipboard or open in a new tab directly from the interface
+- **Auto-Cleanup**: Sessions automatically expire via DynamoDB TTL - no database maintenance required
 
 The Liveshare feature is powered by AWS (DynamoDB, Lambda, API Gateway). For infrastructure setup, see [infrastructure/README.md](./infrastructure/README.md).
 
@@ -77,26 +77,22 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 ### Core Game Concepts
 
 1. **Stats System**:
-
     - **Body** - Strength, endurance, and physical prowess (lift, push, climb, drag, grapple, jump, swim)
     - **Agility** - Dexterity and nimbleness (catch, squeeze, pick locks, escape manacles)
     - **Focus** - Mental acuity and perception (perceive, listen, conjure magic, track prey, control will, resist enchantment)
     - **Fate** - Luck and life force (determines hit points)
 
 2. **Combat System**:
-
     - Players choose one of several actions each turn: Attack, Dodge, Brace, gather a Power, Flee, or Negotiate
     - Roll 1d10 against your relevant stat; if the roll is lower, your action succeeds
     - Combat is deadly and strategic, with minimal hit points
 
 3. **Magic System**:
-
     - Hunters can gather and cast powers through testing Focus
     - Powers are organized in decks and by rarity
     - Players can hold up to 3 powers at a time
 
 4. **Equipment**:
-
     - Hunters begin with 10 random items
     - Equipment provides tactical advantages in combat
 
@@ -120,23 +116,23 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 
 ### Technologies Used
 
--   **React** - Frontend library for building the user interface
--   **Material UI** - Component library for consistent design
--   **React Router** - Navigation between different sections of the game
--   **Local Storage** - Saving user preferences and selections
+- **React** - Frontend library for building the user interface
+- **Material UI** - Component library for consistent design
+- **React Router** - Navigation between different sections of the game
+- **Local Storage** - Saving user preferences and selections
 
 ### Data Architecture
 
--   Game data (monsters, powers, equipment) stored in JSON format
--   Responsive design for mobile and desktop access
--   Dark/light theme toggle for accessibility
+- Game data (monsters, powers, equipment) stored in JSON format
+- Responsive design for mobile and desktop access
+- Dark/light theme toggle for accessibility
 
 ### Key Components
 
--   **Search & Filter System** for powers and equipment
--   **Interactive Character Sheet**
--   **Downloadable Game Resources**
--   **Random Equipment Generator**
+- **Search & Filter System** for powers and equipment
+- **Interactive Character Sheet**
+- **Downloadable Game Resources**
+- **Random Equipment Generator**
 
 ## Contributing
 
