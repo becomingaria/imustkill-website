@@ -14,6 +14,14 @@
 const HTTP_API_URL = process.env.REACT_APP_SESSIONS_API_URL || ""
 const WEBSOCKET_API_URL = process.env.REACT_APP_WEBSOCKET_API_URL || ""
 
+// Debug: Log API URLs on load (remove in production)
+if (!HTTP_API_URL) {
+    console.warn("REACT_APP_SESSIONS_API_URL is not set!")
+}
+if (!WEBSOCKET_API_URL) {
+    console.warn("REACT_APP_WEBSOCKET_API_URL is not set!")
+}
+
 // Active WebSocket connection
 let ws = null
 let reconnectAttempts = 0
@@ -32,6 +40,12 @@ let messageHandlers = new Set()
  * @returns {Promise<{sessionId: string, expiresAt: string}>}
  */
 export const createSession = async (combatState, expiresInMinutes = 480) => {
+    if (!HTTP_API_URL) {
+        throw new Error("API URL not configured. Please set REACT_APP_SESSIONS_API_URL environment variable.")
+    }
+    
+    console.log("Creating session at:", `${HTTP_API_URL}/sessions`)
+    
     const response = await fetch(`${HTTP_API_URL}/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
