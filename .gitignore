@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /infrastructure/node_modules
+/infrastructure/cdk.out
 /.pnp
 .pnp.js
 
