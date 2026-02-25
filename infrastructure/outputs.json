@@ -1,0 +1,11 @@
+{
+  "ImkLiveSessionsStack": {
+    "WebSocketUrl": "wss://oj59xw8lvb.execute-api.us-east-1.amazonaws.com/live",
+    "ConnectionsTableName": "imk-websocket-connections",
+    "ArtworkBucketName": "imk-card-artwork-544623438535",
+    "ArtworkCdnUrl": "https://d3l08bny2j22o1.cloudfront.net",
+    "SessionsTableName": "imk-initiative-sessions",
+    "HttpApiUrl": "https://6tnku32a8f.execute-api.us-east-1.amazonaws.com/",
+    "CardsTableName": "imk-cards"
+  }
+}

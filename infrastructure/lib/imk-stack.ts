@@ -6,6 +6,9 @@ import * as apigateway from "aws-cdk-lib/aws-apigatewayv2"
 import * as apigatewayIntegrations from "aws-cdk-lib/aws-apigatewayv2-integrations"
 import * as iam from "aws-cdk-lib/aws-iam"
 import * as logs from "aws-cdk-lib/aws-logs"
+import * as s3 from "aws-cdk-lib/aws-s3"
+import * as cloudfront from "aws-cdk-lib/aws-cloudfront"
+import * as origins from "aws-cdk-lib/aws-cloudfront-origins"
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs"
 import * as path from "path"
 
@@ -74,6 +77,125 @@ export class ImkLiveSessionsStack extends cdk.Stack {
         })
 
         // ============================================================
+        // DynamoDB Table for Cards (Powers + Monsters)
+        // ============================================================
+        // Partition by deck for efficient "get all cards in deck" queries
+        // Sort by name for unique identification within each deck
+        // Type field distinguishes between "power" and "monster" cards
+        const cardsTable = new dynamodb.Table(this, "CardsTable", {
+            tableName: "imk-cards",
+            partitionKey: {
+                name: "deck",
+                type: dynamodb.AttributeType.STRING,
+            },
+            sortKey: {
+                name: "name",
+                type: dynamodb.AttributeType.STRING,
+            },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            pointInTimeRecovery: false,
+        })
+
+        // GSI for querying by type (power vs monster)
+        cardsTable.addGlobalSecondaryIndex({
+            indexName: "type-index",
+            partitionKey: {
+                name: "type",
+                type: dynamodb.AttributeType.STRING,
+            },
+            sortKey: {
+                name: "name",
+                type: dynamodb.AttributeType.STRING,
+            },
+            projectionType: dynamodb.ProjectionType.ALL,
+        })
+
+        // GSI for querying powers by rarity
+        cardsTable.addGlobalSecondaryIndex({
+            indexName: "rarity-index",
+            partitionKey: {
+                name: "rarity",
+                type: dynamodb.AttributeType.STRING,
+            },
+            sortKey: {
+                name: "name",
+                type: dynamodb.AttributeType.STRING,
+            },
+            projectionType: dynamodb.ProjectionType.ALL,
+        })
+
+        // ============================================================
+        // S3 Bucket for Card Artwork
+        // ============================================================
+        // Structure:
+        //   cards/{deck}/{cardName}.png - Individual card art
+        //   backs/{deck}.png - Deck back artwork
+        //   placeholder.png - Default fallback image
+        const artworkBucket = new s3.Bucket(this, "CardArtworkBucket", {
+            bucketName: `imk-card-artwork-${this.account}`,
+            removalPolicy: cdk.RemovalPolicy.RETAIN, // Keep artwork on stack deletion
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, // CloudFront only
+            encryption: s3.BucketEncryption.S3_MANAGED,
+            cors: [
+                {
+                    allowedMethods: [s3.HttpMethods.GET],
+                    allowedOrigins: ["*"], // CloudFront will serve these
+                    allowedHeaders: ["*"],
+                },
+            ],
+        })
+
+        // CloudFront distribution for artwork CDN
+        // ResponseHeadersPolicy to add CORS headers for canvas usage
+        const corsHeadersPolicy = new cloudfront.ResponseHeadersPolicy(
+            this,
+            "ArtworkCorsPolicy",
+            {
+                responseHeadersPolicyName: "imk-artwork-cors",
+                corsBehavior: {
+                    accessControlAllowCredentials: false,
+                    accessControlAllowHeaders: ["*"],
+                    accessControlAllowMethods: ["GET"],
+                    accessControlAllowOrigins: ["*"],
+                    accessControlMaxAge: cdk.Duration.days(1),
+                    originOverride: true,
+                },
+            },
+        )
+
+        const artworkDistribution = new cloudfront.Distribution(
+            this,
+            "ArtworkDistribution",
+            {
+                defaultBehavior: {
+                    origin: origins.S3BucketOrigin.withOriginAccessControl(
+                        artworkBucket,
+                    ),
+                    viewerProtocolPolicy:
+                        cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+                    responseHeadersPolicy: corsHeadersPolicy,
+                },
+                // Error page for missing images (serves placeholder)
+                errorResponses: [
+                    {
+                        httpStatus: 403,
+                        responseHttpStatus: 200,
+                        responsePagePath: "/placeholder.png",
+                        ttl: cdk.Duration.seconds(10),
+                    },
+                    {
+                        httpStatus: 404,
+                        responseHttpStatus: 200,
+                        responsePagePath: "/placeholder.png",
+                        ttl: cdk.Duration.seconds(10),
+                    },
+                ],
+            },
+        )
+
+        // ============================================================
         // Lambda Functions for REST API
         // ============================================================
         const sessionsHandler = new NodejsFunction(this, "SessionsHandler", {
@@ -99,6 +221,31 @@ export class ImkLiveSessionsStack extends cdk.Stack {
         // Grant DynamoDB permissions
         sessionsTable.grantReadWriteData(sessionsHandler)
         connectionsTable.grantReadData(sessionsHandler)
+
+        // ============================================================
+        // Cards Lambda Handler (CRUD for powers + monsters)
+        // ============================================================
+        const cardsHandler = new NodejsFunction(this, "CardsHandler", {
+            functionName: "imk-cards-handler",
+            entry: path.join(__dirname, "../lambda/cards.ts"),
+            handler: "handler",
+            runtime: lambda.Runtime.NODEJS_20_X,
+            architecture: lambda.Architecture.ARM_64,
+            memorySize: 256,
+            timeout: cdk.Duration.seconds(10),
+            environment: {
+                CARDS_TABLE: cardsTable.tableName,
+                NODE_OPTIONS: "--enable-source-maps",
+            },
+            logRetention: logs.RetentionDays.ONE_WEEK,
+            bundling: {
+                minify: true,
+                sourceMap: true,
+            },
+        })
+
+        // Grant DynamoDB permissions for cards
+        cardsTable.grantReadWriteData(cardsHandler)
 
         // ============================================================
         // HTTP API (REST endpoints)
@@ -141,6 +288,41 @@ export class ImkLiveSessionsStack extends cdk.Stack {
                 apigateway.HttpMethod.DELETE,
             ],
             integration: sessionsIntegration,
+        })
+
+        // Cards API endpoints (powers + monsters)
+        const cardsIntegration =
+            new apigatewayIntegrations.HttpLambdaIntegration(
+                "CardsIntegration",
+                cardsHandler,
+            )
+
+        // GET /cards - List all cards (with optional ?type=power|monster or ?deck= filter)
+        // POST /cards - Create a new card
+        httpApi.addRoutes({
+            path: "/cards",
+            methods: [apigateway.HttpMethod.GET, apigateway.HttpMethod.POST],
+            integration: cardsIntegration,
+        })
+
+        // GET /cards/{deck}/{name} - Get specific card
+        // PUT /cards/{deck}/{name} - Update card
+        // DELETE /cards/{deck}/{name} - Delete card
+        httpApi.addRoutes({
+            path: "/cards/{deck}/{name}",
+            methods: [
+                apigateway.HttpMethod.GET,
+                apigateway.HttpMethod.PUT,
+                apigateway.HttpMethod.DELETE,
+            ],
+            integration: cardsIntegration,
+        })
+
+        // POST /cards/batch - Batch import cards (for seeding)
+        httpApi.addRoutes({
+            path: "/cards/batch",
+            methods: [apigateway.HttpMethod.POST],
+            integration: cardsIntegration,
         })
 
         // ============================================================
@@ -282,6 +464,23 @@ export class ImkLiveSessionsStack extends cdk.Stack {
         new cdk.CfnOutput(this, "ConnectionsTableName", {
             value: connectionsTable.tableName,
             description: "DynamoDB table name for WebSocket connections",
+        })
+
+        new cdk.CfnOutput(this, "CardsTableName", {
+            value: cardsTable.tableName,
+            description: "DynamoDB table name for cards (powers + monsters)",
+        })
+
+        new cdk.CfnOutput(this, "ArtworkBucketName", {
+            value: artworkBucket.bucketName,
+            description: "S3 bucket for card artwork",
+            exportName: "ImkArtworkBucket",
+        })
+
+        new cdk.CfnOutput(this, "ArtworkCdnUrl", {
+            value: `https://${artworkDistribution.distributionDomainName}`,
+            description: "CloudFront CDN URL for card artwork",
+            exportName: "ImkArtworkCdnUrl",
         })
     }
 }
