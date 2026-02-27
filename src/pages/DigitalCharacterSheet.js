@@ -15,13 +15,20 @@ import {
     MenuItem,
     Divider,
 } from "@mui/material"
-import { Upload, Save, RestartAlt, PictureAsPdf } from "@mui/icons-material"
+import {
+    Upload,
+    Save,
+    RestartAlt,
+    PictureAsPdf,
+    Close,
+} from "@mui/icons-material"
 import { saveAs } from "file-saver"
 import html2canvas from "html2canvas"
 import { PDFDocument, rgb } from "pdf-lib"
 import * as fontkit from "fontkit"
 import InsightToken from "../components/InsightToken"
 import PlayerToolsButton from "../components/PlayerToolsButton"
+import PowerDeckManager from "../components/PowerDeckManager"
 
 const DigitalCharacterSheet = () => {
     // Character data state matching the original sheet
@@ -60,36 +67,111 @@ const DigitalCharacterSheet = () => {
     const [tokenCount, setTokenCount] = useState(1)
     const [tokenStates, setTokenStates] = useState({})
 
-    // Load insight tokens from localStorage on component mount
+    // Death Mode state - for "I Died" feature
+    const [isDeathMode, setIsDeathMode] = useState(false)
+    const [struckStats, setStruckStats] = useState({
+        body: false,
+        agility: false,
+        focus: false,
+        fate: false,
+    })
+    const [burnedTokens, setBurnedTokens] = useState({})
+
+    // Computed: check if fully dead (all stats struck AND all tokens burned)
+    const allStatsStruck = Object.values(struckStats).every((s) => s)
+    const allTokensBurned =
+        tokenCount > 0 &&
+        Array.from({ length: tokenCount }, (_, i) => burnedTokens[i]).every(
+            (b) => b,
+        )
+    const isFullyDead = isDeathMode && allStatsStruck && allTokensBurned
+
+    // Toggle death mode
+    const toggleDeathMode = () => {
+        if (isDeathMode) {
+            // Reset struck stats and burned tokens when exiting death mode
+            setStruckStats({
+                body: false,
+                agility: false,
+                focus: false,
+                fate: false,
+            })
+            setBurnedTokens({})
+        }
+        // Token states are preserved - don't flip them when entering death mode
+        setIsDeathMode(!isDeathMode)
+    }
+
+    // Toggle a struck stat
+    const toggleStruckStat = (stat) => {
+        if (!isDeathMode) return
+        setStruckStats((prev) => ({
+            ...prev,
+            [stat]: !prev[stat],
+        }))
+    }
+
+    // Load insight token count from localStorage on component mount
     React.useEffect(() => {
         const savedTokenCount = localStorage.getItem("insightTokenCount")
-        const savedTokenStates = localStorage.getItem("insightTokenStates")
 
         if (savedTokenCount) {
             setTokenCount(parseInt(savedTokenCount, 10))
         }
-
-        if (savedTokenStates) {
-            try {
-                setTokenStates(JSON.parse(savedTokenStates))
-            } catch (error) {
-                console.error(
-                    "Error parsing token states from localStorage:",
-                    error,
-                )
-            }
-        }
     }, [])
 
-    // Save insight tokens to localStorage whenever tokenCount changes
+    // Save insight token count to localStorage whenever tokenCount changes
     React.useEffect(() => {
         localStorage.setItem("insightTokenCount", tokenCount.toString())
     }, [tokenCount])
 
-    // Save insight tokens to localStorage whenever tokenStates changes
+    // Load character data from sessionStorage on component mount (for accidental refresh protection)
     React.useEffect(() => {
-        localStorage.setItem("insightTokenStates", JSON.stringify(tokenStates))
-    }, [tokenStates])
+        const savedSession = sessionStorage.getItem("imk_character_session")
+        if (savedSession) {
+            try {
+                const parsed = JSON.parse(savedSession)
+                if (parsed.characterData) {
+                    setCharacterData((prev) => ({
+                        ...prev,
+                        ...parsed.characterData,
+                    }))
+                }
+                if (parsed.isDeathMode !== undefined)
+                    setIsDeathMode(parsed.isDeathMode)
+                if (parsed.struckStats) setStruckStats(parsed.struckStats)
+                if (parsed.burnedTokens) setBurnedTokens(parsed.burnedTokens)
+                if (parsed.tokenStates) setTokenStates(parsed.tokenStates)
+                if (parsed.tokenCount !== undefined)
+                    setTokenCount(parsed.tokenCount)
+            } catch (error) {
+                console.error("Error loading session data:", error)
+            }
+        }
+    }, [])
+
+    // Save all character data to sessionStorage whenever it changes
+    React.useEffect(() => {
+        const sessionData = {
+            characterData,
+            isDeathMode,
+            struckStats,
+            burnedTokens,
+            tokenStates,
+            tokenCount,
+        }
+        sessionStorage.setItem(
+            "imk_character_session",
+            JSON.stringify(sessionData),
+        )
+    }, [
+        characterData,
+        isDeathMode,
+        struckStats,
+        burnedTokens,
+        tokenStates,
+        tokenCount,
+    ])
 
     const handleTokenCountChange = (event) => {
         const newCount = event.target.value
@@ -108,15 +190,25 @@ const DigitalCharacterSheet = () => {
     }
 
     const handleTokenFlip = (tokenId) => {
-        setTokenStates((prevStates) => ({
-            ...prevStates,
-            [tokenId]: !prevStates[tokenId],
-        }))
+        if (isDeathMode) {
+            // In death mode, burn/unburn instead of flip
+            setBurnedTokens((prev) => ({
+                ...prev,
+                [tokenId]: !prev[tokenId],
+            }))
+        } else {
+            // Normal mode - flip token
+            setTokenStates((prevStates) => ({
+                ...prevStates,
+                [tokenId]: !prevStates[tokenId],
+            }))
+        }
     }
 
     const handleResetTokens = () => {
         // Reset all tokens to front (false state) while keeping the current count
         setTokenStates({})
+        setBurnedTokens({})
     }
 
     // Utility functions for PNG metadata embedding
@@ -908,10 +1000,18 @@ const DigitalCharacterSheet = () => {
                     actionButtons.style.display = "flex"
                 }
 
-                // Embed character data in the PNG
+                // Embed character data in the PNG (include death mode state)
+                const saveData = {
+                    ...characterData,
+                    isDeathMode,
+                    struckStats,
+                    burnedTokens,
+                    tokenStates,
+                    tokenCount,
+                }
                 const blobWithData = await embedCharacterDataInPNG(
                     canvas,
-                    characterData,
+                    saveData,
                 )
 
                 const fileName = characterData.characterName
@@ -939,13 +1039,33 @@ const DigitalCharacterSheet = () => {
                     file.name.endsWith(".png")
                 ) {
                     // Try to extract character data from PNG
-                    const characterData =
-                        await extractCharacterDataFromPNG(file)
-                    if (characterData) {
+                    const loadedData = await extractCharacterDataFromPNG(file)
+                    if (loadedData) {
+                        // Extract death mode state if present
+                        const {
+                            isDeathMode: savedDeathMode,
+                            struckStats: savedStruckStats,
+                            burnedTokens: savedBurnedTokens,
+                            tokenStates: savedTokenStates,
+                            tokenCount: savedTokenCount,
+                            ...charData
+                        } = loadedData
+
                         setCharacterData((prev) => ({
                             ...prev,
-                            ...characterData,
+                            ...charData,
                         }))
+
+                        // Restore death mode state
+                        if (savedDeathMode !== undefined)
+                            setIsDeathMode(savedDeathMode)
+                        if (savedStruckStats) setStruckStats(savedStruckStats)
+                        if (savedBurnedTokens)
+                            setBurnedTokens(savedBurnedTokens)
+                        if (savedTokenStates) setTokenStates(savedTokenStates)
+                        if (savedTokenCount !== undefined)
+                            setTokenCount(savedTokenCount)
+
                         showAlert("Character sheet loaded from .character.png!")
                     } else {
                         showAlert(
@@ -985,9 +1105,29 @@ const DigitalCharacterSheet = () => {
                 file.name.endsWith(".png")
             ) {
                 // Try to extract character data from PNG
-                const characterData = await extractCharacterDataFromPNG(file)
-                if (characterData) {
-                    setCharacterData((prev) => ({ ...prev, ...characterData }))
+                const loadedData = await extractCharacterDataFromPNG(file)
+                if (loadedData) {
+                    // Extract death mode state if present
+                    const {
+                        isDeathMode: savedDeathMode,
+                        struckStats: savedStruckStats,
+                        burnedTokens: savedBurnedTokens,
+                        tokenStates: savedTokenStates,
+                        tokenCount: savedTokenCount,
+                        ...charData
+                    } = loadedData
+
+                    setCharacterData((prev) => ({ ...prev, ...charData }))
+
+                    // Restore death mode state
+                    if (savedDeathMode !== undefined)
+                        setIsDeathMode(savedDeathMode)
+                    if (savedStruckStats) setStruckStats(savedStruckStats)
+                    if (savedBurnedTokens) setBurnedTokens(savedBurnedTokens)
+                    if (savedTokenStates) setTokenStates(savedTokenStates)
+                    if (savedTokenCount !== undefined)
+                        setTokenCount(savedTokenCount)
+
                     showAlert("Character sheet loaded from .character.png!")
                 } else {
                     showAlert(
@@ -1034,6 +1174,8 @@ const DigitalCharacterSheet = () => {
         const files = event.dataTransfer.files
         if (files.length > 0) {
             const file = files[0]
+            // Skip .deck.png files — those are handled by PowerDeckManager
+            if (file.name.endsWith(".deck.png")) return
             // Check if it's a character file (.character.png) or legacy formats
             if (
                 file.name.endsWith(".character.png") ||
@@ -1363,6 +1505,53 @@ const DigitalCharacterSheet = () => {
                     >
                         Reset
                     </Button>
+                    <Button
+                        variant={isDeathMode ? "contained" : "outlined"}
+                        startIcon={<Close />}
+                        onClick={toggleDeathMode}
+                        sx={{
+                            border: isDeathMode
+                                ? "2px solid #8B0000"
+                                : (theme) =>
+                                      theme.palette.mode === "dark"
+                                          ? "2px solid rgba(255, 255, 255, 0.3)"
+                                          : "2px solid rgba(0, 0, 0, 0.2)",
+                            color: isDeathMode
+                                ? "#ffffff"
+                                : (theme) =>
+                                      theme.palette.mode === "dark"
+                                          ? "#e0e0e0"
+                                          : "#121212",
+                            bgcolor: isDeathMode
+                                ? "#8B0000"
+                                : (theme) =>
+                                      theme.palette.mode === "dark"
+                                          ? "rgba(255, 255, 255, 0.05)"
+                                          : "rgba(0, 0, 0, 0.03)",
+                            backdropFilter: "blur(10px)",
+                            "&:hover": {
+                                border: isDeathMode
+                                    ? "2px solid #5c0000"
+                                    : (theme) =>
+                                          theme.palette.mode === "dark"
+                                              ? "2px solid rgba(255, 255, 255, 0.6)"
+                                              : "2px solid rgba(0, 0, 0, 0.4)",
+                                bgcolor: isDeathMode
+                                    ? "#5c0000"
+                                    : (theme) =>
+                                          theme.palette.mode === "dark"
+                                              ? "rgba(255, 255, 255, 0.1)"
+                                              : "rgba(0, 0, 0, 0.08)",
+                            },
+                            borderRadius: "12px",
+                            fontSize: "0.9rem",
+                            fontFamily: '"Cinzel", serif',
+                            textTransform: "none",
+                            fontWeight: "bold",
+                        }}
+                    >
+                        {isDeathMode ? "Exit Death Mode" : "I Died"}
+                    </Button>
                     <input
                         type='file'
                         ref={fileInputRef}
@@ -1372,6 +1561,45 @@ const DigitalCharacterSheet = () => {
                     />
                 </Box>
 
+                {/* Death Mode Instructions */}
+                {isDeathMode && (
+                    <Alert
+                        severity='info'
+                        sx={{
+                            mb: 2,
+                            backgroundColor: "rgba(139, 0, 0, 0.1)",
+                            border: "2px solid #8B0000",
+                            color: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "#e0e0e0"
+                                    : "#333",
+                            "& .MuiAlert-icon": {
+                                color: "#8B0000",
+                            },
+                            fontFamily: '"Cinzel", serif',
+                        }}
+                    >
+                        <Typography
+                            variant='subtitle2'
+                            sx={{
+                                fontFamily: '"Cinzel", serif',
+                                fontWeight: "bold",
+                            }}
+                        >
+                            Death Mode Active
+                        </Typography>
+                        <Typography
+                            variant='body2'
+                            sx={{ fontFamily: '"Cinzel", serif', mt: 0.5 }}
+                        >
+                            Click on a stat (Body, Agility, Focus, or Fate) to
+                            strike it off and transfer its power to a living
+                            ally. This can be done at any time, even in response
+                            to dice rolls.
+                        </Typography>
+                    </Alert>
+                )}
+
                 {/* Character Sheet - PDF-faithful layout */}
                 <Paper
                     id='character-sheet-container'
@@ -1380,12 +1608,20 @@ const DigitalCharacterSheet = () => {
                         backgroundColor: "#ffffff",
                         color: "#000000",
                         p: 3,
-                        border: "2px solid #000000",
+                        border: isDeathMode
+                            ? "3px solid #8B0000"
+                            : "2px solid #000000",
                         borderRadius: "16px",
                         fontFamily:
                             '"Cinzel", "Libre Baskerville", "Crimson Text", serif',
-                        boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                        boxShadow: isDeathMode
+                            ? "0 8px 24px rgba(139, 0, 0, 0.3)"
+                            : "0 8px 24px rgba(0,0,0,0.15)",
                         flex: 1,
+                        filter: isDeathMode ? "grayscale(80%)" : "none",
+                        transition:
+                            "filter 0.3s ease, border 0.3s ease, box-shadow 0.3s ease",
+                        position: "relative",
                         display: "flex",
                         flexDirection: "column",
                         minHeight: 0,
@@ -1411,7 +1647,7 @@ const DigitalCharacterSheet = () => {
                                     '"Cinzel Decorative", "Cinzel", serif',
                             }}
                         >
-                            My Name Is...
+                            {isFullyDead ? "My Name Was..." : "My Name Is..."}
                         </Typography>
                         <Box
                             sx={{
@@ -1474,7 +1710,7 @@ const DigitalCharacterSheet = () => {
                                     '"Cinzel Decorative", "Cinzel", serif',
                             }}
                         >
-                            I MUST KILL
+                            {isFullyDead ? "I'VE BEEN KILLED" : "I MUST KILL"}
                         </Typography>
                     </Box>
 
@@ -1488,131 +1724,202 @@ const DigitalCharacterSheet = () => {
                         ].map(({ label, field }) => (
                             <Grid item xs={6} sm={3} key={field}>
                                 <Box
+                                    onClick={() =>
+                                        isDeathMode && toggleStruckStat(field)
+                                    }
                                     sx={{
-                                        border: "2px solid #000000",
+                                        border: struckStats[field]
+                                            ? "3px solid #8B0000"
+                                            : "2px solid #000000",
                                         p: 1.5,
                                         textAlign: "center",
-                                        backgroundColor: "#f9f9f9",
+                                        backgroundColor: struckStats[field]
+                                            ? "rgba(139, 0, 0, 0.1)"
+                                            : "#f9f9f9",
                                         borderRadius: "12px",
+                                        position: "relative",
+                                        cursor: isDeathMode
+                                            ? "pointer"
+                                            : "default",
+                                        transition: "all 0.3s ease",
+                                        "&:hover":
+                                            isDeathMode && !struckStats[field]
+                                                ? {
+                                                      backgroundColor:
+                                                          "rgba(139, 0, 0, 0.05)",
+                                                      border: "2px solid #8B0000",
+                                                  }
+                                                : {},
                                     }}
                                 >
+                                    {/* Red X Overlay for struck stats */}
+                                    {struckStats[field] && (
+                                        <Box
+                                            sx={{
+                                                position: "absolute",
+                                                top: 0,
+                                                left: 0,
+                                                right: 0,
+                                                bottom: 0,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                zIndex: 20,
+                                                pointerEvents: "none",
+                                            }}
+                                        >
+                                            <Typography
+                                                sx={{
+                                                    fontSize: "80px",
+                                                    fontWeight: "bold",
+                                                    color: "rgba(139, 0, 0, 0.7)",
+                                                    lineHeight: 1,
+                                                    textShadow:
+                                                        "2px 2px 4px rgba(0,0,0,0.2)",
+                                                    fontFamily:
+                                                        '"Cinzel", serif',
+                                                }}
+                                            >
+                                                X
+                                            </Typography>
+                                        </Box>
+                                    )}
                                     <Box sx={{ position: "relative" }}>
                                         <Typography
                                             variant='h6'
                                             sx={{
                                                 fontWeight: "bold",
                                                 mb: 1,
-                                                color: "#000000",
+                                                color: struckStats[field]
+                                                    ? "#8B0000"
+                                                    : "#000000",
                                                 fontSize: "12px",
                                                 fontFamily: '"Cinzel", serif',
+                                                textDecoration: struckStats[
+                                                    field
+                                                ]
+                                                    ? "line-through"
+                                                    : "none",
                                             }}
                                         >
                                             {label}
                                         </Typography>
-                                        {(field === "body" ||
-                                            field === "agility" ||
-                                            field === "focus") && (
-                                            <Box
-                                                onClick={() => {
-                                                    // Toggle an 'atkChecked' property for this stat
-                                                    const currentValue =
-                                                        characterData[
-                                                            `${field}AtkChecked`
-                                                        ]
-                                                    const newValue =
-                                                        !currentValue
-                                                    console.log(
-                                                        `ATK Bubble Clicked - Field: ${field}, Current Value: ${currentValue}, New Value: ${newValue}`,
-                                                    )
-
-                                                    setCharacterData((prev) => {
-                                                        const updatedData = {
-                                                            ...prev,
-                                                            [`${field}AtkChecked`]:
-                                                                newValue,
-                                                        }
-                                                        console.log(
-                                                            `ATK State Updated - ${field}AtkChecked:`,
-                                                            updatedData[
+                                        {!isDeathMode &&
+                                            (field === "body" ||
+                                                field === "agility" ||
+                                                field === "focus") && (
+                                                <Box
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        // Toggle an 'atkChecked' property for this stat
+                                                        const currentValue =
+                                                            characterData[
                                                                 `${field}AtkChecked`
-                                                            ],
-                                                        )
+                                                            ]
+                                                        const newValue =
+                                                            !currentValue
                                                         console.log(
-                                                            "Complete character data after ATK update:",
-                                                            updatedData,
+                                                            `ATK Bubble Clicked - Field: ${field}, Current Value: ${currentValue}, New Value: ${newValue}`,
                                                         )
-                                                        return updatedData
-                                                    })
-                                                }}
-                                                sx={{
-                                                    position: "absolute",
-                                                    top: "-14px",
-                                                    right: "-14px",
-                                                    width: "32px",
-                                                    height: "32px",
-                                                    borderRadius: "50%",
-                                                    border: "1px dotted #000",
-                                                    backgroundColor: "#f9f9f9",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    fontSize: "12px",
-                                                    fontWeight: "bold",
-                                                    fontFamily:
-                                                        '"Cinzel", serif',
-                                                    cursor: "pointer",
-                                                    overflow: "visible",
-                                                    zIndex: 5,
-                                                }}
-                                            >
-                                                {characterData[
-                                                    `${field}AtkChecked`
-                                                ] ? (
-                                                    <>
-                                                        <Box
-                                                            sx={{
-                                                                position:
-                                                                    "absolute",
-                                                                top: 0,
-                                                                left: 0,
-                                                                width: "32px",
-                                                                height: "32px",
-                                                                borderRadius:
-                                                                    "50%",
-                                                                backgroundColor:
-                                                                    "#8B0000",
-                                                                zIndex: 10,
-                                                                display: "flex",
-                                                                alignItems:
-                                                                    "center",
-                                                                justifyContent:
-                                                                    "center",
-                                                            }}
-                                                        />
-                                                        <span
-                                                            style={{
-                                                                position:
-                                                                    "relative",
-                                                                zIndex: 15,
-                                                                color: "#ffffff",
-                                                            }}
-                                                        >
-                                                            atk
-                                                        </span>
-                                                    </>
-                                                ) : (
-                                                    "atk"
-                                                )}
-                                            </Box>
-                                        )}
+
+                                                        setCharacterData(
+                                                            (prev) => {
+                                                                const updatedData =
+                                                                    {
+                                                                        ...prev,
+                                                                        [`${field}AtkChecked`]:
+                                                                            newValue,
+                                                                    }
+                                                                console.log(
+                                                                    `ATK State Updated - ${field}AtkChecked:`,
+                                                                    updatedData[
+                                                                        `${field}AtkChecked`
+                                                                    ],
+                                                                )
+                                                                console.log(
+                                                                    "Complete character data after ATK update:",
+                                                                    updatedData,
+                                                                )
+                                                                return updatedData
+                                                            },
+                                                        )
+                                                    }}
+                                                    sx={{
+                                                        position: "absolute",
+                                                        top: "-14px",
+                                                        right: "-14px",
+                                                        width: "32px",
+                                                        height: "32px",
+                                                        borderRadius: "50%",
+                                                        border: "1px dotted #000",
+                                                        backgroundColor:
+                                                            "#f9f9f9",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "center",
+                                                        fontSize: "12px",
+                                                        fontWeight: "bold",
+                                                        fontFamily:
+                                                            '"Cinzel", serif',
+                                                        cursor: "pointer",
+                                                        overflow: "visible",
+                                                        zIndex: 5,
+                                                    }}
+                                                >
+                                                    {characterData[
+                                                        `${field}AtkChecked`
+                                                    ] ? (
+                                                        <>
+                                                            <Box
+                                                                sx={{
+                                                                    position:
+                                                                        "absolute",
+                                                                    top: 0,
+                                                                    left: 0,
+                                                                    width: "32px",
+                                                                    height: "32px",
+                                                                    borderRadius:
+                                                                        "50%",
+                                                                    backgroundColor:
+                                                                        "#8B0000",
+                                                                    zIndex: 10,
+                                                                    display:
+                                                                        "flex",
+                                                                    alignItems:
+                                                                        "center",
+                                                                    justifyContent:
+                                                                        "center",
+                                                                }}
+                                                            />
+                                                            <span
+                                                                style={{
+                                                                    position:
+                                                                        "relative",
+                                                                    zIndex: 15,
+                                                                    color: "#ffffff",
+                                                                }}
+                                                            >
+                                                                atk
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        "atk"
+                                                    )}
+                                                </Box>
+                                            )}
                                     </Box>
                                     <TextField
                                         value={characterData[field]}
                                         onChange={handleInputChange(field)}
                                         variant='standard'
                                         size='small'
+                                        disabled={isDeathMode}
+                                        onClick={(e) => e.stopPropagation()}
                                         sx={{
                                             width: "50px",
+                                            position: "relative",
+                                            zIndex: 10,
                                             "& .MuiInput-underline:before": {
                                                 borderBottomStyle: "dotted",
                                                 borderBottomWidth: "2px",
@@ -1633,6 +1940,13 @@ const DigitalCharacterSheet = () => {
                                                 fontWeight: "bold",
                                                 fontFamily: '"Cinzel", serif',
                                                 padding: "4px 0",
+                                                WebkitTextFillColor:
+                                                    "#000000 !important",
+                                            },
+                                            "& .Mui-disabled": {
+                                                WebkitTextFillColor:
+                                                    "#000000 !important",
+                                                color: "#000000 !important",
                                             },
                                         }}
                                     />
@@ -1640,6 +1954,45 @@ const DigitalCharacterSheet = () => {
                             </Grid>
                         ))}
                     </Grid>
+
+                    {/* RIP Overlay when fully dead */}
+                    {isFullyDead && (
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                top: "280px", // Position below stats
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                backgroundColor: "rgba(0, 0, 0, 0.85)",
+                                zIndex: 100,
+                                borderRadius: "0 0 14px 14px",
+                            }}
+                        >
+                            <Typography
+                                sx={{
+                                    fontSize: {
+                                        xs: "120px",
+                                        sm: "180px",
+                                        md: "220px",
+                                    },
+                                    fontWeight: "bold",
+                                    color: "#8B0000",
+                                    fontFamily:
+                                        '"Cinzel Decorative", "Cinzel", serif',
+                                    letterSpacing: "20px",
+                                    textShadow:
+                                        "4px 4px 8px rgba(0,0,0,0.5), 0 0 40px rgba(139, 0, 0, 0.5)",
+                                    userSelect: "none",
+                                }}
+                            >
+                                RIP
+                            </Typography>
+                        </Box>
+                    )}
 
                     {/* Action Rolls */}
                     <Box sx={{ mb: 3 }}>
@@ -2183,14 +2536,17 @@ const DigitalCharacterSheet = () => {
                             margin: "0 auto 3rem",
                             textAlign: "center",
                             fontFamily: '"Cinzel", serif',
-                            color: (theme) =>
-                                theme.palette.mode === "dark"
-                                    ? "#e0e0e0"
-                                    : "#000000",
+                            color: isDeathMode
+                                ? "#FF6600"
+                                : (theme) =>
+                                      theme.palette.mode === "dark"
+                                          ? "#e0e0e0"
+                                          : "#000000",
                         }}
                     >
-                        Manage your insight tokens - click to flip between front
-                        and back
+                        {isDeathMode
+                            ? "Click a token to burn it and grant a living ally a reroll"
+                            : "Manage your insight tokens - click to flip between front and back"}
                     </Typography>
 
                     <Box
@@ -2335,6 +2691,8 @@ const DigitalCharacterSheet = () => {
                                         isFlipped={tokenStates[index] || false}
                                         onFlip={handleTokenFlip}
                                         size={100}
+                                        isBurned={burnedTokens[index] || false}
+                                        isDeathMode={isDeathMode}
                                     />
                                 </Grid>
                             ))}
@@ -2367,6 +2725,10 @@ const DigitalCharacterSheet = () => {
                         )}
                     </Paper>
                 </Box>
+
+                {/* Power Deck Section */}
+                <Divider sx={{ my: 4 }} />
+                <PowerDeckManager />
 
                 {/* Alert Snackbar */}
                 <Snackbar

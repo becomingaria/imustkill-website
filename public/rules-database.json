@@ -367,7 +367,7 @@
                 ]
             },
             "spellcasting": {
-                "title": "Casting",
+                "title": "Powers",
                 "description": "Magic system and power mechanics",
                 "file": "casting.json",
                 "keywords": [
@@ -404,36 +404,11 @@
                     "research"
                 ]
             },
-            "spells": {
-                "title": "Powers",
-                "description": "Power database with all available powers",
-                "file": "powers.json",
-                "keywords": [
-                    "powers",
-                    "magic",
-                    "ancient spells",
-                    "common",
-                    "uncommon",
-                    "rare"
-                ]
-            },
             "equipment": {
                 "title": "Equipment",
                 "description": "Equipment and gear database",
                 "file": "equipment.json",
                 "keywords": ["equipment", "gear", "tools", "weapons", "armor"]
-            },
-            "monsters": {
-                "title": "Monsters",
-                "description": "Monster bestiary and statistics",
-                "file": "monsters.json",
-                "keywords": [
-                    "monsters",
-                    "bestiary",
-                    "creatures",
-                    "enemies",
-                    "supernatural"
-                ]
             }
         },
         "quickReference": {

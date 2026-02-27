@@ -332,7 +332,7 @@ export const getConnectionState = () => {
 }
 
 // Re-export for compatibility (can use these instead of Supabase)
-export default {
+const awsClient = {
     createSession,
     getSession,
     updateSession,
@@ -344,3 +344,5 @@ export default {
     isConnected,
     getConnectionState,
 }
+
+export default awsClient

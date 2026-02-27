@@ -92,7 +92,7 @@ const About = () => {
         {
             title: "Grow Stronger",
             content:
-                "Harvest trophies from your kills to craft powerful gear. Develop new abilities and techniques. The monsters grow stronger—so must you.",
+                "Every monster you slay makes you stronger, wiser, and more feared. Learn from each encounter, adapt your strategies, and become the ultimate hunter.",
             Icon: SkullIcon,
         },
         {

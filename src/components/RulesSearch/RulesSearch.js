@@ -16,6 +16,7 @@ import {
 } from "@mui/material"
 import { Search, Clear, ExpandMore, ExpandLess } from "@mui/icons-material"
 import { useNavigate } from "react-router-dom"
+import { fetchAllCards } from "../../utils/cardsClient"
 
 const RulesSearch = () => {
     const [searchQuery, setSearchQuery] = useState("")
@@ -166,8 +167,8 @@ const RulesSearch = () => {
                 ],
             },
             {
-                page: "Casting",
-                path: "/casting",
+                page: "Powers",
+                path: "/powers",
                 sections: [
                     {
                         title: "Drawing Powers",
@@ -208,30 +209,26 @@ const RulesSearch = () => {
                 ],
             },
         ],
-        []
+        [],
     )
 
     // Load dynamic content (powers, equipment, monsters)
     useEffect(() => {
         const loadDynamicContent = async () => {
             try {
-                const [powersResponse, equipmentResponse, monstersResponse] =
-                    await Promise.all([
-                        fetch("/powers.json"),
-                        fetch("/equipment.json"),
-                        fetch("/monsters.json"),
-                    ])
+                const [cardsData, equipmentResponse] = await Promise.all([
+                    fetchAllCards(),
+                    fetch("/equipment.json"),
+                ])
 
-                const powersData = await powersResponse.json()
                 const equipmentData = await equipmentResponse.json()
-                const monstersData = await monstersResponse.json()
 
                 const dynamicContent = [
                     {
-                        page: "Powers",
-                        path: "/powers",
+                        page: "Power Cards",
+                        path: "/power-cards",
                         sections:
-                            powersData.powers?.map((power) => ({
+                            cardsData.powers?.map((power) => ({
                                 title: power.name,
                                 content: `${power.deck} ${power.rarity} ${power.description}`,
                                 type: "power",
@@ -251,11 +248,11 @@ const RulesSearch = () => {
                         page: "Monsters",
                         path: "/monsters",
                         sections:
-                            monstersData?.map((monster) => ({
-                                title: monster.Name,
+                            cardsData.monsters?.map((monster) => ({
+                                title: monster.Name || monster.name,
                                 content: `${monster.Description} ${monster.Actions} ${monster.Damage} ${monster["Special Abilities"]} Body ${monster.Body} Agility ${monster.Agility} Focus ${monster.Focus} Fate ${monster.Fate} Insight ${monster.Insight}`,
                                 type: "monster",
-                                path: `/monsters/${monster.Name}`,
+                                path: `/monsters/${monster.Name || monster.name}`,
                             })) || [],
                     },
                 ]
@@ -287,7 +284,7 @@ const RulesSearch = () => {
 
                 // Check if all search terms are present
                 const matchesAllTerms = searchTerms.every((term) =>
-                    searchText.includes(term)
+                    searchText.includes(term),
                 )
 
                 if (matchesAllTerms) {
@@ -320,7 +317,7 @@ const RulesSearch = () => {
                             const start = Math.max(0, searchIndex - 50)
                             const end = Math.min(
                                 section.content.length,
-                                searchIndex + 100
+                                searchIndex + 100,
                             )
                             snippet = section.content.substring(start, end)
                             if (start > 0) snippet = "..." + snippet
@@ -544,7 +541,7 @@ const RulesSearch = () => {
                                                         label={result.type}
                                                         size='small'
                                                         color={getChipColor(
-                                                            result.type
+                                                            result.type,
                                                         )}
                                                         sx={{
                                                             fontSize: "0.7rem",

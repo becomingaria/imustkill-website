@@ -36,8 +36,8 @@ const PAGE_ROUTES = {
     "combat mechanics": "/combat-mechanics",
     "death and resting": "/death-and-resting",
     progression: "/progression",
-    casting: "/casting",
     powers: "/powers",
+    "power cards": "/power-cards",
     equipment: "/equipment",
     monsters: "/monsters",
     "quick reference": "/quick-reference",
@@ -56,8 +56,7 @@ const EnhancedRulesSearch = () => {
     const [isFocused, setIsFocused] = useState(false)
     const navigate = useNavigate()
 
-    const { rulesData, loading, error, search, getKeywordSuggestions } =
-        useRulesEngine()
+    const { loading, error, search, getKeywordSuggestions } = useRulesEngine()
 
     // Get suggestions for autocomplete
     const suggestions = useMemo(() => {

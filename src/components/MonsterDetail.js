@@ -18,23 +18,28 @@ import {
     Divider,
 } from "@mui/material"
 import GMToolsButton from "./GMToolsButton"
+import { fetchMonsters } from "../utils/cardsClient"
 
 const MonsterDetail = () => {
     const [monstersData, setMonstersData] = useState([])
     const [playerCount, setPlayerCount] = useState(3) // Default to 3 players
 
     useEffect(() => {
-        const fetchMonstersData = async () => {
+        const loadMonsters = async () => {
             try {
-                const response = await fetch("/monsters.json")
-                const data = await response.json()
-                setMonstersData(data)
+                const monsters = await fetchMonsters()
+                // Normalize data - API returns 'name' field, static JSON uses 'Name'
+                const normalizedMonsters = monsters.map((m) => ({
+                    ...m,
+                    Name: m.Name || m.name,
+                }))
+                setMonstersData(normalizedMonsters)
             } catch (error) {
                 console.error("Error fetching monsters data:", error)
             }
         }
 
-        fetchMonstersData()
+        loadMonsters()
     }, [])
 
     const { name } = useParams()
@@ -54,7 +59,7 @@ const MonsterDetail = () => {
 
         // Check if buffs mention non-magical weapons (another incorporeal indicator)
         const buffsCheck = monster.Buffs?.toLowerCase().includes(
-            "non-magical weapons"
+            "non-magical weapons",
         )
 
         return descriptionCheck || (immunityCheck && buffsCheck)
@@ -200,7 +205,7 @@ const MonsterDetail = () => {
                             value={playerCount}
                             onChange={(e) =>
                                 setPlayerCount(
-                                    Math.max(1, parseInt(e.target.value) || 1)
+                                    Math.max(1, parseInt(e.target.value) || 1),
                                 )
                             }
                             inputProps={{ min: 1, max: 10 }}
@@ -263,7 +268,7 @@ const MonsterDetail = () => {
                             >
                                 {calculateHitPoints(
                                     monster["Hit Points Multiplier"],
-                                    playerCount
+                                    playerCount,
                                 )}
                             </Typography>
                             <Typography
@@ -304,7 +309,7 @@ const MonsterDetail = () => {
                             >
                                 {calculateBloodied(
                                     monster.Bloodied,
-                                    playerCount
+                                    playerCount,
                                 )}
                             </Typography>
                             <Typography
@@ -575,7 +580,7 @@ const MonsterDetail = () => {
                                                     >
                                                         {weakness}
                                                     </li>
-                                                )
+                                                ),
                                             )}
                                         </ul>
                                     </TableCell>

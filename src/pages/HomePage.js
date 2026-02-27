@@ -187,19 +187,19 @@ const HomePage = () => {
                     </Button>
                     <Button
                         component={Link}
-                        to='/casting'
-                        variant='outlined'
-                        sx={getButtonStyles()}
-                    >
-                        Casting
-                    </Button>
-                    <Button
-                        component={Link}
                         to='/powers'
                         variant='outlined'
                         sx={getButtonStyles()}
                     >
                         Powers
+                    </Button>
+                    <Button
+                        component={Link}
+                        to='/power-cards'
+                        variant='outlined'
+                        sx={getButtonStyles()}
+                    >
+                        Power Cards
                     </Button>
                     <Button
                         component={Link}

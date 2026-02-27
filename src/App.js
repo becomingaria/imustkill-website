@@ -8,9 +8,9 @@ import CharacterCreation from "./pages/CharacterCreation.js"
 import Equipment from "./pages/Equipment.js"
 import CombatMechanics from "./pages/CombatMechanics.js"
 import DeathAndResting from "./pages/DeathAndResting.js"
-import Casting from "./pages/Casting.js"
-import Progression from "./pages/Progression.js"
 import Powers from "./pages/Powers.js"
+import Progression from "./pages/Progression.js"
+import PowerCards from "./pages/PowerCards.js"
 import RunningTheGame from "./pages/RunningTheGame.js"
 import Monsters from "./pages/Monsters.js"
 import MonsterDetail from "./components/MonsterDetail.js"
@@ -21,6 +21,7 @@ import RuleCategorizer from "./components/RulesSearch/RuleCategorizer.js"
 import DigitalTools from "./pages/DigitalTools.js"
 import GMTools from "./pages/GMTools.js"
 import DigitalCharacterSheet from "./pages/DigitalCharacterSheet.js"
+import DeckBuilder from "./pages/DeckBuilder.js"
 import InitiativeTracker from "./pages/InitiativeTrackerPage.js"
 import CampaignManager from "./pages/CampaignManager.js"
 import LiveGameView from "./pages/LiveGameView.js"
@@ -62,8 +63,8 @@ function App() {
                         path='death-and-resting'
                         element={<DeathAndResting />}
                     />
-                    <Route path='casting' element={<Casting />} />
                     <Route path='powers' element={<Powers />} />
+                    <Route path='power-cards' element={<PowerCards />} />
                     <Route path='progression' element={<Progression />} />
                     <Route
                         path='running-the-game'
@@ -102,6 +103,7 @@ function App() {
                         path='digital-character-sheet'
                         element={<DigitalCharacterSheet />}
                     />
+                    <Route path='deck-builder' element={<DeckBuilder />} />
                     <Route path='style-guide' element={<StyleGuide />} />
                     <Route path='/' element={<HomePage />} />
                 </Route>

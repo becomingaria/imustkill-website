@@ -12,6 +12,7 @@ import {
     Grid,
 } from "@mui/material"
 import GMToolsButton from "../components/GMToolsButton"
+import { fetchMonsters } from "../utils/cardsClient"
 
 // Custom hook for detecting when an element is in viewport
 const useInView = (options = {}) => {
@@ -178,18 +179,22 @@ const Monsters = () => {
     const [damageTypeFilter, setDamageTypeFilter] = useState("all")
 
     useEffect(() => {
-        const fetchMonstersData = async () => {
+        const loadMonsters = async () => {
             try {
-                const response = await fetch("/monsters.json")
-                const data = await response.json()
-                setMonstersData(data)
-                setFilteredMonsters(data)
+                const monsters = await fetchMonsters()
+                // Normalize data - API returns 'name' field, static JSON uses 'Name'
+                const normalizedMonsters = monsters.map((m) => ({
+                    ...m,
+                    Name: m.Name || m.name, // Support both formats
+                }))
+                setMonstersData(normalizedMonsters)
+                setFilteredMonsters(normalizedMonsters)
             } catch (error) {
                 console.error("Error fetching monsters data:", error)
             }
         }
 
-        fetchMonstersData()
+        loadMonsters()
     }, [])
 
     useEffect(() => {

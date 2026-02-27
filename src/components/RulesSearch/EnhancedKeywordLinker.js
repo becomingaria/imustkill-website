@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react"
 import { Link } from "react-router-dom"
 import { Tooltip, Box } from "@mui/material"
 import useRulesEngine from "../../hooks/useRulesEngine"
+import { fetchAllCards } from "../../utils/cardsClient"
 
 const EnhancedKeywordLinker = ({
     children,
@@ -20,21 +21,17 @@ const EnhancedKeywordLinker = ({
     useEffect(() => {
         const loadDynamicContent = async () => {
             try {
-                const [powersResponse, equipmentResponse, monstersResponse] =
-                    await Promise.all([
-                        fetch("/powers.json"),
-                        fetch("/equipment.json"),
-                        fetch("/monsters.json"),
-                    ])
+                const [cardsData, equipmentResponse] = await Promise.all([
+                    fetchAllCards(),
+                    fetch("/equipment.json"),
+                ])
 
-                const powersData = await powersResponse.json()
                 const equipmentData = await equipmentResponse.json()
-                const monstersData = await monstersResponse.json()
 
                 setAllContent({
-                    powers: powersData.powers || [],
+                    powers: cardsData.powers || [],
                     equipment: equipmentData.equipment || [],
-                    monsters: monstersData || [],
+                    monsters: cardsData.monsters || [],
                 })
             } catch (error) {
                 console.error("Error loading dynamic content:", error)
@@ -74,8 +71,8 @@ const EnhancedKeywordLinker = ({
         // Add power names
         allContent.powers?.forEach((power) => {
             mappings.set(power.name.toLowerCase(), {
-                page: "Powers",
-                path: "/powers",
+                page: "Power Cards",
+                path: "/power-cards",
                 section: power.name,
                 description: `${power.deck} power - ${power.description}`,
                 type: "power",
