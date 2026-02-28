@@ -12,12 +12,8 @@ import {
     Box,
     Divider,
 } from "@mui/material"
-import {
-    Casino,
-    Shield,
-    LocalFireDepartment,
-    Psychology,
-} from "@mui/icons-material"
+import { Shield, LocalFireDepartment, Psychology } from "@mui/icons-material"
+import { D10Icon } from "../components/icons"
 import PlayerToolsButton from "../components/PlayerToolsButton"
 import useRulesEngine from "../hooks/useRulesEngine"
 import { scrollToAnchor } from "../utils/scrollToAnchor"
@@ -54,7 +50,7 @@ const QuickReference = () => {
     const getIcon = (category) => {
         switch (category) {
             case "core-mechanics":
-                return <Casino />
+                return <D10Icon size={24} />
             case "character-stats":
                 return <Psychology />
             case "damage-types":
@@ -251,7 +247,7 @@ const QuickReference = () => {
                     }}
                 >
                     <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                        <Casino />
+                        <D10Icon size={24} />
                         <Typography variant='h4' sx={{ ml: 1 }}>
                             Common Dice Rolls
                         </Typography>

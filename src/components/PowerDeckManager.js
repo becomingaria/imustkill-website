@@ -21,13 +21,13 @@ import {
     Layers,
     LayersClear,
     Style,
-    Casino,
     Close,
     MenuBook,
     KeyboardDoubleArrowUp,
     Undo,
     Redo,
 } from "@mui/icons-material"
+import { D10Icon } from "./icons"
 import { fetchPowers } from "../utils/cardsClient"
 import { getCardImageProps } from "../utils/cardArtwork"
 
@@ -1715,7 +1715,7 @@ const PowerDeckManager = () => {
                         >
                             <Button
                                 variant='contained'
-                                startIcon={<Casino />}
+                                startIcon={<D10Icon size={22} />}
                                 onClick={drawCard}
                                 disabled={
                                     deckCards.length === 0 ||

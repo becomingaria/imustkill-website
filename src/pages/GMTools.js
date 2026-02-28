@@ -10,7 +10,8 @@ import {
     CardContent,
     CardActions,
 } from "@mui/material"
-import { MoreHoriz, MenuBook, Pets, Casino, Groups } from "@mui/icons-material"
+import { MoreHoriz, MenuBook, Pets, Groups } from "@mui/icons-material"
+import { D10Icon } from "../components/icons"
 import HomeButton from "../components/HomeButton.js"
 
 const GMTools = () => {
@@ -80,7 +81,7 @@ const GMTools = () => {
             title: "Initiative Tracker",
             description:
                 "Track combat initiative order with drag-and-drop support for monsters, NPCs, players, and environmental hazards.",
-            icon: <Casino sx={{ fontSize: 40 }} />,
+            icon: <D10Icon size={40} />,
             path: "/initiative-tracker",
             available: true,
         },

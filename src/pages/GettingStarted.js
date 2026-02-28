@@ -7,6 +7,7 @@ import {
     TargetIcon,
     SkullIcon,
     ChevronDownIcon,
+    D10Icon,
 } from "../components/icons"
 
 // Custom hook for detecting when an element is in viewport
@@ -195,7 +196,7 @@ const GettingStarted = () => {
                                     fontWeight: "bold",
                                 }}
                             >
-                                The One Rule
+                                The One Rule to Remember
                             </Typography>
                         </Box>
                         <Typography
@@ -205,7 +206,7 @@ const GettingStarted = () => {
                                 mb: 3,
                             }}
                         >
-                            Everything in I Must Kill uses one simple mechanic:
+                            Most tests in I Must Kill uses one simple mechanic:
                         </Typography>
                         <Box
                             sx={{
@@ -241,11 +242,51 @@ const GettingStarted = () => {
                             sx={{
                                 fontSize: { xs: "1rem", sm: "1.1rem" },
                                 lineHeight: 1.8,
+                                mb: 3,
                             }}
                         >
                             That's it. Every action—attacking, dodging, casting
                             spells, tracking monsters—uses this same roll.
                         </Typography>
+                        <Box
+                            sx={{
+                                ...glassSection,
+                                p: 2.5,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2.5,
+                            }}
+                        >
+                            <Box sx={{ flexShrink: 0 }}>
+                                <D10Icon size={48} />
+                            </Box>
+                            <Box>
+                                <Typography
+                                    sx={{
+                                        fontWeight: "bold",
+                                        mb: 0.5,
+                                        fontSize: "1rem",
+                                    }}
+                                >
+                                    What's a d10?
+                                </Typography>
+                                <Typography
+                                    variant='body2'
+                                    sx={{
+                                        lineHeight: 1.7,
+                                        color: (theme) =>
+                                            theme.palette.mode === "dark"
+                                                ? "#b0b0b0"
+                                                : "#555",
+                                    }}
+                                >
+                                    A d10 is a 10-sided die numbered 1–10. I
+                                    Must Kill typically calls for 4 or fewer at
+                                    a time — but if you only have one, just roll
+                                    it multiple times.
+                                </Typography>
+                            </Box>
+                        </Box>
                     </Box>
                 </Slide>
 
@@ -286,8 +327,8 @@ const GettingStarted = () => {
                                 mb: 3,
                             }}
                         >
-                            Every hunter has four stats, typically ranging from
-                            3 to 9:
+                            Every hunter has four stats, ranging from
+                            2 to 9:
                         </Typography>
                         <Grid container spacing={2}>
                             {[

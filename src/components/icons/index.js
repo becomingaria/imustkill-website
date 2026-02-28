@@ -2,6 +2,8 @@
 // These icons are designed to match the dark fantasy aesthetic of the game
 
 import React from "react"
+import { useTheme } from "@mui/material"
+import d10Png from "./d10.png"
 
 // Common wrapper for consistent styling
 const IconWrapper = ({
@@ -254,6 +256,24 @@ export const PotionIcon = ({ size, color, ...props }) => (
     </IconWrapper>
 )
 
+// 🎲 D10 Die
+export const D10Icon = ({ size = 24, style, ...props }) => {
+    const theme = useTheme()
+    return (
+        <img
+            src={d10Png}
+            alt='d10'
+            width={size}
+            height={size}
+            style={{
+                filter: theme.palette.mode === "dark" ? "invert(1)" : "none",
+                ...style,
+            }}
+            {...props}
+        />
+    )
+}
+
 const Icons = {
     CrossedSwordsIcon,
     DarkMoonIcon,
@@ -265,6 +285,7 @@ const Icons = {
     MonsterClawIcon,
     BatteredShieldIcon,
     PotionIcon,
+    D10Icon,
 }
 
 export default Icons

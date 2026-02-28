@@ -29,7 +29,6 @@ import {
     Edit,
     Delete,
     Logout,
-    Casino,
     BugReport,
     CloudUpload,
     Close,
@@ -42,6 +41,7 @@ import {
     CheckCircle,
 } from "@mui/icons-material"
 import { getCardArtUrl, getDeckBackUrl } from "../utils/cardArtwork"
+import { D10Icon } from "../components/icons"
 
 // ═══════════════════════════════════════════════════════════
 // Configuration — set these env vars after deploying CDK:
@@ -1730,7 +1730,7 @@ function AdminDashboard({ email, onLogout }) {
                 }}
             >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Casino sx={{ color: "#8B0000", fontSize: 28 }} />
+                    <D10Icon size={28} />
                     <Typography
                         sx={{
                             fontFamily: '"Cinzel Decorative", "Cinzel", serif',
@@ -1981,7 +1981,6 @@ function AdminDashboard({ email, onLogout }) {
                                 gap: 2,
                             }}
                         >
-                            <Casino sx={{ fontSize: 56 }} />
                             <Typography
                                 sx={{
                                     fontFamily: '"Cinzel", serif',
@@ -2628,7 +2627,9 @@ function LoginScreen({ onSuccess }) {
             >
                 {/* Header */}
                 <Box sx={{ p: 3, bgcolor: "#1a0a0a", textAlign: "center" }}>
-                    <Casino sx={{ fontSize: 40, color: "#8B0000", mb: 1 }} />
+                    <Box sx={{ mb: 1 }}>
+                        <D10Icon size={40} color='#8B0000' />
+                    </Box>
                     <Typography
                         sx={{
                             fontFamily: '"Cinzel Decorative", "Cinzel", serif',
