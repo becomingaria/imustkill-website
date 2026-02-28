@@ -8,6 +8,7 @@ import {
     IconButton,
     Chip,
     CircularProgress,
+    LinearProgress,
     Alert,
     Modal,
     Select,
@@ -17,6 +18,11 @@ import {
     Divider,
     Tooltip,
     Grid,
+    Table,
+    TableHead,
+    TableBody,
+    TableRow,
+    TableCell,
 } from "@mui/material"
 import {
     Add,
@@ -30,8 +36,12 @@ import {
     Save,
     Warning,
     AutoAwesome,
+    FileDownload,
+    FileUpload,
+    TableChart,
+    CheckCircle,
 } from "@mui/icons-material"
-import { getCardArtUrl } from "../utils/cardArtwork"
+import { getCardArtUrl, getDeckBackUrl } from "../utils/cardArtwork"
 
 // ═══════════════════════════════════════════════════════════
 // Configuration — set these env vars after deploying CDK:
@@ -124,6 +134,93 @@ const RARITY_COLORS = {
 const CARD_TYPES = ["power", "monster"]
 const POWER_RARITIES = ["common", "uncommon", "rare", "mythic"]
 
+// ── CSV helpers ───────────────────────────────────────────────────────────
+const POWER_CSV_COLS = ["name", "rarity", "description"]
+const MONSTER_CSV_COLS = [
+    "name",
+    "Description",
+    "Guise",
+    "Attack",
+    "Damage",
+    "Hit Points Multiplier",
+    "Bloodied",
+    "Buffs",
+    "Crit",
+    "Immunities",
+    "Special Weaknesses",
+    "Body",
+    "Agility",
+    "Focus",
+    "Fate",
+    "Insight",
+]
+
+function csvCell(val) {
+    const s =
+        val === null || val === undefined
+            ? ""
+            : String(Array.isArray(val) ? val.join(", ") : val)
+    return s.includes(",") || s.includes('"') || s.includes("\n")
+        ? `"${s.replace(/"/g, '""')}"`
+        : s
+}
+
+function exportCardsAsCsv(cards, cardType, deckDisplayName) {
+    const cols = cardType === "monster" ? MONSTER_CSV_COLS : POWER_CSV_COLS
+    const header = cols.join(",")
+    const rows = cards.map((c) => cols.map((col) => csvCell(c[col])).join(","))
+    const csv = [header, ...rows].join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `${deckDisplayName.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-cards.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+}
+
+// Parse a CSV string into an array of objects. Handles quoted fields.
+function parseCsv(text) {
+    const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n")
+    if (lines.length < 2)
+        throw new Error("CSV must have a header row and at least one data row.")
+    const headers = splitCsvRow(lines[0])
+    const rows = []
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (!line) continue
+        const values = splitCsvRow(line)
+        const obj = {}
+        headers.forEach((h, idx) => {
+            obj[h.trim()] = (values[idx] || "").trim()
+        })
+        rows.push(obj)
+    }
+    return { headers, rows }
+}
+
+function splitCsvRow(row) {
+    const cells = []
+    let cur = "",
+        inQuote = false
+    for (let i = 0; i < row.length; i++) {
+        const ch = row[i]
+        if (ch === '"') {
+            if (inQuote && row[i + 1] === '"') {
+                cur += '"'
+                i++
+            } else inQuote = !inQuote
+        } else if (ch === "," && !inQuote) {
+            cells.push(cur)
+            cur = ""
+        } else {
+            cur += ch
+        }
+    }
+    cells.push(cur)
+    return cells
+}
+
 // ═══════════════════════════════════════════════════════════
 // Deck Form Modal
 // ═══════════════════════════════════════════════════════════
@@ -135,30 +232,42 @@ function DeckFormModal({ open, onClose, onSave, initialDeck }) {
         description: "",
         cardType: "power",
     })
+    const [backImageFile, setBackImageFile] = useState(null)
+    const [backImagePreview, setBackImagePreview] = useState("")
+    const backFileRef = useRef()
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState("")
 
     useEffect(() => {
         if (open) {
-            setForm(
-                isEdit
-                    ? {
-                          deck: initialDeck.deck,
-                          displayName:
-                              initialDeck.displayName || initialDeck.deck,
-                          description: initialDeck.description || "",
-                          cardType: initialDeck.cardType || "power",
-                      }
-                    : {
-                          deck: "",
-                          displayName: "",
-                          description: "",
-                          cardType: "power",
-                      },
-            )
+            setBackImageFile(null)
+            if (isEdit) {
+                setForm({
+                    deck: initialDeck.deck,
+                    displayName: initialDeck.displayName || initialDeck.deck,
+                    description: initialDeck.description || "",
+                    cardType: initialDeck.cardType || "power",
+                })
+                setBackImagePreview(getDeckBackUrl(initialDeck.deck))
+            } else {
+                setForm({
+                    deck: "",
+                    displayName: "",
+                    description: "",
+                    cardType: "power",
+                })
+                setBackImagePreview("")
+            }
             setError("")
         }
     }, [open, initialDeck, isEdit])
+
+    const handleBackImageChange = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        setBackImageFile(file)
+        setBackImagePreview(URL.createObjectURL(file))
+    }
 
     const handleSave = async () => {
         if (!form.displayName.trim()) {
@@ -173,6 +282,26 @@ function DeckFormModal({ open, onClose, onSave, initialDeck }) {
                       .toLowerCase()
                       .replace(/[^a-z0-9]+/g, "-")
                       .replace(/^-|-$/g, "")
+            // Upload deck back art if provided
+            if (backImageFile) {
+                const { uploadUrl } = await adminFetch(
+                    "/admin/upload-url",
+                    "POST",
+                    {
+                        deck: deckId,
+                        name: "back",
+                        folder: "backs",
+                        contentType: backImageFile.type || "image/png",
+                    },
+                )
+                await fetch(uploadUrl, {
+                    method: "PUT",
+                    body: backImageFile,
+                    headers: {
+                        "Content-Type": backImageFile.type || "image/png",
+                    },
+                })
+            }
             await onSave({ ...form, deck: deckId })
             onClose()
         } catch (e) {
@@ -311,6 +440,103 @@ function DeckFormModal({ open, onClose, onSave, initialDeck }) {
                         multiline
                         rows={3}
                     />
+                    {/* Deck back art */}
+                    <Box>
+                        <Typography
+                            sx={{ fontSize: "0.75rem", opacity: 0.5, mb: 0.5 }}
+                        >
+                            Deck Back Art
+                        </Typography>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
+                            }}
+                        >
+                            <Box
+                                onClick={() => backFileRef.current?.click()}
+                                sx={{
+                                    width: 80,
+                                    height: 120,
+                                    borderRadius: "8px",
+                                    border: "2px dashed",
+                                    borderColor: "divider",
+                                    cursor: "pointer",
+                                    overflow: "hidden",
+                                    flexShrink: 0,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    bgcolor: "action.hover",
+                                    "&:hover": { borderColor: "#8B0000" },
+                                    backgroundImage: backImagePreview
+                                        ? `url(${backImagePreview})`
+                                        : "none",
+                                    backgroundSize: "cover",
+                                    backgroundPosition: "center",
+                                }}
+                            >
+                                {!backImagePreview && (
+                                    <>
+                                        <CloudUpload
+                                            sx={{ fontSize: 22, opacity: 0.4 }}
+                                        />
+                                        <Typography
+                                            sx={{
+                                                fontSize: "0.6rem",
+                                                opacity: 0.5,
+                                                mt: 0.5,
+                                                textAlign: "center",
+                                            }}
+                                        >
+                                            Back Art
+                                        </Typography>
+                                    </>
+                                )}
+                            </Box>
+                            <Box sx={{ flex: 1 }}>
+                                <Typography
+                                    sx={{
+                                        fontSize: "0.75rem",
+                                        opacity: 0.6,
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    This image appears on the back of every card
+                                    in this deck. Stored at{" "}
+                                    <code style={{ fontSize: "0.7rem" }}>
+                                        backs/{form.deck || "deck-id"}.png
+                                    </code>
+                                </Typography>
+                                {backImageFile && (
+                                    <Chip
+                                        label={backImageFile.name}
+                                        size='small'
+                                        sx={{ mt: 1, maxWidth: "100%" }}
+                                        onDelete={() => {
+                                            setBackImageFile(null)
+                                            setBackImagePreview(
+                                                isEdit
+                                                    ? getDeckBackUrl(
+                                                          initialDeck.deck,
+                                                      )
+                                                    : "",
+                                            )
+                                        }}
+                                    />
+                                )}
+                            </Box>
+                            <input
+                                ref={backFileRef}
+                                type='file'
+                                accept='image/*'
+                                style={{ display: "none" }}
+                                onChange={handleBackImageChange}
+                            />
+                        </Box>
+                    </Box>
                     <Box
                         sx={{
                             display: "flex",
@@ -356,7 +582,6 @@ const POWER_DEFAULTS = {
     name: "",
     rarity: "common",
     description: "",
-    effect: "",
 }
 const MONSTER_DEFAULTS = {
     name: "",
@@ -401,7 +626,6 @@ function CardFormModal({ open, onClose, onSave, initialCard, deck }) {
                               name: initialCard.name,
                               rarity: initialCard.rarity || "common",
                               description: initialCard.description || "",
-                              effect: initialCard.effect || "",
                           }
                         : Object.fromEntries(
                               Object.keys(MONSTER_DEFAULTS).map((k) => [
@@ -673,13 +897,6 @@ function CardFormModal({ open, onClose, onSave, initialCard, deck }) {
                                 multiline
                                 rows={3}
                             />
-                            <TextField
-                                {...f("effect")}
-                                label='Power Effect (optional)'
-                                fullWidth
-                                multiline
-                                rows={2}
-                            />
                         </>
                     )}
 
@@ -934,12 +1151,426 @@ function ConfirmDeleteModal({
 }
 
 // ═══════════════════════════════════════════════════════════
+// CSV Import Modal
+// ═══════════════════════════════════════════════════════════
+function CsvImportModal({ open, onClose, onImport, deck }) {
+    const cardType = deck?.cardType || "power"
+    const expectedCols =
+        cardType === "monster" ? MONSTER_CSV_COLS : POWER_CSV_COLS
+    const [parsedRows, setParsedRows] = useState([])
+    const [parseError, setParseError] = useState("")
+    const [importing, setImporting] = useState(false)
+    const [importResult, setImportResult] = useState(null)
+    const [fileName, setFileName] = useState("")
+    const fileRef = useRef()
+
+    useEffect(() => {
+        if (open) {
+            setParsedRows([])
+            setParseError("")
+            setImporting(false)
+            setImportResult(null)
+            setFileName("")
+        }
+    }, [open])
+
+    const handleFile = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        setFileName(file.name)
+        setParseError("")
+        setParsedRows([])
+        setImportResult(null)
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+            try {
+                const { headers, rows } = parseCsv(ev.target.result)
+                // Warn about unrecognised columns but don't block
+                const unknown = headers.filter(
+                    (h) =>
+                        !expectedCols.includes(h) &&
+                        h !== "deck" &&
+                        h !== "type",
+                )
+                if (!headers.includes("name"))
+                    throw new Error('CSV must have a "name" column.')
+                if (unknown.length)
+                    setParseError(
+                        `Note: unknown columns will be ignored: ${unknown.join(", ")}`,
+                    )
+                setParsedRows(rows)
+            } catch (err) {
+                setParseError(err.message)
+            }
+        }
+        reader.readAsText(file)
+    }
+
+    const handleImport = async () => {
+        setImporting(true)
+        setImportResult(null)
+        try {
+            const cardsToImport = parsedRows
+                .filter((r) => r.name?.trim())
+                .map((r) => ({
+                    ...r,
+                    deck: deck.deck,
+                    type: cardType,
+                    rarity: r.rarity || "common",
+                }))
+            const result = await onImport(cardsToImport)
+            setImportResult(result)
+            setParsedRows([])
+            setFileName("")
+        } catch (err) {
+            setParseError(err.message)
+        } finally {
+            setImporting(false)
+        }
+    }
+
+    const previewCols = expectedCols.slice(0, 4)
+    const validRows = parsedRows.filter((r) => r.name?.trim())
+
+    return (
+        <Modal
+            open={open}
+            onClose={onClose}
+            sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                p: 1,
+            }}
+        >
+            <Paper
+                sx={{
+                    width: { xs: "98%", sm: 700 },
+                    maxHeight: "90vh",
+                    display: "flex",
+                    flexDirection: "column",
+                    borderRadius: "16px",
+                    outline: "none",
+                }}
+            >
+                {/* Header */}
+                <Box
+                    sx={{
+                        p: 2.5,
+                        bgcolor: "#1a0a0a",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flexShrink: 0,
+                    }}
+                >
+                    <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                    >
+                        <FileUpload sx={{ color: "#8B0000" }} />
+                        <Box>
+                            <Typography
+                                sx={{
+                                    fontFamily: '"Cinzel", serif',
+                                    fontWeight: "bold",
+                                }}
+                            >
+                                Import Cards from CSV
+                            </Typography>
+                            <Typography
+                                sx={{ fontSize: "0.7rem", opacity: 0.5 }}
+                            >
+                                Deck: {deck?.displayName}
+                            </Typography>
+                        </Box>
+                    </Box>
+                    <IconButton onClick={onClose} sx={{ color: "#fff" }}>
+                        <Close />
+                    </IconButton>
+                </Box>
+
+                <Box
+                    sx={{
+                        p: 3,
+                        overflow: "auto",
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                    }}
+                >
+                    {/* Format hint */}
+                    <Paper
+                        variant='outlined'
+                        sx={{
+                            p: 1.5,
+                            bgcolor: "rgba(139,0,0,0.04)",
+                            borderColor: "rgba(139,0,0,0.2)",
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                fontSize: "0.72rem",
+                                fontWeight: "bold",
+                                mb: 0.5,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                            }}
+                        >
+                            <TableChart sx={{ fontSize: 14 }} /> Expected
+                            columns ({cardType})
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontSize: "0.68rem",
+                                fontFamily: "monospace",
+                                opacity: 0.7,
+                                wordBreak: "break-all",
+                            }}
+                        >
+                            {expectedCols.join(", ")}
+                        </Typography>
+                    </Paper>
+
+                    {/* File picker */}
+                    <Box
+                        onClick={() => fileRef.current?.click()}
+                        sx={{
+                            border: "2px dashed",
+                            borderColor: parsedRows.length
+                                ? "#2e7d32"
+                                : "divider",
+                            borderRadius: "12px",
+                            p: 3,
+                            textAlign: "center",
+                            cursor: "pointer",
+                            bgcolor: parsedRows.length
+                                ? "rgba(46,125,50,0.04)"
+                                : "action.hover",
+                            "&:hover": { borderColor: "#8B0000" },
+                            transition: "border-color 0.2s",
+                        }}
+                    >
+                        <input
+                            ref={fileRef}
+                            type='file'
+                            accept='.csv,text/csv'
+                            style={{ display: "none" }}
+                            onChange={handleFile}
+                        />
+                        {parsedRows.length ? (
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 1,
+                                }}
+                            >
+                                <CheckCircle sx={{ color: "#2e7d32" }} />
+                                <Typography sx={{ fontWeight: "bold" }}>
+                                    {fileName}
+                                </Typography>
+                                <Chip
+                                    label={`${validRows.length} card${validRows.length !== 1 ? "s" : ""}`}
+                                    size='small'
+                                    color='success'
+                                />
+                            </Box>
+                        ) : (
+                            <>
+                                <FileUpload
+                                    sx={{ fontSize: 36, opacity: 0.3, mb: 1 }}
+                                />
+                                <Typography sx={{ opacity: 0.5 }}>
+                                    Click to choose a .csv file
+                                </Typography>
+                            </>
+                        )}
+                    </Box>
+
+                    {parseError && (
+                        <Alert
+                            severity={parsedRows.length ? "warning" : "error"}
+                            onClose={() => setParseError("")}
+                        >
+                            {parseError}
+                        </Alert>
+                    )}
+
+                    {/* Preview table */}
+                    {parsedRows.length > 0 && !importResult && (
+                        <Box>
+                            <Typography
+                                sx={{
+                                    fontSize: "0.75rem",
+                                    opacity: 0.5,
+                                    mb: 1,
+                                }}
+                            >
+                                Preview (first 5 rows)
+                            </Typography>
+                            <Box
+                                sx={{
+                                    overflow: "auto",
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    borderRadius: "8px",
+                                }}
+                            >
+                                <Table size='small'>
+                                    <TableHead>
+                                        <TableRow
+                                            sx={{
+                                                bgcolor: "rgba(139,0,0,0.06)",
+                                            }}
+                                        >
+                                            {previewCols.map((col) => (
+                                                <TableCell
+                                                    key={col}
+                                                    sx={{
+                                                        fontFamily:
+                                                            '"Cinzel", serif',
+                                                        fontSize: "0.65rem",
+                                                        fontWeight: "bold",
+                                                        whiteSpace: "nowrap",
+                                                    }}
+                                                >
+                                                    {col}
+                                                </TableCell>
+                                            ))}
+                                            {parsedRows[0] &&
+                                                Object.keys(parsedRows[0])
+                                                    .length >
+                                                    previewCols.length && (
+                                                    <TableCell
+                                                        sx={{
+                                                            fontSize: "0.65rem",
+                                                            opacity: 0.4,
+                                                        }}
+                                                    >
+                                                        +
+                                                        {Object.keys(
+                                                            parsedRows[0],
+                                                        ).length -
+                                                            previewCols.length}{" "}
+                                                        more
+                                                    </TableCell>
+                                                )}
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {parsedRows
+                                            .slice(0, 5)
+                                            .map((row, i) => (
+                                                <TableRow key={i}>
+                                                    {previewCols.map((col) => (
+                                                        <TableCell
+                                                            key={col}
+                                                            sx={{
+                                                                fontSize:
+                                                                    "0.7rem",
+                                                                maxWidth: 160,
+                                                                overflow:
+                                                                    "hidden",
+                                                                textOverflow:
+                                                                    "ellipsis",
+                                                                whiteSpace:
+                                                                    "nowrap",
+                                                            }}
+                                                        >
+                                                            {row[col] || "—"}
+                                                        </TableCell>
+                                                    ))}
+                                                    {Object.keys(parsedRows[0])
+                                                        .length >
+                                                        previewCols.length && (
+                                                        <TableCell />
+                                                    )}
+                                                </TableRow>
+                                            ))}
+                                    </TableBody>
+                                </Table>
+                            </Box>
+                        </Box>
+                    )}
+
+                    {importing && <LinearProgress sx={{ borderRadius: 4 }} />}
+
+                    {importResult && (
+                        <Alert severity='success' icon={<CheckCircle />}>
+                            Imported {importResult.imported} card
+                            {importResult.imported !== 1 ? "s" : ""}{" "}
+                            successfully
+                            {importResult.failed > 0
+                                ? ` (${importResult.failed} failed)`
+                                : "."}{" "}
+                            Click Close to view them.
+                        </Alert>
+                    )}
+                </Box>
+
+                {/* Footer */}
+                <Box
+                    sx={{
+                        p: 2,
+                        borderTop: "1px solid",
+                        borderColor: "divider",
+                        display: "flex",
+                        gap: 1,
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexShrink: 0,
+                    }}
+                >
+                    <Typography sx={{ fontSize: "0.72rem", opacity: 0.4 }}>
+                        Existing cards with the same name will be overwritten.
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                        <Button onClick={onClose}>
+                            {importResult ? "Close" : "Cancel"}
+                        </Button>
+                        {!importResult && (
+                            <Button
+                                variant='contained'
+                                onClick={handleImport}
+                                disabled={validRows.length === 0 || importing}
+                                startIcon={
+                                    importing ? (
+                                        <CircularProgress size={14} />
+                                    ) : (
+                                        <FileUpload />
+                                    )
+                                }
+                                sx={{
+                                    bgcolor: "#8B0000",
+                                    "&:hover": { bgcolor: "#a00" },
+                                    fontFamily: '"Cinzel", serif',
+                                    textTransform: "none",
+                                }}
+                            >
+                                {importing
+                                    ? "Importing…"
+                                    : `Import ${validRows.length} Card${validRows.length !== 1 ? "s" : ""}`}
+                            </Button>
+                        )}
+                    </Box>
+                </Box>
+            </Paper>
+        </Modal>
+    )
+}
+
+// ═══════════════════════════════════════════════════════════
 // Dashboard
 // ═══════════════════════════════════════════════════════════
 function AdminDashboard({ email, onLogout }) {
     const [decks, setDecks] = useState([])
     const [selectedDeck, setSelectedDeck] = useState(null)
     const [cards, setCards] = useState([])
+    const [artCacheBust, setArtCacheBust] = useState(null)
     const [loading, setLoading] = useState({
         decks: true,
         cards: false,
@@ -950,6 +1581,7 @@ function AdminDashboard({ email, onLogout }) {
     // Modal state
     const [deckModal, setDeckModal] = useState({ open: false, deck: null })
     const [cardModal, setCardModal] = useState({ open: false, card: null })
+    const [csvImportOpen, setCsvImportOpen] = useState(false)
     const [deleteModal, setDeleteModal] = useState({
         open: false,
         type: null,
@@ -1042,6 +1674,7 @@ function AdminDashboard({ email, onLogout }) {
         } else {
             await adminFetch("/cards", "POST", cardData)
         }
+        setArtCacheBust(Date.now())
         await loadCards(selectedDeck)
     }
 
@@ -1059,6 +1692,15 @@ function AdminDashboard({ email, onLogout }) {
         } finally {
             setLoading((l) => ({ ...l, deleting: false }))
         }
+    }
+
+    const importCards = async (cardsToImport) => {
+        const result = await adminFetch("/cards/batch", "POST", {
+            cards: cardsToImport,
+        })
+        setArtCacheBust(Date.now())
+        await loadCards(selectedDeck)
+        return result
     }
 
     const powerDecks = decks.filter((d) => d.cardType === "power")
@@ -1453,6 +2095,43 @@ function AdminDashboard({ email, onLogout }) {
                                     </Button>
                                     <Button
                                         size='small'
+                                        startIcon={
+                                            <FileDownload
+                                                sx={{ fontSize: 14 }}
+                                            />
+                                        }
+                                        disabled={cards.length === 0}
+                                        onClick={() =>
+                                            exportCardsAsCsv(
+                                                cards,
+                                                selectedDeck.cardType,
+                                                selectedDeck.displayName,
+                                            )
+                                        }
+                                        sx={{
+                                            textTransform: "none",
+                                            fontFamily: '"Cinzel", serif',
+                                            fontSize: "0.75rem",
+                                        }}
+                                    >
+                                        Export CSV
+                                    </Button>
+                                    <Button
+                                        size='small'
+                                        startIcon={
+                                            <FileUpload sx={{ fontSize: 14 }} />
+                                        }
+                                        onClick={() => setCsvImportOpen(true)}
+                                        sx={{
+                                            textTransform: "none",
+                                            fontFamily: '"Cinzel", serif',
+                                            fontSize: "0.75rem",
+                                        }}
+                                    >
+                                        Import CSV
+                                    </Button>
+                                    <Button
+                                        size='small'
                                         color='error'
                                         startIcon={
                                             <Delete sx={{ fontSize: 14 }} />
@@ -1553,6 +2232,7 @@ function AdminDashboard({ email, onLogout }) {
                                             card={card}
                                             deckId={selectedDeck.deck}
                                             deckType={selectedDeck.cardType}
+                                            artCacheBust={artCacheBust}
                                             onEdit={() =>
                                                 setCardModal({
                                                     open: true,
@@ -1587,6 +2267,12 @@ function AdminDashboard({ email, onLogout }) {
                 onClose={() => setCardModal({ open: false, card: null })}
                 onSave={saveCard}
                 initialCard={cardModal.card}
+                deck={selectedDeck}
+            />
+            <CsvImportModal
+                open={csvImportOpen}
+                onClose={() => setCsvImportOpen(false)}
+                onImport={importCards}
                 deck={selectedDeck}
             />
             <ConfirmDeleteModal
@@ -1676,8 +2362,10 @@ function DeckItem({ deck, selected, onClick, onEdit, onDelete }) {
 }
 
 // ── Individual admin card tile ────────────────────────────────────────────────
-function AdminCard({ card, deckId, deckType, onEdit, onDelete }) {
-    const artUrl = getCardArtUrl(deckId, card.name)
+function AdminCard({ card, deckId, deckType, onEdit, onDelete, artCacheBust }) {
+    // Prefer artUrl stored on the card record; fall back to convention-based CDN URL
+    const baseUrl = card.artUrl || getCardArtUrl(deckId, card.name)
+    const artUrl = artCacheBust ? `${baseUrl}?t=${artCacheBust}` : baseUrl
     const rarity = card.rarity || "common"
     const rarityColor = RARITY_COLORS[rarity] || "#777"
 
