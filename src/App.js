@@ -25,6 +25,7 @@ import DeckBuilder from "./pages/DeckBuilder.js"
 import InitiativeTracker from "./pages/InitiativeTrackerPage.js"
 import CampaignManager from "./pages/CampaignManager.js"
 import LiveGameView from "./pages/LiveGameView.js"
+import Admin from "./pages/Admin.js"
 import StyleGuide from "./pages/StyleGuide.js"
 import Sparks from "./components/Sparks/Sparks.jsx"
 import BackButton from "./components/BackButton/BackButton.js"
@@ -105,6 +106,7 @@ function App() {
                     />
                     <Route path='deck-builder' element={<DeckBuilder />} />
                     <Route path='style-guide' element={<StyleGuide />} />
+                    <Route path='admin' element={<Admin />} />
                     <Route path='/' element={<HomePage />} />
                 </Route>
             </Routes>

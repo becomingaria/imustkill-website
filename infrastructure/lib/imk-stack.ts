@@ -4,6 +4,8 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb"
 import * as lambda from "aws-cdk-lib/aws-lambda"
 import * as apigateway from "aws-cdk-lib/aws-apigatewayv2"
 import * as apigatewayIntegrations from "aws-cdk-lib/aws-apigatewayv2-integrations"
+import * as apigatewayAuthorizers from "aws-cdk-lib/aws-apigatewayv2-authorizers"
+import * as cognito from "aws-cdk-lib/aws-cognito"
 import * as iam from "aws-cdk-lib/aws-iam"
 import * as logs from "aws-cdk-lib/aws-logs"
 import * as s3 from "aws-cdk-lib/aws-s3"
@@ -139,8 +141,8 @@ export class ImkLiveSessionsStack extends cdk.Stack {
             encryption: s3.BucketEncryption.S3_MANAGED,
             cors: [
                 {
-                    allowedMethods: [s3.HttpMethods.GET],
-                    allowedOrigins: ["*"], // CloudFront will serve these
+                    allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT],
+                    allowedOrigins: ["*"],
                     allowedHeaders: ["*"],
                 },
             ],
@@ -248,6 +250,98 @@ export class ImkLiveSessionsStack extends cdk.Stack {
         cardsTable.grantReadWriteData(cardsHandler)
 
         // ============================================================
+        // Admin Lambda (Deck CRUD + S3 Presigned Upload URLs)
+        // ============================================================
+        const adminHandler = new NodejsFunction(this, "AdminHandler", {
+            functionName: "imk-admin-handler",
+            entry: path.join(__dirname, "../lambda/admin.ts"),
+            handler: "handler",
+            runtime: lambda.Runtime.NODEJS_20_X,
+            architecture: lambda.Architecture.ARM_64,
+            memorySize: 256,
+            timeout: cdk.Duration.seconds(15),
+            environment: {
+                CARDS_TABLE: cardsTable.tableName,
+                ARTWORK_BUCKET: artworkBucket.bucketName,
+                ARTWORK_CDN_URL: `https://${artworkDistribution.distributionDomainName}`,
+                NODE_OPTIONS: "--enable-source-maps",
+            },
+            logRetention: logs.RetentionDays.ONE_WEEK,
+            bundling: {
+                minify: true,
+                sourceMap: true,
+                externalModules: [],
+            },
+        })
+
+        cardsTable.grantReadWriteData(adminHandler)
+        artworkBucket.grantPut(adminHandler)
+        artworkBucket.grantRead(adminHandler)
+
+        // ============================================================
+        // Cognito User Pool for Admin Authentication
+        // ============================================================
+        const adminUserPool = new cognito.UserPool(this, "AdminUserPool", {
+            userPoolName: "imk-admin-pool",
+            selfSignUpEnabled: false,
+            signInAliases: { email: true },
+            accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+            passwordPolicy: {
+                minLength: 8,
+                requireLowercase: true,
+                requireUppercase: true,
+                requireDigits: true,
+                requireSymbols: false,
+                tempPasswordValidity: cdk.Duration.days(7),
+            },
+            standardAttributes: {
+                email: { required: true, mutable: true },
+            },
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        })
+
+        const adminUserPoolClient = adminUserPool.addClient("AdminWebClient", {
+            authFlows: {
+                userPassword: true,
+                userSrp: true,
+            },
+            generateSecret: false,
+            accessTokenValidity: cdk.Duration.hours(8),
+            idTokenValidity: cdk.Duration.hours(8),
+            refreshTokenValidity: cdk.Duration.days(30),
+        })
+
+        // Create admin users (sends invitation email with temporary password)
+        new cognito.CfnUserPoolUser(this, "AdminUser1", {
+            userPoolId: adminUserPool.userPoolId,
+            username: "becomingaria@gmail.com",
+            userAttributes: [
+                { name: "email", value: "becomingaria@gmail.com" },
+                { name: "email_verified", value: "true" },
+            ],
+            desiredDeliveryMediums: ["EMAIL"],
+        })
+
+        new cognito.CfnUserPoolUser(this, "AdminUser2", {
+            userPoolId: adminUserPool.userPoolId,
+            username: "kat.hallo@outlook.com",
+            userAttributes: [
+                { name: "email", value: "kat.hallo@outlook.com" },
+                { name: "email_verified", value: "true" },
+            ],
+            desiredDeliveryMediums: ["EMAIL"],
+        })
+
+        // JWT Authorizer — protects all /admin/* routes and card write routes
+        const adminAuthorizer =
+            new apigatewayAuthorizers.HttpUserPoolAuthorizer(
+                "AdminAuthorizer",
+                adminUserPool,
+                {
+                    userPoolClients: [adminUserPoolClient],
+                    identitySource: ["$request.header.Authorization"],
+                },
+            )
         // HTTP API (REST endpoints)
         // ============================================================
         const httpApi = new apigateway.HttpApi(this, "SessionsHttpApi", {
@@ -297,32 +391,67 @@ export class ImkLiveSessionsStack extends cdk.Stack {
                 cardsHandler,
             )
 
-        // GET /cards - List all cards (with optional ?type=power|monster or ?deck= filter)
-        // POST /cards - Create a new card
+        const adminIntegration =
+            new apigatewayIntegrations.HttpLambdaIntegration(
+                "AdminIntegration",
+                adminHandler,
+            )
+
+        // ── Public card reads ──────────────────────────────────────
         httpApi.addRoutes({
             path: "/cards",
-            methods: [apigateway.HttpMethod.GET, apigateway.HttpMethod.POST],
+            methods: [apigateway.HttpMethod.GET],
             integration: cardsIntegration,
         })
 
-        // GET /cards/{deck}/{name} - Get specific card
-        // PUT /cards/{deck}/{name} - Update card
-        // DELETE /cards/{deck}/{name} - Delete card
         httpApi.addRoutes({
             path: "/cards/{deck}/{name}",
-            methods: [
-                apigateway.HttpMethod.GET,
-                apigateway.HttpMethod.PUT,
-                apigateway.HttpMethod.DELETE,
-            ],
+            methods: [apigateway.HttpMethod.GET],
             integration: cardsIntegration,
         })
 
-        // POST /cards/batch - Batch import cards (for seeding)
+        // ── Protected card writes (require Cognito auth) ───────────
+        httpApi.addRoutes({
+            path: "/cards",
+            methods: [apigateway.HttpMethod.POST],
+            integration: cardsIntegration,
+            authorizer: adminAuthorizer,
+        })
+
+        httpApi.addRoutes({
+            path: "/cards/{deck}/{name}",
+            methods: [apigateway.HttpMethod.PUT, apigateway.HttpMethod.DELETE],
+            integration: cardsIntegration,
+            authorizer: adminAuthorizer,
+        })
+
         httpApi.addRoutes({
             path: "/cards/batch",
             methods: [apigateway.HttpMethod.POST],
             integration: cardsIntegration,
+            authorizer: adminAuthorizer,
+        })
+
+        // ── Admin routes (deck management + image upload) ──────────
+        httpApi.addRoutes({
+            path: "/admin/decks",
+            methods: [apigateway.HttpMethod.GET, apigateway.HttpMethod.POST],
+            integration: adminIntegration,
+            authorizer: adminAuthorizer,
+        })
+
+        httpApi.addRoutes({
+            path: "/admin/decks/{deck}",
+            methods: [apigateway.HttpMethod.PUT, apigateway.HttpMethod.DELETE],
+            integration: adminIntegration,
+            authorizer: adminAuthorizer,
+        })
+
+        httpApi.addRoutes({
+            path: "/admin/upload-url",
+            methods: [apigateway.HttpMethod.POST],
+            integration: adminIntegration,
+            authorizer: adminAuthorizer,
         })
 
         // ============================================================
@@ -481,6 +610,23 @@ export class ImkLiveSessionsStack extends cdk.Stack {
             value: `https://${artworkDistribution.distributionDomainName}`,
             description: "CloudFront CDN URL for card artwork",
             exportName: "ImkArtworkCdnUrl",
+        })
+
+        new cdk.CfnOutput(this, "AdminUserPoolId", {
+            value: adminUserPool.userPoolId,
+            description: "Cognito User Pool ID for admin authentication",
+            exportName: "ImkAdminUserPoolId",
+        })
+
+        new cdk.CfnOutput(this, "AdminUserPoolClientId", {
+            value: adminUserPoolClient.userPoolClientId,
+            description: "Cognito User Pool Client ID for admin web app",
+            exportName: "ImkAdminUserPoolClientId",
+        })
+
+        new cdk.CfnOutput(this, "AdminUserPoolRegion", {
+            value: this.region,
+            description: "AWS Region for Cognito User Pool",
         })
     }
 }

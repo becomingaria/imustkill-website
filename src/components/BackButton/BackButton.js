@@ -12,7 +12,8 @@ function BackButton() {
     const checkVisibility = useCallback(() => {
         const isDesktop = window.innerWidth > 1100
         const isNotHomePage = location.pathname !== "/"
-        setIsVisible(isDesktop && isNotHomePage)
+        const isNotAdminPage = !location.pathname.startsWith("/admin")
+        setIsVisible(isDesktop && isNotHomePage && isNotAdminPage)
     }, [location.pathname])
 
     // Adjust opacity based on scroll position
@@ -22,7 +23,7 @@ function BackButton() {
             const maxScroll = window.innerHeight
             const newOpacity = Math.max(
                 0.2,
-                0.5 - (scrollTop / maxScroll) * 0.3
+                0.5 - (scrollTop / maxScroll) * 0.3,
             )
             setOpacity(newOpacity)
         }
