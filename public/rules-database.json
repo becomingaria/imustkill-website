@@ -75,8 +75,8 @@
                 "section": "gathering-powers",
                 "description": "Focus test to gather powers from deck"
             },
-            "@CastPowers": {
-                "title": "Casting Powers",
+            "@UsePowers": {
+                "title": "Using Powers",
                 "category": "casting",
                 "section": "casting-powers",
                 "description": "Playing power cards to trigger effects"
@@ -152,6 +152,84 @@
                 "category": "combat-mechanics",
                 "section": "statuses",
                 "description": "Cannot defend, attack, or move. Attacks automatically succeed"
+            },
+            "@Obscured": {
+                "title": "Obscured Status",
+                "category": "combat-mechanics",
+                "section": "statuses",
+                "description": "Cannot be targeted by attacks or powers. Granted by full cover such as a barricade or building wall"
+            },
+            "@Close": {
+                "title": "Close Range",
+                "category": "combat-mechanics",
+                "section": "range",
+                "description": "Within arm's reach — close enough to touch or strike without stepping"
+            },
+            "@Near": {
+                "title": "Near Range",
+                "category": "combat-mechanics",
+                "section": "range",
+                "description": "Within the same room or immediate area"
+            },
+            "@Far": {
+                "title": "Far Range",
+                "category": "combat-mechanics",
+                "section": "range",
+                "description": "Across a field or large open space — visible but distant"
+            },
+            "@Tiny": {
+                "title": "Tiny (Size)",
+                "category": "combat-mechanics",
+                "section": "size",
+                "description": "Insect to house cat. Hunters deal +1 damage to Tiny or smaller creatures if they remember to ask"
+            },
+            "@Smaller": {
+                "title": "Smaller (Size)",
+                "category": "combat-mechanics",
+                "section": "size",
+                "description": "Large dog to a human child. Hunters deal +1 damage to Smaller or smaller creatures if they remember to ask"
+            },
+            "@YourSize": {
+                "title": "Your Size",
+                "category": "combat-mechanics",
+                "section": "size",
+                "description": "Roughly the size of an adult human. The baseline — no size bonuses apply"
+            },
+            "@Bigger": {
+                "title": "Bigger (Size)",
+                "category": "combat-mechanics",
+                "section": "size",
+                "description": "As big as a horse. Large enough to ride. No size damage bonus for hunters attacking Bigger creatures"
+            },
+            "@WayBigger": {
+                "title": "Way Bigger (Size)",
+                "category": "combat-mechanics",
+                "section": "size",
+                "description": "Larger than a small hut — you can climb them. Hunters roll an extra d10 and choose lower when dodging their attacks"
+            },
+            "@Common": {
+                "title": "Common Power",
+                "category": "spellcasting",
+                "section": "power-rarities",
+                "description": "1 target at Close range, effect lasts this turn only. No charge required"
+            },
+            "@Uncommon": {
+                "title": "Uncommon Power",
+                "category": "spellcasting",
+                "section": "power-rarities",
+                "description": "1–3 targets at Close or Near range. May persist until a discard condition is met. No charge required"
+            },
+            "@Rare": {
+                "title": "Rare Power",
+                "category": "spellcasting",
+                "section": "power-rarities",
+                "description": "More than 3 targets at Close, Near, or Far range. Requires at least 1 Common or Uncommon card played face-down as a charge"
+            },
+            "@Mythic": {
+                "title": "Mythic Power",
+                "category": "spellcasting",
+                "section": "power-rarities",
+                "description": "Can singlehandedly end an encounter with fatal effects. Requires at least 1 Common or Uncommon card played face-down as a charge"
             },
             "@Gather": {
                 "title": "Gather Action",
@@ -525,6 +603,68 @@
                         "incorporeal"
                     ],
                     "description": "@HybridDamage works on all creature types."
+                }
+            ],
+            "size": [
+                {
+                    "term": "Tiny",
+                    "description": "Insect to house cat. You deal +1 damage to anything @Tiny or @Smaller than you — if you remember to ask.",
+                    "uses": ["+1 damage from larger hunters"],
+                    "keywords": ["tiny", "insect", "cat", "small"]
+                },
+                {
+                    "term": "Smaller",
+                    "description": "Large dog to a human child. You deal +1 damage to anything this size or @Tiny.",
+                    "uses": ["+1 damage from larger hunters"],
+                    "keywords": ["smaller", "dog", "child"]
+                },
+                {
+                    "term": "Your Size",
+                    "description": "Roughly an adult human. The baseline — no size modifiers apply when fighting a creature of similar size.",
+                    "uses": ["Baseline — no modifiers"],
+                    "keywords": ["your size", "human", "baseline"]
+                },
+                {
+                    "term": "Bigger",
+                    "description": "As big as a horse. A creature this size is large enough to ride. No size damage bonus applies when attacking @Bigger creatures.",
+                    "uses": ["Can be ridden"],
+                    "keywords": ["bigger", "horse", "rideable"]
+                },
+                {
+                    "term": "Way Bigger",
+                    "description": "Larger than a small hut — you can climb them. When a @WayBigger creature attacks you, roll an extra d10 to dodge and choose the lower result.",
+                    "uses": ["Can be climbed", "+1d10 dodge (choose lower)"],
+                    "keywords": ["way bigger", "huge", "climbable", "giant"]
+                }
+            ],
+            "distance": [
+                {
+                    "term": "Close",
+                    "description": "Within arm's reach — touch, grapple, or strike without stepping. Melee weapons and unarmed attacks. See @Close for details.",
+                    "uses": ["Melee weapons", "Unarmed attacks", "Grappling"],
+                    "keywords": ["close", "melee", "reach", "touch"]
+                },
+                {
+                    "term": "Near",
+                    "description": "Same room or immediate area — gap closed in a few strides. Thrown weapons and short-range powers. See @Near for details.",
+                    "uses": [
+                        "Thrown weapons",
+                        "Short-range powers",
+                        "Most creature abilities"
+                    ],
+                    "keywords": ["near", "thrown", "short range", "room"]
+                },
+                {
+                    "term": "Far",
+                    "description": "Across a field or large open space — visible but distant. Bows, firearms, and long-range powers. See @Far for details.",
+                    "uses": ["Bows", "Firearms", "Long-range powers"],
+                    "keywords": [
+                        "far",
+                        "ranged",
+                        "bow",
+                        "firearms",
+                        "long range"
+                    ]
                 }
             ]
         }

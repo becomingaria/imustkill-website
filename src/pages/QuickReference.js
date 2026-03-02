@@ -13,7 +13,7 @@ import {
     Divider,
 } from "@mui/material"
 import { Shield, LocalFireDepartment, Psychology } from "@mui/icons-material"
-import { D10Icon } from "../components/icons"
+import { D10Icon, TargetIcon, MonsterClawIcon } from "../components/icons"
 import PlayerToolsButton from "../components/PlayerToolsButton"
 import useRulesEngine from "../hooks/useRulesEngine"
 import { scrollToAnchor } from "../utils/scrollToAnchor"
@@ -55,12 +55,17 @@ const QuickReference = () => {
                 return <Psychology />
             case "damage-types":
                 return <LocalFireDepartment />
+            case "distance":
+                return <TargetIcon size={24} />
+            case "size":
+                return <MonsterClawIcon size={24} />
             default:
                 return <Shield />
         }
     }
 
     const getCategoryTitle = (category) => {
+        if (category === "distance") return "Distance"
         return category
             .split("-")
             .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

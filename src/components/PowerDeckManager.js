@@ -13,6 +13,8 @@ import {
     Collapse,
     Modal,
     Divider,
+    TextField,
+    InputAdornment,
 } from "@mui/material"
 import {
     Shuffle,
@@ -26,6 +28,10 @@ import {
     KeyboardDoubleArrowUp,
     Undo,
     Redo,
+    FlipToBack,
+    Search,
+    RotateRight,
+    ReplyAll,
 } from "@mui/icons-material"
 import { D10Icon } from "./icons"
 import { fetchPowers } from "../utils/cardsClient"
@@ -173,6 +179,7 @@ const PowerDeckManager = () => {
     // ─── Zones ───
     const [deckCards, setDeckCards] = useState([]) // draw pile (shuffled)
     const [hand, setHand] = useState([]) // up to MAX_HAND_SIZE
+    const [charges, setCharges] = useState([]) // face-down charged cards (fuel for rare/mythic)
     const [inPlay, setInPlay] = useState([]) // cards actively played
     const [discardPile, setDiscardPile] = useState([]) // discarded cards
     const [deckName, setDeckName] = useState("")
@@ -188,6 +195,8 @@ const PowerDeckManager = () => {
     const [discardingCardId, setDiscardingCardId] = useState(null)
     const [drawAnimating, setDrawAnimating] = useState(false)
     const [showDiscardPile, setShowDiscardPile] = useState(false)
+    const [showBrowseDeck, setShowBrowseDeck] = useState(false)
+    const [deckSearchQuery, setDeckSearchQuery] = useState("")
     const [lastAction, setLastAction] = useState("") // for status message
 
     const fileInputRef = useRef(null)
@@ -206,13 +215,13 @@ const PowerDeckManager = () => {
 
     const saveSnapshot = useCallback(() => {
         // cap history at 20 to avoid memory growth
-        const snap = { deckCards, hand, inPlay, discardPile }
+        const snap = { deckCards, hand, charges, inPlay, discardPile }
         historyRef.current = [...historyRef.current.slice(-19), snap]
         futureRef.current = []
         setHistoryLength(historyRef.current.length)
         setFutureLength(0)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [deckCards, hand, inPlay, discardPile])
+    }, [deckCards, hand, charges, inPlay, discardPile])
 
     const undo = useCallback(() => {
         if (historyRef.current.length === 0) return
@@ -220,17 +229,18 @@ const PowerDeckManager = () => {
         historyRef.current = historyRef.current.slice(0, -1)
         futureRef.current = [
             ...futureRef.current,
-            { deckCards, hand, inPlay, discardPile },
+            { deckCards, hand, charges, inPlay, discardPile },
         ]
         setDeckCards(snap.deckCards)
         setHand(snap.hand)
+        setCharges(snap.charges || [])
         setInPlay(snap.inPlay)
         setDiscardPile(snap.discardPile)
         setHistoryLength(historyRef.current.length)
         setFutureLength(futureRef.current.length)
         setLastAction("↩ Undid last action.")
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [deckCards, hand, inPlay, discardPile])
+    }, [deckCards, hand, charges, inPlay, discardPile])
 
     const redo = useCallback(() => {
         if (futureRef.current.length === 0) return
@@ -238,17 +248,18 @@ const PowerDeckManager = () => {
         futureRef.current = futureRef.current.slice(0, -1)
         historyRef.current = [
             ...historyRef.current,
-            { deckCards, hand, inPlay, discardPile },
+            { deckCards, hand, charges, inPlay, discardPile },
         ]
         setDeckCards(snap.deckCards)
         setHand(snap.hand)
+        setCharges(snap.charges || [])
         setInPlay(snap.inPlay)
         setDiscardPile(snap.discardPile)
         setHistoryLength(historyRef.current.length)
         setFutureLength(futureRef.current.length)
         setLastAction("↪ Redid last action.")
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [deckCards, hand, inPlay, discardPile])
+    }, [deckCards, hand, charges, inPlay, discardPile])
     const fetchCardDescriptions = useCallback(async (cards) => {
         try {
             const { powers } = await fetchPowers()
@@ -292,6 +303,7 @@ const PowerDeckManager = () => {
                 const data = JSON.parse(saved)
                 if (data.deckCards) setDeckCards(data.deckCards)
                 if (data.hand) setHand(data.hand)
+                if (data.charges) setCharges(data.charges)
                 if (data.inPlay) setInPlay(data.inPlay)
                 if (data.discardPile) setDiscardPile(data.discardPile)
                 if (data.deckName) setDeckName(data.deckName)
@@ -321,6 +333,7 @@ const PowerDeckManager = () => {
                 JSON.stringify({
                     deckCards,
                     hand,
+                    charges,
                     inPlay,
                     discardPile,
                     deckName,
@@ -329,7 +342,16 @@ const PowerDeckManager = () => {
                 }),
             )
         }
-    }, [deckCards, hand, inPlay, discardPile, deckName, deckImage, cardLog])
+    }, [
+        deckCards,
+        hand,
+        charges,
+        inPlay,
+        discardPile,
+        deckName,
+        deckImage,
+        cardLog,
+    ])
 
     // ─── Auto-reshuffle when deck is empty and discardPile has cards ───
     useEffect(() => {
@@ -471,20 +493,79 @@ const PowerDeckManager = () => {
     // ─── Play a card from hand → in-play zone ───
     const playCard = useCallback(
         (uid) => {
+            const card = hand.find((c) => c.uid === uid)
+            const rarity = (card?.rarity || "common").toLowerCase()
+            const needsCharge = rarity === "rare" || rarity === "mythic"
+
+            if (needsCharge && charges.length === 0) {
+                setLastAction(
+                    `⚠️ A ${rarity} card requires a charge — play a Common or Uncommon face-down first.`,
+                )
+                return
+            }
+
             saveSnapshot()
             setPlayingCardId(uid)
             setTimeout(() => {
                 setHand((prev) => {
-                    const card = prev.find((c) => c.uid === uid)
-                    if (card) {
-                        setInPlay((ip) => [...ip, card])
-                        logAction(`Played: ${card.name}`)
+                    const c = prev.find((c) => c.uid === uid)
+                    if (c) {
+                        setInPlay((ip) => [...ip, c])
+                        logAction(`Played: ${c.name}`)
                     }
                     return prev.filter((c) => c.uid !== uid)
                 })
+                if (needsCharge) {
+                    setCharges((ch) => {
+                        const [consumed, ...remaining] = ch
+                        setDiscardPile((dp) => [...dp, consumed])
+                        logAction(
+                            `Charge consumed: ${consumed.name} → discarded`,
+                        )
+                        return remaining
+                    })
+                }
                 setPlayingCardId(null)
                 setLastAction("Played a power!")
             }, 400)
+        },
+        [hand, charges, logAction, saveSnapshot],
+    )
+
+    // ─── Play a card face-down as a charge ───
+    const chargeCard = useCallback(
+        (uid) => {
+            saveSnapshot()
+            setDiscardingCardId(uid)
+            setTimeout(() => {
+                setHand((prev) => {
+                    const card = prev.find((c) => c.uid === uid)
+                    if (card) {
+                        setCharges((ch) => [...ch, { ...card, charged: true }])
+                        logAction(`Charged (face-down): ${card.name}`)
+                    }
+                    return prev.filter((c) => c.uid !== uid)
+                })
+                setDiscardingCardId(null)
+                setLastAction("Played face-down as a charge.")
+            }, 300)
+        },
+        [logAction, saveSnapshot],
+    )
+
+    // ─── Remove a charge → discard pile ───
+    const discardCharge = useCallback(
+        (uid) => {
+            saveSnapshot()
+            setCharges((prev) => {
+                const card = prev.find((c) => c.uid === uid)
+                if (card) {
+                    setDiscardPile((dp) => [...dp, card])
+                    logAction(`Removed charge: ${card.name}`)
+                }
+                return prev.filter((c) => c.uid !== uid)
+            })
+            setLastAction("Charge removed to discard pile.")
         },
         [logAction, saveSnapshot],
     )
@@ -575,6 +656,69 @@ const PowerDeckManager = () => {
         )
     }, [hand.length, deckCards])
 
+    // ─── Return a card from discard pile → hand ───
+    const returnFromDiscard = useCallback(
+        (uid) => {
+            if (hand.length >= MAX_HAND_SIZE) {
+                setLastAction("Hand is full — discard a card first.")
+                return
+            }
+            saveSnapshot()
+            setDiscardPile((prev) => {
+                const card = prev.find((c) => c.uid === uid)
+                if (card) {
+                    setHand((h) => [...h, { ...card, reversed: false }])
+                    logAction(`Returned from discard: ${card.name}`)
+                }
+                return prev.filter((c) => c.uid !== uid)
+            })
+            setLastAction("Returned card from discard to hand.")
+        },
+        [hand.length, logAction, saveSnapshot],
+    )
+
+    // ─── Take a specific card from the deck → hand (search/tutor) ───
+    const takeFromDeck = useCallback(
+        (uid) => {
+            if (hand.length >= MAX_HAND_SIZE) {
+                setLastAction("Hand is full — discard a card first.")
+                return
+            }
+            saveSnapshot()
+            setDeckCards((prev) => {
+                const card = prev.find((c) => c.uid === uid)
+                if (card) {
+                    setHand((h) => [...h, card])
+                    logAction(`Searched deck and took: ${card.name}`)
+                }
+                return shuffle(prev.filter((c) => c.uid !== uid))
+            })
+            setLastAction("Took card from deck — deck reshuffled.")
+            setShowBrowseDeck(false)
+        },
+        [hand.length, logAction, saveSnapshot],
+    )
+
+    // ─── Toggle reversed state on an in-play card ───
+    const toggleReversed = useCallback(
+        (uid) => {
+            setInPlay((prev) =>
+                prev.map((c) =>
+                    c.uid === uid ? { ...c, reversed: !c.reversed } : c,
+                ),
+            )
+            setInPlay((prev) => {
+                const card = prev.find((c) => c.uid === uid)
+                if (card)
+                    logAction(
+                        `${card.reversed ? "Un-reversed" : "Reversed"}: ${card.name}`,
+                    )
+                return prev
+            })
+        },
+        [logAction],
+    )
+
     // ─── Keyboard shortcuts: Ctrl/Cmd+Z = undo, Ctrl/Cmd+Shift+Z or Ctrl+Y = redo ───
     useEffect(() => {
         const onKey = (e) => {
@@ -602,6 +746,7 @@ const PowerDeckManager = () => {
         logAction("Removed deck")
         setDeckCards([])
         setHand([])
+        setCharges([])
         setInPlay([])
         setDiscardPile([])
         setDeckName("")
@@ -612,7 +757,11 @@ const PowerDeckManager = () => {
 
     // ─── Total card counts ───
     const totalCards =
-        deckCards.length + hand.length + inPlay.length + discardPile.length
+        deckCards.length +
+        hand.length +
+        charges.length +
+        inPlay.length +
+        discardPile.length
     const hasLoadedDeck = totalCards > 0 || deckName
 
     // ═══════════════════════════════════════════════════════
@@ -916,15 +1065,23 @@ const PowerDeckManager = () => {
                                                         display: "flex",
                                                         flexDirection: "column",
                                                         borderRadius: "12px",
-                                                        border: "2px solid #8B0000",
+                                                        border: card.reversed
+                                                            ? "2px solid #7e57c2"
+                                                            : "2px solid #8B0000",
                                                         bgcolor: (theme) =>
                                                             theme.palette
                                                                 .mode === "dark"
                                                                 ? "rgba(60,10,10,0.95)"
                                                                 : "#fff5f0",
-                                                        boxShadow:
-                                                            "0 6px 20px rgba(139,0,0,0.4)",
+                                                        boxShadow: card.reversed
+                                                            ? "0 6px 20px rgba(126,87,194,0.45)"
+                                                            : "0 6px 20px rgba(139,0,0,0.4)",
                                                         overflow: "hidden",
+                                                        transform: card.reversed
+                                                            ? "rotate(180deg)"
+                                                            : "none",
+                                                        transition:
+                                                            "transform 0.4s ease, border-color 0.3s, box-shadow 0.3s",
                                                     }}
                                                 >
                                                     {/* Card Art */}
@@ -1083,6 +1240,42 @@ const PowerDeckManager = () => {
                                                                     />
                                                                 </IconButton>
                                                             </Tooltip>
+                                                            <Tooltip
+                                                                title={
+                                                                    card.reversed
+                                                                        ? "Un-reverse"
+                                                                        : "Reverse 180°"
+                                                                }
+                                                            >
+                                                                <IconButton
+                                                                    size='small'
+                                                                    onClick={() =>
+                                                                        toggleReversed(
+                                                                            card.uid,
+                                                                        )
+                                                                    }
+                                                                    sx={{
+                                                                        bgcolor:
+                                                                            card.reversed
+                                                                                ? "rgba(94,53,177,0.9)"
+                                                                                : "rgba(80,80,80,0.7)",
+                                                                        color: "#fff",
+                                                                        width: 26,
+                                                                        height: 26,
+                                                                        "&:hover":
+                                                                            {
+                                                                                bgcolor:
+                                                                                    "rgba(94,53,177,0.9)",
+                                                                            },
+                                                                    }}
+                                                                >
+                                                                    <RotateRight
+                                                                        sx={{
+                                                                            fontSize: 13,
+                                                                        }}
+                                                                    />
+                                                                </IconButton>
+                                                            </Tooltip>
                                                             <Tooltip title='Discard'>
                                                                 <IconButton
                                                                     size='small'
@@ -1118,6 +1311,181 @@ const PowerDeckManager = () => {
                                         </Box>
                                     )
                                 })}
+                            </Box>
+                        </Box>
+                    )}
+
+                    {/* ─── Charges Zone ─── */}
+                    {charges.length > 0 && (
+                        <Box sx={{ mb: 3 }}>
+                            <Typography
+                                sx={{
+                                    fontFamily:
+                                        '"Cinzel Decorative", "Cinzel", serif',
+                                    fontWeight: "bold",
+                                    fontSize: { xs: "0.9rem", sm: "1rem" },
+                                    mb: 1,
+                                    color: "#f9a825",
+                                    textAlign: "center",
+                                }}
+                            >
+                                Charged ({charges.length})
+                            </Typography>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    gap: { xs: 1.5, sm: 2 },
+                                    justifyContent: "center",
+                                    flexWrap: "wrap",
+                                    p: 2,
+                                    borderRadius: "12px",
+                                    border: "2px solid rgba(249,168,37,0.4)",
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(249,168,37,0.06)"
+                                            : "rgba(249,168,37,0.04)",
+                                    minHeight: { xs: 90, sm: 110 },
+                                    alignItems: "flex-start",
+                                }}
+                            >
+                                {charges.map((card) => (
+                                    <Zoom key={card.uid} in timeout={400}>
+                                        <Box
+                                            sx={{
+                                                transition: "transform 0.2s",
+                                                "&:hover": {
+                                                    transform:
+                                                        "translateY(-6px) scale(1.05)",
+                                                    zIndex: 10,
+                                                    position: "relative",
+                                                },
+                                            }}
+                                        >
+                                            <Paper
+                                                elevation={6}
+                                                sx={{
+                                                    width: {
+                                                        xs: 110,
+                                                        sm: 140,
+                                                    },
+                                                    height: {
+                                                        xs: 165,
+                                                        sm: 210,
+                                                    },
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    borderRadius: "12px",
+                                                    border: "2px solid #f9a825",
+                                                    overflow: "hidden",
+                                                    bgcolor: (theme) =>
+                                                        theme.palette.mode ===
+                                                        "dark"
+                                                            ? "rgba(30,20,0,0.97)"
+                                                            : "#fffde7",
+                                                    boxShadow:
+                                                        "0 4px 16px rgba(249,168,37,0.35)",
+                                                }}
+                                            >
+                                                {/* Face-down back */}
+                                                <Box
+                                                    sx={{
+                                                        width: "100%",
+                                                        flex: 1,
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "center",
+                                                        gap: 0.5,
+                                                        bgcolor: (theme) =>
+                                                            theme.palette
+                                                                .mode === "dark"
+                                                                ? "rgba(80,55,0,0.6)"
+                                                                : "rgba(249,168,37,0.12)",
+                                                    }}
+                                                >
+                                                    {deckImage ? (
+                                                        <Box
+                                                            component='img'
+                                                            src={deckImage}
+                                                            alt='card back'
+                                                            sx={{
+                                                                width: "75%",
+                                                                height: "75%",
+                                                                objectFit:
+                                                                    "contain",
+                                                                opacity: 0.6,
+                                                                filter: "grayscale(0.4) brightness(0.8)",
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <FlipToBack
+                                                            sx={{
+                                                                fontSize: 32,
+                                                                color: "#f9a825",
+                                                                opacity: 0.7,
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <Typography
+                                                        sx={{
+                                                            fontFamily:
+                                                                '"Cinzel", serif',
+                                                            fontSize: "0.55rem",
+                                                            fontWeight: "bold",
+                                                            color: "#f9a825",
+                                                            letterSpacing:
+                                                                "0.05em",
+                                                            textAlign: "center",
+                                                            px: 0.5,
+                                                        }}
+                                                    >
+                                                        CHARGE
+                                                    </Typography>
+                                                </Box>
+                                                {/* Discard button */}
+                                                <Box
+                                                    sx={{
+                                                        p: 0.5,
+                                                        display: "flex",
+                                                        justifyContent:
+                                                            "center",
+                                                        borderTop:
+                                                            "1px solid rgba(249,168,37,0.3)",
+                                                    }}
+                                                >
+                                                    <Tooltip title='Remove charge to discard'>
+                                                        <IconButton
+                                                            size='small'
+                                                            onClick={() =>
+                                                                discardCharge(
+                                                                    card.uid,
+                                                                )
+                                                            }
+                                                            sx={{
+                                                                bgcolor:
+                                                                    "rgba(100,100,100,0.7)",
+                                                                color: "#fff",
+                                                                width: 24,
+                                                                height: 24,
+                                                                "&:hover": {
+                                                                    bgcolor:
+                                                                        "#666",
+                                                                },
+                                                            }}
+                                                        >
+                                                            <LayersClear
+                                                                sx={{
+                                                                    fontSize: 12,
+                                                                }}
+                                                            />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                            </Paper>
+                                        </Box>
+                                    </Zoom>
+                                ))}
                             </Box>
                         </Box>
                     )}
@@ -1492,37 +1860,106 @@ const PowerDeckManager = () => {
                                                                     />
                                                                 </IconButton>
                                                             </Tooltip>
-                                                            <Tooltip title='Play'>
+                                                            {/* Charge button */}
+                                                            <Tooltip title='Play face-down as charge (fuels Rare/Mythic)'>
                                                                 <IconButton
                                                                     size='small'
                                                                     onClick={(
                                                                         e,
                                                                     ) => {
                                                                         e.stopPropagation()
-                                                                        playCard(
+                                                                        chargeCard(
                                                                             card.uid,
                                                                         )
                                                                     }}
                                                                     sx={{
                                                                         bgcolor:
-                                                                            "rgba(139,0,0,0.85)",
+                                                                            "rgba(180,120,0,0.85)",
                                                                         color: "#fff",
-                                                                        width: 28,
-                                                                        height: 28,
+                                                                        width: 22,
+                                                                        height: 22,
                                                                         "&:hover":
                                                                             {
                                                                                 bgcolor:
-                                                                                    "#a00",
+                                                                                    "#f9a825",
                                                                             },
                                                                     }}
                                                                 >
-                                                                    <KeyboardDoubleArrowUp
+                                                                    <FlipToBack
                                                                         sx={{
-                                                                            fontSize: 14,
+                                                                            fontSize: 11,
                                                                         }}
                                                                     />
                                                                 </IconButton>
                                                             </Tooltip>
+                                                            {/* Play button — disabled for rare/mythic with no charge */}
+                                                            {(() => {
+                                                                const rarity = (
+                                                                    card.rarity ||
+                                                                    "common"
+                                                                ).toLowerCase()
+                                                                const needsCharge =
+                                                                    rarity ===
+                                                                        "rare" ||
+                                                                    rarity ===
+                                                                        "mythic"
+                                                                const canPlay =
+                                                                    !needsCharge ||
+                                                                    charges.length >
+                                                                        0
+                                                                return (
+                                                                    <Tooltip
+                                                                        title={
+                                                                            canPlay
+                                                                                ? "Play"
+                                                                                : `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} requires a charge — play a Common or Uncommon face-down first`
+                                                                        }
+                                                                    >
+                                                                        <span>
+                                                                            <IconButton
+                                                                                size='small'
+                                                                                disabled={
+                                                                                    !canPlay
+                                                                                }
+                                                                                onClick={(
+                                                                                    e,
+                                                                                ) => {
+                                                                                    e.stopPropagation()
+                                                                                    playCard(
+                                                                                        card.uid,
+                                                                                    )
+                                                                                }}
+                                                                                sx={{
+                                                                                    bgcolor:
+                                                                                        canPlay
+                                                                                            ? "rgba(139,0,0,0.85)"
+                                                                                            : "rgba(80,80,80,0.4)",
+                                                                                    color: "#fff",
+                                                                                    width: 28,
+                                                                                    height: 28,
+                                                                                    "&:hover":
+                                                                                        {
+                                                                                            bgcolor:
+                                                                                                canPlay
+                                                                                                    ? "#a00"
+                                                                                                    : "rgba(80,80,80,0.4)",
+                                                                                        },
+                                                                                    "&.Mui-disabled":
+                                                                                        {
+                                                                                            color: "rgba(255,255,255,0.3)",
+                                                                                        },
+                                                                                }}
+                                                                            >
+                                                                                <KeyboardDoubleArrowUp
+                                                                                    sx={{
+                                                                                        fontSize: 14,
+                                                                                    }}
+                                                                                />
+                                                                            </IconButton>
+                                                                        </span>
+                                                                    </Tooltip>
+                                                                )
+                                                            })()}
                                                             <Tooltip title='Discard'>
                                                                 <IconButton
                                                                     size='small'
@@ -1788,6 +2225,31 @@ const PowerDeckManager = () => {
                             >
                                 Grit Teeth
                             </Button>
+                            <Button
+                                variant='outlined'
+                                startIcon={<Search sx={{ fontSize: 14 }} />}
+                                onClick={() => {
+                                    setDeckSearchQuery("")
+                                    setShowBrowseDeck(true)
+                                }}
+                                disabled={deckCards.length === 0}
+                                size='small'
+                                sx={{
+                                    fontFamily: '"Cinzel", serif',
+                                    textTransform: "none",
+                                    fontSize: { xs: "0.6rem", sm: "0.7rem" },
+                                    borderRadius: "10px",
+                                    borderColor: "#5c35a8",
+                                    color: "#7e57c2",
+                                    "&:hover": {
+                                        borderColor: "#7e57c2",
+                                        color: "#9575cd",
+                                        bgcolor: "rgba(94,53,177,0.08)",
+                                    },
+                                }}
+                            >
+                                Browse Deck
+                            </Button>
                         </Box>
 
                         {/* Discard pile visual */}
@@ -1983,14 +2445,69 @@ const PowerDeckManager = () => {
                                                     ? "rgba(40,20,10,0.8)"
                                                     : "#f0ebe4",
                                             display: "flex",
+                                            flexDirection: "column",
                                             alignItems: "center",
-                                            justifyContent: "center",
+                                            justifyContent: "space-between",
                                             p: 0.5,
-                                            opacity: 0.6,
-                                            filter: "grayscale(40%)",
+                                            opacity: 0.75,
+                                            filter: "grayscale(30%)",
+                                            transition:
+                                                "filter 0.2s, opacity 0.2s",
+                                            "&:hover": {
+                                                opacity: 1,
+                                                filter: "none",
+                                            },
                                         }}
                                     >
-                                        <CardFace card={card} compact />
+                                        <Box
+                                            sx={{
+                                                flex: 1,
+                                                width: "100%",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                            }}
+                                        >
+                                            <CardFace card={card} compact />
+                                        </Box>
+                                        <Tooltip title='Return to hand'>
+                                            <span style={{ width: "100%" }}>
+                                                <IconButton
+                                                    size='small'
+                                                    disabled={
+                                                        hand.length >=
+                                                        MAX_HAND_SIZE
+                                                    }
+                                                    onClick={() =>
+                                                        returnFromDiscard(
+                                                            card.uid,
+                                                        )
+                                                    }
+                                                    sx={{
+                                                        width: "100%",
+                                                        height: 18,
+                                                        borderRadius:
+                                                            "0 0 6px 6px",
+                                                        bgcolor:
+                                                            hand.length >=
+                                                            MAX_HAND_SIZE
+                                                                ? "rgba(80,80,80,0.3)"
+                                                                : "rgba(30,100,180,0.75)",
+                                                        color: "#fff",
+                                                        "&:hover": {
+                                                            bgcolor: "#1565c0",
+                                                        },
+                                                        "&.Mui-disabled": {
+                                                            color: "rgba(255,255,255,0.25)",
+                                                        },
+                                                    }}
+                                                >
+                                                    <ReplyAll
+                                                        sx={{ fontSize: 11 }}
+                                                    />
+                                                </IconButton>
+                                            </span>
+                                        </Tooltip>
                                     </Paper>
                                 ))}
                             </Box>
@@ -2054,6 +2571,309 @@ const PowerDeckManager = () => {
                     </Box>
                 </Paper>
             )}
+
+            {/* ═══ Browse Deck Modal ═══ */}
+            <Modal
+                open={showBrowseDeck}
+                onClose={() => setShowBrowseDeck(false)}
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
+            >
+                <Paper
+                    sx={{
+                        width: { xs: "96%", sm: 520 },
+                        maxHeight: "88vh",
+                        display: "flex",
+                        flexDirection: "column",
+                        borderRadius: "16px",
+                        outline: "none",
+                    }}
+                >
+                    {/* Header */}
+                    <Box
+                        sx={{
+                            p: 2,
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(0,0,0,0.85)"
+                                    : "rgba(0,0,0,0.9)",
+                            color: "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            borderRadius: "16px 16px 0 0",
+                        }}
+                    >
+                        <Box>
+                            <Typography
+                                variant='h6'
+                                sx={{
+                                    fontFamily: '"Cinzel", serif',
+                                    fontWeight: "bold",
+                                }}
+                            >
+                                Browse Deck
+                            </Typography>
+                            <Typography variant='caption' sx={{ opacity: 0.7 }}>
+                                {deckCards.length} card
+                                {deckCards.length !== 1 ? "s" : ""} remaining ·
+                                deck reshuffles after taking
+                            </Typography>
+                        </Box>
+                        <IconButton
+                            onClick={() => setShowBrowseDeck(false)}
+                            sx={{ color: "#fff" }}
+                        >
+                            <Close />
+                        </IconButton>
+                    </Box>
+
+                    {/* Search */}
+                    <Box
+                        sx={{
+                            p: 1.5,
+                            borderBottom: "1px solid",
+                            borderColor: "divider",
+                        }}
+                    >
+                        <TextField
+                            fullWidth
+                            size='small'
+                            placeholder='Search by name or rarity…'
+                            value={deckSearchQuery}
+                            onChange={(e) => setDeckSearchQuery(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position='start'>
+                                        <Search
+                                            sx={{ fontSize: 18, opacity: 0.6 }}
+                                        />
+                                    </InputAdornment>
+                                ),
+                            }}
+                            sx={{
+                                "& .MuiOutlinedInput-root": {
+                                    fontFamily: '"Cinzel", serif',
+                                    fontSize: "0.85rem",
+                                },
+                            }}
+                        />
+                    </Box>
+
+                    {/* Card list */}
+                    <Box sx={{ flex: 1, overflowY: "auto", p: 1 }}>
+                        {deckCards
+                            .filter((card) => {
+                                const q = deckSearchQuery.toLowerCase()
+                                return (
+                                    !q ||
+                                    card.name.toLowerCase().includes(q) ||
+                                    (card.rarity || "common")
+                                        .toLowerCase()
+                                        .includes(q) ||
+                                    (card.deck || "").toLowerCase().includes(q)
+                                )
+                            })
+                            .map((card) => (
+                                <Box
+                                    key={card.uid}
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1.5,
+                                        p: 1,
+                                        borderRadius: "8px",
+                                        mb: 0.5,
+                                        border: "1px solid",
+                                        borderColor: (theme) =>
+                                            theme.palette.mode === "dark"
+                                                ? "rgba(255,255,255,0.07)"
+                                                : "rgba(0,0,0,0.07)",
+                                        bgcolor: (theme) =>
+                                            theme.palette.mode === "dark"
+                                                ? "rgba(255,255,255,0.03)"
+                                                : "rgba(0,0,0,0.02)",
+                                        "&:hover": {
+                                            borderColor:
+                                                rarityBorder[
+                                                    card.rarity || "common"
+                                                ],
+                                            bgcolor: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "rgba(255,255,255,0.06)"
+                                                    : "rgba(0,0,0,0.04)",
+                                        },
+                                    }}
+                                >
+                                    {/* Mini art */}
+                                    <Box
+                                        component='img'
+                                        {...getCardImageProps(card)}
+                                        sx={{
+                                            width: 40,
+                                            height: 40,
+                                            objectFit: "cover",
+                                            borderRadius: "6px",
+                                            flexShrink: 0,
+                                            border: `1px solid ${rarityBorder[card.rarity || "common"]}`,
+                                        }}
+                                    />
+                                    {/* Name + rarity */}
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: '"Cinzel", serif',
+                                                fontWeight: "bold",
+                                                fontSize: "0.8rem",
+                                                lineHeight: 1.2,
+                                                color: (theme) =>
+                                                    theme.palette.mode ===
+                                                    "dark"
+                                                        ? "#f0e6d2"
+                                                        : "#1a1a1a",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                whiteSpace: "nowrap",
+                                            }}
+                                        >
+                                            {card.name}
+                                        </Typography>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                gap: 0.5,
+                                                mt: 0.25,
+                                                flexWrap: "wrap",
+                                            }}
+                                        >
+                                            <Chip
+                                                label={card.rarity || "common"}
+                                                size='small'
+                                                sx={{
+                                                    height: 14,
+                                                    fontSize: "0.45rem",
+                                                    fontWeight: "bold",
+                                                    bgcolor:
+                                                        rarityColor[
+                                                            card.rarity ||
+                                                                "common"
+                                                        ],
+                                                    color: "#fff",
+                                                }}
+                                            />
+                                            {card.deck && (
+                                                <Chip
+                                                    label={card.deck}
+                                                    size='small'
+                                                    variant='outlined'
+                                                    sx={{
+                                                        height: 14,
+                                                        fontSize: "0.45rem",
+                                                        opacity: 0.7,
+                                                    }}
+                                                />
+                                            )}
+                                        </Box>
+                                    </Box>
+                                    {/* Take button */}
+                                    <Tooltip
+                                        title={
+                                            hand.length >= MAX_HAND_SIZE
+                                                ? "Hand is full"
+                                                : "Take to hand (deck reshuffles)"
+                                        }
+                                    >
+                                        <span>
+                                            <IconButton
+                                                size='small'
+                                                disabled={
+                                                    hand.length >= MAX_HAND_SIZE
+                                                }
+                                                onClick={() =>
+                                                    takeFromDeck(card.uid)
+                                                }
+                                                sx={{
+                                                    bgcolor:
+                                                        hand.length >=
+                                                        MAX_HAND_SIZE
+                                                            ? "rgba(80,80,80,0.3)"
+                                                            : "rgba(94,53,177,0.85)",
+                                                    color: "#fff",
+                                                    width: 30,
+                                                    height: 30,
+                                                    flexShrink: 0,
+                                                    "&:hover": {
+                                                        bgcolor:
+                                                            "rgba(94,53,177,1)",
+                                                    },
+                                                    "&.Mui-disabled": {
+                                                        color: "rgba(255,255,255,0.25)",
+                                                    },
+                                                }}
+                                            >
+                                                <ReplyAll
+                                                    sx={{
+                                                        fontSize: 15,
+                                                        transform: "scaleX(-1)",
+                                                    }}
+                                                />
+                                            </IconButton>
+                                        </span>
+                                    </Tooltip>
+                                </Box>
+                            ))}
+                        {deckCards.filter((card) => {
+                            const q = deckSearchQuery.toLowerCase()
+                            return (
+                                !q ||
+                                card.name.toLowerCase().includes(q) ||
+                                (card.rarity || "common")
+                                    .toLowerCase()
+                                    .includes(q) ||
+                                (card.deck || "").toLowerCase().includes(q)
+                            )
+                        }).length === 0 && (
+                            <Typography
+                                sx={{
+                                    textAlign: "center",
+                                    py: 3,
+                                    opacity: 0.4,
+                                    fontFamily: '"Cinzel", serif',
+                                    fontSize: "0.85rem",
+                                }}
+                            >
+                                No cards match your search.
+                            </Typography>
+                        )}
+                    </Box>
+
+                    {/* Footer */}
+                    <Box
+                        sx={{
+                            p: 1.5,
+                            borderTop: "1px solid",
+                            borderColor: "divider",
+                            display: "flex",
+                            justifyContent: "flex-end",
+                        }}
+                    >
+                        <Button
+                            variant='outlined'
+                            onClick={() => setShowBrowseDeck(false)}
+                            sx={{
+                                fontFamily: '"Cinzel", serif',
+                                textTransform: "none",
+                                fontSize: "0.8rem",
+                            }}
+                        >
+                            Close
+                        </Button>
+                    </Box>
+                </Paper>
+            </Modal>
 
             {/* ═══ Card Detail Modal ═══ */}
             <Modal

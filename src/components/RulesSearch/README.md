@@ -70,7 +70,7 @@ The component automatically recognizes and links the following types of keywords
 
 ### Casting
 
--   **Casting**, **Drawing Powers**, **Casting Powers**, **Power Deck** - Links to Casting sections
+-   **Casting**, **Drawing Powers**, **Using Powers**, **Power Deck** - Links to Casting sections
 
 ### Game Master Content
 

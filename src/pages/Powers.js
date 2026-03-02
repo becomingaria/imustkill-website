@@ -5,6 +5,7 @@ import {
     CircularProgress,
     Alert,
     Box,
+    Chip,
 } from "@mui/material"
 import { useState, useEffect } from "react"
 import { useLocation } from "react-router-dom"
@@ -126,6 +127,16 @@ const Casting = () => {
                             </Typography>
                         )}
 
+                        {/* Section timing */}
+                        {section.timing && (
+                            <Typography variant='body1' paragraph>
+                                <strong>Timing:</strong>{" "}
+                                <EnhancedKeywordLinker referencesOnly={true}>
+                                    {section.timing}
+                                </EnhancedKeywordLinker>
+                            </Typography>
+                        )}
+
                         {/* Section mechanics */}
                         {section.mechanics && (
                             <Typography variant='body1' paragraph>
@@ -164,6 +175,196 @@ const Casting = () => {
                                     {section.recovery}
                                 </EnhancedKeywordLinker>
                             </Typography>
+                        )}
+
+                        {/* Power rarities */}
+                        {section.rarities && (
+                            <>
+                                {/* Charge mechanic callout */}
+                                {section.charge && (
+                                    <Box
+                                        sx={{
+                                            bgcolor: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "rgba(249, 168, 37, 0.08)"
+                                                    : "rgba(249, 168, 37, 0.06)",
+                                            border: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "1px solid rgba(249, 168, 37, 0.4)"
+                                                    : "1px solid rgba(249, 168, 37, 0.5)",
+                                            borderLeft: "4px solid #f9a825",
+                                            borderRadius: "12px",
+                                            p: 2,
+                                            mb: 3,
+                                        }}
+                                    >
+                                        <Typography
+                                            variant='subtitle2'
+                                            sx={{
+                                                color: "#f9a825",
+                                                fontWeight: "bold",
+                                                mb: 0.5,
+                                                textTransform: "uppercase",
+                                                letterSpacing: "0.05em",
+                                                fontSize: "0.7rem",
+                                            }}
+                                        >
+                                            Charging Rule
+                                        </Typography>
+                                        <Typography variant='body1'>
+                                            <EnhancedKeywordLinker
+                                                referencesOnly={true}
+                                            >
+                                                {section.charge}
+                                            </EnhancedKeywordLinker>
+                                        </Typography>
+                                    </Box>
+                                )}
+
+                                {section.rarities.map((rarity) => (
+                                    <Paper
+                                        key={rarity.name}
+                                        sx={{
+                                            bgcolor: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "rgba(255, 255, 255, 0.03)"
+                                                    : "rgba(0, 0, 0, 0.02)",
+                                            border: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                                                    : "1px solid rgba(0, 0, 0, 0.1)",
+                                            borderLeft: `4px solid ${rarity.color}`,
+                                            borderRadius: "12px",
+                                            p: 2,
+                                            mb: 2,
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                flexWrap: "wrap",
+                                                gap: 1,
+                                                mb: 1.5,
+                                            }}
+                                        >
+                                            <Chip
+                                                label={rarity.name}
+                                                size='small'
+                                                sx={{
+                                                    bgcolor: rarity.color,
+                                                    color: "#fff",
+                                                    fontWeight: "bold",
+                                                    letterSpacing: "0.04em",
+                                                }}
+                                            />
+                                            {rarity.charge_required && (
+                                                <Chip
+                                                    label='Charge Required'
+                                                    size='small'
+                                                    variant='outlined'
+                                                    sx={{
+                                                        borderColor:
+                                                            rarity.color,
+                                                        color: rarity.color,
+                                                        fontWeight: "600",
+                                                    }}
+                                                />
+                                            )}
+                                        </Box>
+
+                                        <Typography variant='body1' paragraph>
+                                            <EnhancedKeywordLinker
+                                                referencesOnly={true}
+                                            >
+                                                {rarity.description}
+                                            </EnhancedKeywordLinker>
+                                        </Typography>
+
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                flexWrap: "wrap",
+                                                gap: 3,
+                                                mt: 1,
+                                            }}
+                                        >
+                                            <Box>
+                                                <Typography
+                                                    variant='caption'
+                                                    color='text.secondary'
+                                                    sx={{
+                                                        display: "block",
+                                                        textTransform:
+                                                            "uppercase",
+                                                        letterSpacing: "0.06em",
+                                                        fontSize: "0.65rem",
+                                                    }}
+                                                >
+                                                    Targets
+                                                </Typography>
+                                                <Typography variant='body2'>
+                                                    <strong>
+                                                        {rarity.targets}
+                                                    </strong>
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography
+                                                    variant='caption'
+                                                    color='text.secondary'
+                                                    sx={{
+                                                        display: "block",
+                                                        textTransform:
+                                                            "uppercase",
+                                                        letterSpacing: "0.06em",
+                                                        fontSize: "0.65rem",
+                                                    }}
+                                                >
+                                                    Range
+                                                </Typography>
+                                                <Typography variant='body2'>
+                                                    <strong>
+                                                        <EnhancedKeywordLinker
+                                                            referencesOnly={
+                                                                true
+                                                            }
+                                                        >
+                                                            {rarity.range}
+                                                        </EnhancedKeywordLinker>
+                                                    </strong>
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography
+                                                    variant='caption'
+                                                    color='text.secondary'
+                                                    sx={{
+                                                        display: "block",
+                                                        textTransform:
+                                                            "uppercase",
+                                                        letterSpacing: "0.06em",
+                                                        fontSize: "0.65rem",
+                                                    }}
+                                                >
+                                                    Duration
+                                                </Typography>
+                                                <Typography variant='body2'>
+                                                    <strong>
+                                                        <EnhancedKeywordLinker
+                                                            referencesOnly={
+                                                                true
+                                                            }
+                                                        >
+                                                            {rarity.duration}
+                                                        </EnhancedKeywordLinker>
+                                                    </strong>
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Paper>
+                                ))}
+                            </>
                         )}
                     </Paper>
                 ))}

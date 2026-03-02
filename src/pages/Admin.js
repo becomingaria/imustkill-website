@@ -23,6 +23,9 @@ import {
     TableBody,
     TableRow,
     TableCell,
+    Drawer,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material"
 import {
     Add,
@@ -39,6 +42,7 @@ import {
     FileUpload,
     TableChart,
     CheckCircle,
+    Menu as MenuIcon,
 } from "@mui/icons-material"
 import { getCardArtUrl, getDeckBackUrl } from "../utils/cardArtwork"
 import { D10Icon } from "../components/icons"
@@ -323,7 +327,8 @@ function DeckFormModal({ open, onClose, onSave, initialDeck }) {
         >
             <Paper
                 sx={{
-                    width: 480,
+                    width: { xs: "calc(100vw - 32px)", sm: 480 },
+                    maxWidth: 480,
                     borderRadius: "16px",
                     overflow: "hidden",
                     outline: "none",
@@ -1089,7 +1094,8 @@ function ConfirmDeleteModal({
         >
             <Paper
                 sx={{
-                    width: 400,
+                    width: { xs: "calc(100vw - 32px)", sm: 400 },
+                    maxWidth: 400,
                     borderRadius: "16px",
                     overflow: "hidden",
                     outline: "none",
@@ -1567,6 +1573,9 @@ function CsvImportModal({ open, onClose, onImport, deck }) {
 // Dashboard
 // ═══════════════════════════════════════════════════════════
 function AdminDashboard({ email, onLogout }) {
+    const theme = useTheme()
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+    const [sidebarOpen, setSidebarOpen] = useState(false)
     const [decks, setDecks] = useState([])
     const [selectedDeck, setSelectedDeck] = useState(null)
     const [cards, setCards] = useState([])
@@ -1706,6 +1715,154 @@ function AdminDashboard({ email, onLogout }) {
     const powerDecks = decks.filter((d) => d.cardType === "power")
     const monsterDecks = decks.filter((d) => d.cardType === "monster")
 
+    // ── Reusable sidebar content (used in both desktop sidebar and mobile Drawer) ──
+    const renderSidebarBody = (onDeckSelect = () => {}) =>
+        loading.decks ? (
+            <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+                <CircularProgress size={24} />
+            </Box>
+        ) : (
+            <>
+                {/* Power Decks */}
+                <Box sx={{ p: 2 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            mb: 1,
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                fontFamily: '"Cinzel", serif',
+                                fontWeight: "bold",
+                                fontSize: "0.75rem",
+                                opacity: 0.5,
+                                textTransform: "uppercase",
+                                letterSpacing: 1,
+                            }}
+                        >
+                            ⚡ Power Decks
+                        </Typography>
+                        <Tooltip title='New Power Deck'>
+                            <IconButton
+                                size='small'
+                                onClick={() =>
+                                    setDeckModal({
+                                        open: true,
+                                        deck: null,
+                                        defaultType: "power",
+                                    })
+                                }
+                                sx={{
+                                    opacity: 0.6,
+                                    "&:hover": { opacity: 1, color: "#8B0000" },
+                                }}
+                            >
+                                <Add sx={{ fontSize: 16 }} />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                    {powerDecks.length === 0 && (
+                        <Typography
+                            sx={{ fontSize: "0.75rem", opacity: 0.3, pl: 1 }}
+                        >
+                            No power decks yet
+                        </Typography>
+                    )}
+                    {powerDecks.map((deck) => (
+                        <DeckItem
+                            key={deck.deck}
+                            deck={deck}
+                            selected={selectedDeck?.deck === deck.deck}
+                            onClick={() => {
+                                setSelectedDeck(deck)
+                                onDeckSelect()
+                            }}
+                            onEdit={() => setDeckModal({ open: true, deck })}
+                            onDelete={() =>
+                                setDeleteModal({
+                                    open: true,
+                                    type: "deck",
+                                    target: deck,
+                                })
+                            }
+                        />
+                    ))}
+                </Box>
+                <Divider />
+                {/* Monster Decks */}
+                <Box sx={{ p: 2 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            mb: 1,
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                fontFamily: '"Cinzel", serif',
+                                fontWeight: "bold",
+                                fontSize: "0.75rem",
+                                opacity: 0.5,
+                                textTransform: "uppercase",
+                                letterSpacing: 1,
+                            }}
+                        >
+                            💀 Monster Decks
+                        </Typography>
+                        <Tooltip title='New Monster Deck'>
+                            <IconButton
+                                size='small'
+                                onClick={() =>
+                                    setDeckModal({
+                                        open: true,
+                                        deck: null,
+                                        defaultType: "monster",
+                                    })
+                                }
+                                sx={{
+                                    opacity: 0.6,
+                                    "&:hover": { opacity: 1, color: "#8B0000" },
+                                }}
+                            >
+                                <Add sx={{ fontSize: 16 }} />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                    {monsterDecks.length === 0 && (
+                        <Typography
+                            sx={{ fontSize: "0.75rem", opacity: 0.3, pl: 1 }}
+                        >
+                            No monster decks yet
+                        </Typography>
+                    )}
+                    {monsterDecks.map((deck) => (
+                        <DeckItem
+                            key={deck.deck}
+                            deck={deck}
+                            selected={selectedDeck?.deck === deck.deck}
+                            onClick={() => {
+                                setSelectedDeck(deck)
+                                onDeckSelect()
+                            }}
+                            onEdit={() => setDeckModal({ open: true, deck })}
+                            onDelete={() =>
+                                setDeleteModal({
+                                    open: true,
+                                    type: "deck",
+                                    target: deck,
+                                })
+                            }
+                        />
+                    ))}
+                </Box>
+            </>
+        )
+
     return (
         <Box
             sx={{
@@ -1730,12 +1887,20 @@ function AdminDashboard({ email, onLogout }) {
                 }}
             >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    {isMobile && (
+                        <IconButton
+                            onClick={() => setSidebarOpen(true)}
+                            sx={{ color: "#fff", mr: 0.5 }}
+                        >
+                            <MenuIcon />
+                        </IconButton>
+                    )}
                     <D10Icon size={28} />
                     <Typography
                         sx={{
                             fontFamily: '"Cinzel Decorative", "Cinzel", serif',
                             fontWeight: "bold",
-                            fontSize: "1.1rem",
+                            fontSize: { xs: "0.85rem", sm: "1.1rem" },
                             letterSpacing: 1,
                         }}
                     >
@@ -1745,6 +1910,7 @@ function AdminDashboard({ email, onLogout }) {
                         label='Card Manager'
                         size='small'
                         sx={{
+                            display: { xs: "none", sm: "flex" },
                             bgcolor: "rgba(139,0,0,0.5)",
                             color: "#ffcdd2",
                             fontSize: "0.65rem",
@@ -1752,7 +1918,13 @@ function AdminDashboard({ email, onLogout }) {
                     />
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Typography sx={{ opacity: 0.6, fontSize: "0.8rem" }}>
+                    <Typography
+                        sx={{
+                            display: { xs: "none", sm: "block" },
+                            opacity: 0.6,
+                            fontSize: "0.8rem",
+                        }}
+                    >
                         {email}
                     </Typography>
                     <Tooltip title='Sign Out'>
@@ -1780,14 +1952,61 @@ function AdminDashboard({ email, onLogout }) {
             )}
 
             <Box sx={{ flex: 1, display: "flex", overflow: "hidden" }}>
-                {/* ── Sidebar ── */}
+                {/* ── Mobile Sidebar Drawer ── */}
+                <Drawer
+                    anchor='left'
+                    open={isMobile && sidebarOpen}
+                    onClose={() => setSidebarOpen(false)}
+                    PaperProps={{
+                        sx: {
+                            width: 280,
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "#1a0a0a"
+                                    : "#fff",
+                        },
+                    }}
+                >
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            px: 2,
+                            py: 1.5,
+                            bgcolor: "#1a0a0a",
+                            color: "#fff",
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                fontFamily: '"Cinzel", serif',
+                                fontWeight: "bold",
+                                fontSize: "0.9rem",
+                                color: "#fff",
+                            }}
+                        >
+                            Decks
+                        </Typography>
+                        <IconButton
+                            onClick={() => setSidebarOpen(false)}
+                            sx={{ color: "#fff" }}
+                        >
+                            <Close />
+                        </IconButton>
+                    </Box>
+                    <Divider />
+                    {renderSidebarBody(() => setSidebarOpen(false))}
+                </Drawer>
+
+                {/* ── Sidebar (desktop) ── */}
                 <Box
                     sx={{
                         width: 260,
                         flexShrink: 0,
                         borderRight: "1px solid",
                         borderColor: "divider",
-                        display: "flex",
+                        display: { xs: "none", sm: "flex" },
                         flexDirection: "column",
                         overflow: "auto",
                         bgcolor: (theme) =>
@@ -1796,179 +2015,11 @@ function AdminDashboard({ email, onLogout }) {
                                 : "rgba(255,255,255,0.6)",
                     }}
                 >
-                    {loading.decks ? (
-                        <Box
-                            sx={{
-                                display: "flex",
-                                justifyContent: "center",
-                                p: 4,
-                            }}
-                        >
-                            <CircularProgress size={24} />
-                        </Box>
-                    ) : (
-                        <>
-                            {/* Power Decks */}
-                            <Box sx={{ p: 2 }}>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        mb: 1,
-                                    }}
-                                >
-                                    <Typography
-                                        sx={{
-                                            fontFamily: '"Cinzel", serif',
-                                            fontWeight: "bold",
-                                            fontSize: "0.75rem",
-                                            opacity: 0.5,
-                                            textTransform: "uppercase",
-                                            letterSpacing: 1,
-                                        }}
-                                    >
-                                        ⚡ Power Decks
-                                    </Typography>
-                                    <Tooltip title='New Power Deck'>
-                                        <IconButton
-                                            size='small'
-                                            onClick={() =>
-                                                setDeckModal({
-                                                    open: true,
-                                                    deck: null,
-                                                    defaultType: "power",
-                                                })
-                                            }
-                                            sx={{
-                                                opacity: 0.6,
-                                                "&:hover": {
-                                                    opacity: 1,
-                                                    color: "#8B0000",
-                                                },
-                                            }}
-                                        >
-                                            <Add sx={{ fontSize: 16 }} />
-                                        </IconButton>
-                                    </Tooltip>
-                                </Box>
-                                {powerDecks.length === 0 && (
-                                    <Typography
-                                        sx={{
-                                            fontSize: "0.75rem",
-                                            opacity: 0.3,
-                                            pl: 1,
-                                        }}
-                                    >
-                                        No power decks yet
-                                    </Typography>
-                                )}
-                                {powerDecks.map((deck) => (
-                                    <DeckItem
-                                        key={deck.deck}
-                                        deck={deck}
-                                        selected={
-                                            selectedDeck?.deck === deck.deck
-                                        }
-                                        onClick={() => setSelectedDeck(deck)}
-                                        onEdit={() =>
-                                            setDeckModal({ open: true, deck })
-                                        }
-                                        onDelete={() =>
-                                            setDeleteModal({
-                                                open: true,
-                                                type: "deck",
-                                                target: deck,
-                                            })
-                                        }
-                                    />
-                                ))}
-                            </Box>
-
-                            <Divider />
-
-                            {/* Monster Decks */}
-                            <Box sx={{ p: 2 }}>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        mb: 1,
-                                    }}
-                                >
-                                    <Typography
-                                        sx={{
-                                            fontFamily: '"Cinzel", serif',
-                                            fontWeight: "bold",
-                                            fontSize: "0.75rem",
-                                            opacity: 0.5,
-                                            textTransform: "uppercase",
-                                            letterSpacing: 1,
-                                        }}
-                                    >
-                                        💀 Monster Decks
-                                    </Typography>
-                                    <Tooltip title='New Monster Deck'>
-                                        <IconButton
-                                            size='small'
-                                            onClick={() =>
-                                                setDeckModal({
-                                                    open: true,
-                                                    deck: null,
-                                                    defaultType: "monster",
-                                                })
-                                            }
-                                            sx={{
-                                                opacity: 0.6,
-                                                "&:hover": {
-                                                    opacity: 1,
-                                                    color: "#8B0000",
-                                                },
-                                            }}
-                                        >
-                                            <Add sx={{ fontSize: 16 }} />
-                                        </IconButton>
-                                    </Tooltip>
-                                </Box>
-                                {monsterDecks.length === 0 && (
-                                    <Typography
-                                        sx={{
-                                            fontSize: "0.75rem",
-                                            opacity: 0.3,
-                                            pl: 1,
-                                        }}
-                                    >
-                                        No monster decks yet
-                                    </Typography>
-                                )}
-                                {monsterDecks.map((deck) => (
-                                    <DeckItem
-                                        key={deck.deck}
-                                        deck={deck}
-                                        selected={
-                                            selectedDeck?.deck === deck.deck
-                                        }
-                                        onClick={() => setSelectedDeck(deck)}
-                                        onEdit={() =>
-                                            setDeckModal({ open: true, deck })
-                                        }
-                                        onDelete={() =>
-                                            setDeleteModal({
-                                                open: true,
-                                                type: "deck",
-                                                target: deck,
-                                            })
-                                        }
-                                    />
-                                ))}
-                            </Box>
-                        </>
-                    )}
+                    {renderSidebarBody()}
                 </Box>
 
                 {/* ── Main Content ── */}
-                <Box sx={{ flex: 1, overflow: "auto", p: 3 }}>
+                <Box sx={{ flex: 1, overflow: "auto", p: { xs: 2, sm: 3 } }}>
                     {!selectedDeck ? (
                         <Box
                             sx={{
@@ -2018,6 +2069,10 @@ function AdminDashboard({ email, onLogout }) {
                                             sx={{
                                                 fontFamily: '"Cinzel", serif',
                                                 fontWeight: "bold",
+                                                fontSize: {
+                                                    xs: "1rem",
+                                                    sm: "1.5rem",
+                                                },
                                             }}
                                         >
                                             {selectedDeck.displayName}
@@ -2072,104 +2127,222 @@ function AdminDashboard({ email, onLogout }) {
                                         </Typography>
                                     )}
                                 </Box>
-                                <Box sx={{ display: "flex", gap: 1 }}>
-                                    <Button
-                                        size='small'
-                                        startIcon={
-                                            <Edit sx={{ fontSize: 14 }} />
-                                        }
-                                        onClick={() =>
-                                            setDeckModal({
-                                                open: true,
-                                                deck: selectedDeck,
-                                            })
-                                        }
-                                        sx={{
-                                            textTransform: "none",
-                                            fontFamily: '"Cinzel", serif',
-                                            fontSize: "0.75rem",
-                                        }}
-                                    >
-                                        Edit Deck
-                                    </Button>
-                                    <Button
-                                        size='small'
-                                        startIcon={
-                                            <FileDownload
-                                                sx={{ fontSize: 14 }}
-                                            />
-                                        }
-                                        disabled={cards.length === 0}
-                                        onClick={() =>
-                                            exportCardsAsCsv(
-                                                cards,
-                                                selectedDeck.cardType,
-                                                selectedDeck.displayName,
-                                            )
-                                        }
-                                        sx={{
-                                            textTransform: "none",
-                                            fontFamily: '"Cinzel", serif',
-                                            fontSize: "0.75rem",
-                                        }}
-                                    >
-                                        Export CSV
-                                    </Button>
-                                    <Button
-                                        size='small'
-                                        startIcon={
-                                            <FileUpload sx={{ fontSize: 14 }} />
-                                        }
-                                        onClick={() => setCsvImportOpen(true)}
-                                        sx={{
-                                            textTransform: "none",
-                                            fontFamily: '"Cinzel", serif',
-                                            fontSize: "0.75rem",
-                                        }}
-                                    >
-                                        Import CSV
-                                    </Button>
-                                    <Button
-                                        size='small'
-                                        color='error'
-                                        startIcon={
-                                            <Delete sx={{ fontSize: 14 }} />
-                                        }
-                                        onClick={() =>
-                                            setDeleteModal({
-                                                open: true,
-                                                type: "deck",
-                                                target: selectedDeck,
-                                            })
-                                        }
-                                        sx={{
-                                            textTransform: "none",
-                                            fontFamily: '"Cinzel", serif',
-                                            fontSize: "0.75rem",
-                                        }}
-                                    >
-                                        Delete Deck
-                                    </Button>
-                                    <Button
-                                        variant='contained'
-                                        size='small'
-                                        startIcon={<Add />}
-                                        onClick={() =>
-                                            setCardModal({
-                                                open: true,
-                                                card: null,
-                                            })
-                                        }
-                                        sx={{
-                                            bgcolor: "#8B0000",
-                                            "&:hover": { bgcolor: "#a00" },
-                                            textTransform: "none",
-                                            fontFamily: '"Cinzel", serif',
-                                            fontSize: "0.75rem",
-                                        }}
-                                    >
-                                        New Card
-                                    </Button>
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        gap: 1,
+                                        flexWrap: "wrap",
+                                    }}
+                                >
+                                    {isMobile ? (
+                                        // Mobile: icon-only buttons
+                                        <>
+                                            <Tooltip title='Edit Deck'>
+                                                <IconButton
+                                                    size='small'
+                                                    onClick={() =>
+                                                        setDeckModal({
+                                                            open: true,
+                                                            deck: selectedDeck,
+                                                        })
+                                                    }
+                                                >
+                                                    <Edit
+                                                        sx={{ fontSize: 18 }}
+                                                    />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title='Export CSV'>
+                                                <span>
+                                                    <IconButton
+                                                        size='small'
+                                                        disabled={
+                                                            cards.length === 0
+                                                        }
+                                                        onClick={() =>
+                                                            exportCardsAsCsv(
+                                                                cards,
+                                                                selectedDeck.cardType,
+                                                                selectedDeck.displayName,
+                                                            )
+                                                        }
+                                                    >
+                                                        <FileDownload
+                                                            sx={{
+                                                                fontSize: 18,
+                                                            }}
+                                                        />
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
+                                            <Tooltip title='Import CSV'>
+                                                <IconButton
+                                                    size='small'
+                                                    onClick={() =>
+                                                        setCsvImportOpen(true)
+                                                    }
+                                                >
+                                                    <FileUpload
+                                                        sx={{ fontSize: 18 }}
+                                                    />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title='Delete Deck'>
+                                                <IconButton
+                                                    size='small'
+                                                    color='error'
+                                                    onClick={() =>
+                                                        setDeleteModal({
+                                                            open: true,
+                                                            type: "deck",
+                                                            target: selectedDeck,
+                                                        })
+                                                    }
+                                                >
+                                                    <Delete
+                                                        sx={{ fontSize: 18 }}
+                                                    />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title='New Card'>
+                                                <IconButton
+                                                    size='small'
+                                                    onClick={() =>
+                                                        setCardModal({
+                                                            open: true,
+                                                            card: null,
+                                                        })
+                                                    }
+                                                    sx={{
+                                                        bgcolor: "#8B0000",
+                                                        color: "#fff",
+                                                        "&:hover": {
+                                                            bgcolor: "#a00",
+                                                        },
+                                                    }}
+                                                >
+                                                    <Add
+                                                        sx={{ fontSize: 18 }}
+                                                    />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Button
+                                                size='small'
+                                                startIcon={
+                                                    <Edit
+                                                        sx={{ fontSize: 14 }}
+                                                    />
+                                                }
+                                                onClick={() =>
+                                                    setDeckModal({
+                                                        open: true,
+                                                        deck: selectedDeck,
+                                                    })
+                                                }
+                                                sx={{
+                                                    textTransform: "none",
+                                                    fontFamily:
+                                                        '"Cinzel", serif',
+                                                    fontSize: "0.75rem",
+                                                }}
+                                            >
+                                                Edit Deck
+                                            </Button>
+                                            <Button
+                                                size='small'
+                                                startIcon={
+                                                    <FileDownload
+                                                        sx={{ fontSize: 14 }}
+                                                    />
+                                                }
+                                                disabled={cards.length === 0}
+                                                onClick={() =>
+                                                    exportCardsAsCsv(
+                                                        cards,
+                                                        selectedDeck.cardType,
+                                                        selectedDeck.displayName,
+                                                    )
+                                                }
+                                                sx={{
+                                                    textTransform: "none",
+                                                    fontFamily:
+                                                        '"Cinzel", serif',
+                                                    fontSize: "0.75rem",
+                                                }}
+                                            >
+                                                Export CSV
+                                            </Button>
+                                            <Button
+                                                size='small'
+                                                startIcon={
+                                                    <FileUpload
+                                                        sx={{ fontSize: 14 }}
+                                                    />
+                                                }
+                                                onClick={() =>
+                                                    setCsvImportOpen(true)
+                                                }
+                                                sx={{
+                                                    textTransform: "none",
+                                                    fontFamily:
+                                                        '"Cinzel", serif',
+                                                    fontSize: "0.75rem",
+                                                }}
+                                            >
+                                                Import CSV
+                                            </Button>
+                                            <Button
+                                                size='small'
+                                                color='error'
+                                                startIcon={
+                                                    <Delete
+                                                        sx={{ fontSize: 14 }}
+                                                    />
+                                                }
+                                                onClick={() =>
+                                                    setDeleteModal({
+                                                        open: true,
+                                                        type: "deck",
+                                                        target: selectedDeck,
+                                                    })
+                                                }
+                                                sx={{
+                                                    textTransform: "none",
+                                                    fontFamily:
+                                                        '"Cinzel", serif',
+                                                    fontSize: "0.75rem",
+                                                }}
+                                            >
+                                                Delete Deck
+                                            </Button>
+                                            <Button
+                                                variant='contained'
+                                                size='small'
+                                                startIcon={<Add />}
+                                                onClick={() =>
+                                                    setCardModal({
+                                                        open: true,
+                                                        card: null,
+                                                    })
+                                                }
+                                                sx={{
+                                                    bgcolor: "#8B0000",
+                                                    "&:hover": {
+                                                        bgcolor: "#a00",
+                                                    },
+                                                    textTransform: "none",
+                                                    fontFamily:
+                                                        '"Cinzel", serif',
+                                                    fontSize: "0.75rem",
+                                                }}
+                                            >
+                                                New Card
+                                            </Button>
+                                        </>
+                                    )}
                                 </Box>
                             </Box>
 
@@ -2617,7 +2790,8 @@ function LoginScreen({ onSuccess }) {
             <Paper
                 elevation={12}
                 sx={{
-                    width: 400,
+                    width: { xs: "calc(100vw - 32px)", sm: 400 },
+                    maxWidth: 400,
                     borderRadius: "20px",
                     overflow: "hidden",
                     border: "1px solid rgba(139,0,0,0.3)",

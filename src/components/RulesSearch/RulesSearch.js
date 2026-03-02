@@ -176,7 +176,7 @@ const RulesSearch = () => {
                             "Test Focus to gather power from deck hold up to 3 powers at time",
                     },
                     {
-                        title: "Casting Powers",
+                        title: "Using Powers",
                         content:
                             "Cast gathered power follow description discard after use or keep if specified",
                     },

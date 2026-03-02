@@ -50,7 +50,7 @@
                     {
                         "name": "Dodge",
                         "id": "dodge",
-                        "description": "Roll 1d10 against @Agility. If the roll is lower, immune to dodgeable attacks until next turn and regain 1 @HitPoints. If you roll a 10 and the monster successfully attacks you on this turn, the GM checks the Crit Fail column on the Monster Stats.",
+                        "description": "Roll 1d10 against @Agility. If the roll is lower, immune to dodgeable attacks until next turn and regain 1 @HitPoints.",
                         "keywords": [
                             "dodge",
                             "agility",
@@ -62,7 +62,7 @@
                     {
                         "name": "Brace",
                         "id": "brace",
-                        "description": "Roll 1d10 against @Body. If the roll is lower and you have a weapon, armor, or shield, you are immune to braceable attacks until next turn and regain 1 @HitPoints. If you roll a 10 and the monster successfully attacks you on this turn, the GM checks the Crit Fail column on the Monster Stats.",
+                        "description": "Roll 1d10 against @Body. If the roll is lower and you have a weapon, armor, or shield, you are immune to braceable attacks until next turn and regain 1 @HitPoints.",
                         "keywords": [
                             "brace",
                             "body",
@@ -231,6 +231,82 @@
                 ]
             },
             {
+                "id": "range",
+                "title": "Range",
+                "description": "Distance in I Must Kill is described in three abstract bands rather than feet or meters. These ranges apply to attacks, powers, and targeting.",
+                "types": [
+                    {
+                        "name": "Close",
+                        "description": "Within arm's reach — close enough to touch, grapple, or strike without stepping. Most melee weapons and unarmed attacks operate at @Close range."
+                    },
+                    {
+                        "name": "Near",
+                        "description": "Within the same room or immediate area — you could cross the distance in a few strides. Most thrown weapons, short-range powers, and many creature abilities operate at @Near range."
+                    },
+                    {
+                        "name": "Far",
+                        "description": "Across a field or large open space — visible but requiring significant effort to close the gap. Ranged weapons, bows, firearms, and long-range powers operate at @Far range."
+                    }
+                ],
+                "keywords": [
+                    "range",
+                    "close",
+                    "near",
+                    "far",
+                    "distance",
+                    "reach",
+                    "melee",
+                    "ranged"
+                ]
+            },
+            {
+                "id": "size",
+                "title": "Size",
+                "description": "All creatures in I Must Kill belong to one of five size categories. Size affects how much damage hunters can deal and how easily they can avoid attacks from massive creatures.",
+                "types": [
+                    {
+                        "name": "Tiny",
+                        "description": "From the size of an insect to a house cat. Hunters deal +1 damage to anything @Tiny compared to themselves — if they remember to ask for it.",
+                        "examples": ["Insects", "Rats", "House cats"]
+                    },
+                    {
+                        "name": "Smaller",
+                        "description": "A large dog to a human child in size. Hunters deal +1 damage to anything @Smaller than themselves — if they remember to ask for it.",
+                        "examples": [
+                            "Large dogs",
+                            "Human children",
+                            "Small creatures"
+                        ]
+                    },
+                    {
+                        "name": "Your Size",
+                        "description": "Roughly the size of an adult human. This is the baseline for hunters — no size-based damage bonuses or penalties apply when fighting creatures of a similar size.",
+                        "examples": ["Adult humans", "Most humanoids"]
+                    },
+                    {
+                        "name": "Bigger",
+                        "description": "As big as a horse. @Bigger creatures are large enough to ride. Hunters gain no size bonus when attacking @Bigger creatures.",
+                        "examples": ["Horses", "Bears", "Large beasts"]
+                    },
+                    {
+                        "name": "Way Bigger",
+                        "description": "Anything larger than a small hut — you can climb them. When a @WayBigger creature attacks a hunter, that hunter may roll an extra d10 and choose the lower result when @Dodge-ing.",
+                        "examples": ["Giants", "Dragons", "Colossal beasts"]
+                    }
+                ],
+                "keywords": [
+                    "size",
+                    "tiny",
+                    "smaller",
+                    "bigger",
+                    "way bigger",
+                    "climb",
+                    "ride",
+                    "damage bonus",
+                    "dodge bonus"
+                ]
+            },
+            {
                 "id": "shields-armor",
                 "title": "Shields & Armor",
                 "equipment": [
@@ -254,7 +330,12 @@
             {
                 "id": "statuses",
                 "title": "Statuses",
-                "%Source": ["@Frightened", "@Unconscious", "@Diseased"],
+                "%Source": [
+                    "@Frightened",
+                    "@Unconscious",
+                    "@Diseased",
+                    "@Obscured"
+                ],
                 "conditions": [
                     {
                         "name": "Frightened",
@@ -286,6 +367,18 @@
                             "poison",
                             "debilitating",
                             "weakened"
+                        ]
+                    },
+                    {
+                        "name": "Obscured",
+                        "description": "A creature that is @Obscured cannot be targeted by attacks or powers. A creature is @Obscured when it is behind full cover — such as a solid barricade, a wall, or inside a building relative to the attacker. Partial cover does not grant this condition. An @Obscured creature may still be able to act, move, or target others if they have a way to attack from their position.",
+                        "keywords": [
+                            "obscured",
+                            "cover",
+                            "cannot be targeted",
+                            "barricade",
+                            "full cover",
+                            "line of sight"
                         ]
                     }
                 ]

@@ -27,7 +27,7 @@
                 "title": "Grit Teeth",
                 "%Source": ["@GritTeeth"],
                 "description": "You take a 1-minute long respite from combat.",
-                "benefits": ["Restore all @HitPoints", "Draw 3 powers"],
+                "benefits": ["Restore all @HitPoints", "Draw 3 powers of your choice"],
                 "keywords": [
                     "grit teeth",
                     "regain hit point",

@@ -14,12 +14,93 @@
             },
             {
                 "id": "casting-powers",
-                "title": "Casting Powers",
+                "title": "Using Powers",
                 "%Source": ["@CastPowers"],
-                "description": "You can play power cards at any time, triggering their effect. Follow the instructions on the power card.",
+                "description": "You can play power cards at any time, as long as any conditions stated in the card's description are fulfilled. Follow the instructions on the power card.",
+                "timing": "Powers have no action cost — they can be played on your turn, on another hunter's turn, or even in response to a monster's action, so long as the card's conditions are met.",
                 "targeting": "You cannot target something with a power if you cannot perceive it, although you might still be able to harm it. You cannot select a target without a clear unbroken line from you to the location of it.",
                 "recovery": "Discarded powers can be returned to your power deck when you complete a @NightsRest.",
                 "keywords": []
+            },
+            {
+                "id": "power-rarities",
+                "title": "Power Rarities",
+                "description": "Every power card belongs to one of four rarity tiers. Rarity indicates how dramatically a power can shift the course of a fight — from a single targeted effect to something capable of ending an encounter entirely.",
+                "charge": "To play a @Rare or @Mythic power, at least one @Common or @Uncommon card must first be played face-down from your hand as a charge. A charged card provides no effect of its own — it is spent to fuel the more powerful card. The charge is discarded alongside the @Rare or @Mythic card when it resolves.",
+                "rarities": [
+                    {
+                        "name": "Common",
+                        "color": "#9e9e9e",
+                        "description": "A focused, immediate effect against a single target within arm's reach.",
+                        "targets": "1 target",
+                        "range": "@Close only",
+                        "duration": "This turn only",
+                        "charge_required": false,
+                        "keywords": [
+                            "common",
+                            "single target",
+                            "close",
+                            "instant"
+                        ]
+                    },
+                    {
+                        "name": "Uncommon",
+                        "color": "#43a047",
+                        "description": "A broader effect hitting one to three targets. May last beyond the moment it's played, persisting until a discard condition on the card is triggered.",
+                        "targets": "1–3 targets",
+                        "range": "@Close or @Near",
+                        "duration": "Instant, or until the card's discard condition is met",
+                        "charge_required": false,
+                        "keywords": [
+                            "uncommon",
+                            "multiple targets",
+                            "close",
+                            "near",
+                            "persisting"
+                        ]
+                    },
+                    {
+                        "name": "Rare",
+                        "color": "#1e88e5",
+                        "description": "A powerful effect that can sweep across a large area or many creatures at once. Requires at least one @Common or @Uncommon card played face-down as a charge before it can be used.",
+                        "targets": "More than 3 targets",
+                        "range": "@Close, @Near, or @Far",
+                        "duration": "Varies by card",
+                        "charge_required": true,
+                        "keywords": [
+                            "rare",
+                            "area",
+                            "close",
+                            "near",
+                            "far",
+                            "charge"
+                        ]
+                    },
+                    {
+                        "name": "Mythic",
+                        "color": "#f9a825",
+                        "description": "The rarest and most devastating powers. A @Mythic card, once played, can singlehandedly end an encounter by causing fatal effects against its target. Requires at least one @Common or @Uncommon card played face-down as a charge before it can be used.",
+                        "targets": "Varies — potentially an entire encounter",
+                        "range": "Varies by card",
+                        "duration": "Varies by card",
+                        "charge_required": true,
+                        "keywords": [
+                            "mythic",
+                            "fatal",
+                            "encounter-ending",
+                            "charge"
+                        ]
+                    }
+                ],
+                "keywords": [
+                    "rarity",
+                    "common",
+                    "uncommon",
+                    "rare",
+                    "mythic",
+                    "charge",
+                    "face-down"
+                ]
             }
         ]
     }
