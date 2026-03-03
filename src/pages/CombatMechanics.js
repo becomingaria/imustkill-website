@@ -3,43 +3,43 @@ import {
     Typography,
     List,
     ListItem,
-    Paper,
     CircularProgress,
     Alert,
     Box,
     Chip,
 } from "@mui/material"
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { useLocation } from "react-router-dom"
 import HomeButton from "../components/HomeButton"
-import useRulesEngine from "../hooks/useRulesEngine"
+import useSectionManager from "../hooks/useSectionManager"
 import EnhancedKeywordLinker from "../components/RulesSearch/EnhancedKeywordLinker"
 import EditableSection from "../components/EditableSection"
 import { scrollToAnchor } from "../utils/scrollToAnchor"
+import { Slide, glassSection, glassItem } from "../components/RulesPageShared"
 
 const CombatMechanics = () => {
-    const { getCategoryRules, loading, error } = useRulesEngine()
-    const [combatData, setCombatData] = useState(null)
+    const {
+        title,
+        sections,
+        loading,
+        error,
+        handleUpdate,
+        handleDelete,
+        handleInsertAfter,
+        handleInsertBefore,
+    } = useSectionManager("combat-mechanics")
     const location = useLocation()
 
+    // Handle scrolling to anchor sections once data is loaded
     useEffect(() => {
-        if (!loading && !error) {
-            const data = getCategoryRules("combat-mechanics")
-            setCombatData(data)
-        }
-    }, [loading, error, getCategoryRules])
-
-    // Handle scrolling to anchor sections
-    useEffect(() => {
-        if (combatData && location.hash) {
+        if (sections.length > 0 && location.hash) {
             const timer = setTimeout(() => {
                 const elementId = location.hash.substring(1)
                 scrollToAnchor(elementId)
             }, 100)
-
             return () => clearTimeout(timer)
         }
-    }, [combatData, location.hash])
+    }, [sections.length, location.hash])
 
     if (loading) {
         return (
@@ -57,14 +57,6 @@ const CombatMechanics = () => {
                 <Alert severity='error'>
                     Error loading combat mechanics: {error}
                 </Alert>
-            </Container>
-        )
-    }
-
-    if (!combatData) {
-        return (
-            <Container sx={{ py: 4 }}>
-                <Alert severity='warning'>No combat mechanics data found</Alert>
             </Container>
         )
     }
@@ -93,81 +85,30 @@ const CombatMechanics = () => {
                                 : "#121212",
                     }}
                 >
-                    {combatData.title}
+                    {title}
                 </Typography>
 
                 {/* Render all sections dynamically */}
-                {combatData.sections.map((section, idx) => (
+                {sections.map((section, idx) => (
                     <EditableSection
                         key={section.id}
                         category='combat-mechanics'
                         sectionId={section.id}
                         sectionOrder={idx}
                         section={section}
-                        onUpdate={(updated) =>
-                            setCombatData((prev) =>
-                                prev
-                                    ? {
-                                          ...prev,
-                                          sections: prev.sections.map((s) =>
-                                              s.id === section.id ? updated : s,
-                                          ),
-                                      }
-                                    : prev,
-                            )
-                        }
-                        onDelete={(deletedId) =>
-                            setCombatData((prev) =>
-                                prev
-                                    ? {
-                                          ...prev,
-                                          sections: prev.sections.filter(
-                                              (s) => s.id !== deletedId,
-                                          ),
-                                      }
-                                    : prev,
-                            )
-                        }
-                        onInsertAfter={(afterId, newSec) =>
-                            setCombatData((prev) => {
-                                if (!prev) return prev
-                                const idx = prev.sections.findIndex(
-                                    (s) => s.id === afterId,
-                                )
-                                const next = [...prev.sections]
-                                next.splice(idx + 1, 0, newSec)
-                                return { ...prev, sections: next }
-                            })
-                        }
-                        onInsertBefore={(beforeId, newSec) =>
-                            setCombatData((prev) => {
-                                if (!prev) return prev
-                                const idx = prev.sections.findIndex(
-                                    (s) => s.id === beforeId,
-                                )
-                                const next = [...prev.sections]
-                                next.splice(Math.max(0, idx), 0, newSec)
-                                return { ...prev, sections: next }
-                            })
-                        }
+                        onUpdate={handleUpdate}
+                        onDelete={handleDelete}
+                        onInsertAfter={handleInsertAfter}
+                        onInsertBefore={handleInsertBefore}
                     >
-                        <Paper
-                            id={section.id} // Add this ID for anchor links
+                        <Slide delay={idx * 50}>
+                        <Box
+                            id={section.id}
                             sx={{
-                                bgcolor: (theme) =>
-                                    theme.palette.mode === "dark"
-                                        ? "rgba(255, 255, 255, 0.05)"
-                                        : "rgba(0, 0, 0, 0.03)",
-                                border: (theme) =>
-                                    theme.palette.mode === "dark"
-                                        ? "1px solid rgba(255, 255, 255, 0.1)"
-                                        : "1px solid rgba(0, 0, 0, 0.1)",
-                                borderRadius: "16px",
-                                backdropFilter: "blur(10px)",
-                                padding: "20px",
+                                ...glassSection,
+                                p: { xs: 3, sm: 4 },
                                 width: "100%",
                                 maxWidth: "800px",
-                                marginBottom: "20px",
                             }}
                         >
                             <Typography variant='h3' gutterBottom>
@@ -437,31 +378,9 @@ const CombatMechanics = () => {
                                 <>
                                     {/* Detailed action descriptions */}
                                     {section.actions.map((action, index) => (
-                                        <Paper
+                                        <Box
                                             key={`${action.name}-detail`}
-                                            sx={{
-                                                bgcolor: (theme) =>
-                                                    theme.palette.mode ===
-                                                    "dark"
-                                                        ? "rgba(255, 255, 255, 0.03)"
-                                                        : "rgba(0, 0, 0, 0.02)",
-                                                padding: "15px",
-                                                margin: "15px 0",
-                                                border: (theme) =>
-                                                    theme.palette.mode ===
-                                                    "dark"
-                                                        ? "1px solid rgba(255, 255, 255, 0.1)"
-                                                        : "1px solid rgba(0, 0, 0, 0.1)",
-                                                borderRadius: "12px",
-                                                transition: "all 0.3s ease",
-                                                "&:hover": {
-                                                    border: (theme) =>
-                                                        theme.palette.mode ===
-                                                        "dark"
-                                                            ? "1px solid rgba(255, 255, 255, 0.2)"
-                                                            : "1px solid rgba(0, 0, 0, 0.2)",
-                                                },
-                                            }}
+                                            sx={{ ...glassItem }}
                                         >
                                             <Typography
                                                 variant='h4'
@@ -489,7 +408,7 @@ const CombatMechanics = () => {
                                                     {action.description}
                                                 </EnhancedKeywordLinker>
                                             </Typography>
-                                        </Paper>
+                                        </Box>
                                     ))}
                                 </>
                             )}
@@ -498,31 +417,9 @@ const CombatMechanics = () => {
                             {section.types && (
                                 <>
                                     {section.types.map((type) => (
-                                        <Paper
+                                        <Box
                                             key={type.name}
-                                            sx={{
-                                                bgcolor: (theme) =>
-                                                    theme.palette.mode ===
-                                                    "dark"
-                                                        ? "rgba(255, 255, 255, 0.03)"
-                                                        : "rgba(0, 0, 0, 0.02)",
-                                                padding: "15px",
-                                                margin: "15px 0",
-                                                border: (theme) =>
-                                                    theme.palette.mode ===
-                                                    "dark"
-                                                        ? "1px solid rgba(255, 255, 255, 0.1)"
-                                                        : "1px solid rgba(0, 0, 0, 0.1)",
-                                                borderRadius: "12px",
-                                                transition: "all 0.3s ease",
-                                                "&:hover": {
-                                                    border: (theme) =>
-                                                        theme.palette.mode ===
-                                                        "dark"
-                                                            ? "1px solid rgba(255, 255, 255, 0.2)"
-                                                            : "1px solid rgba(0, 0, 0, 0.2)",
-                                                },
-                                            }}
+                                            sx={{ ...glassItem }}
                                         >
                                             <Typography
                                                 variant='h4'
@@ -549,7 +446,7 @@ const CombatMechanics = () => {
                                                     {type.examples.join(", ")}
                                                 </Typography>
                                             )}
-                                        </Paper>
+                                        </Box>
                                     ))}
                                 </>
                             )}
@@ -558,31 +455,9 @@ const CombatMechanics = () => {
                             {section.equipment && (
                                 <>
                                     {section.equipment.map((item) => (
-                                        <Paper
+                                        <Box
                                             key={item.name}
-                                            sx={{
-                                                bgcolor: (theme) =>
-                                                    theme.palette.mode ===
-                                                    "dark"
-                                                        ? "rgba(255, 255, 255, 0.03)"
-                                                        : "rgba(0, 0, 0, 0.02)",
-                                                padding: "15px",
-                                                margin: "15px 0",
-                                                border: (theme) =>
-                                                    theme.palette.mode ===
-                                                    "dark"
-                                                        ? "1px solid rgba(255, 255, 255, 0.1)"
-                                                        : "1px solid rgba(0, 0, 0, 0.1)",
-                                                borderRadius: "12px",
-                                                transition: "all 0.3s ease",
-                                                "&:hover": {
-                                                    border: (theme) =>
-                                                        theme.palette.mode ===
-                                                        "dark"
-                                                            ? "1px solid rgba(255, 255, 255, 0.2)"
-                                                            : "1px solid rgba(0, 0, 0, 0.2)",
-                                                },
-                                            }}
+                                            sx={{ ...glassItem }}
                                         >
                                             <Typography
                                                 variant='h4'
@@ -600,7 +475,7 @@ const CombatMechanics = () => {
                                                     {item.effect}
                                                 </EnhancedKeywordLinker>
                                             </Typography>
-                                        </Paper>
+                                        </Box>
                                     ))}
                                 </>
                             )}
@@ -609,31 +484,9 @@ const CombatMechanics = () => {
                             {section.conditions && (
                                 <>
                                     {section.conditions.map((condition) => (
-                                        <Paper
+                                        <Box
                                             key={condition.name}
-                                            sx={{
-                                                bgcolor: (theme) =>
-                                                    theme.palette.mode ===
-                                                    "dark"
-                                                        ? "rgba(255, 255, 255, 0.03)"
-                                                        : "rgba(0, 0, 0, 0.02)",
-                                                padding: "15px",
-                                                margin: "15px 0",
-                                                border: (theme) =>
-                                                    theme.palette.mode ===
-                                                    "dark"
-                                                        ? "1px solid rgba(255, 255, 255, 0.1)"
-                                                        : "1px solid rgba(0, 0, 0, 0.1)",
-                                                borderRadius: "12px",
-                                                transition: "all 0.3s ease",
-                                                "&:hover": {
-                                                    border: (theme) =>
-                                                        theme.palette.mode ===
-                                                        "dark"
-                                                            ? "1px solid rgba(255, 255, 255, 0.2)"
-                                                            : "1px solid rgba(0, 0, 0, 0.2)",
-                                                },
-                                            }}
+                                            sx={{ ...glassItem }}
                                         >
                                             <Typography
                                                 variant='h4'
@@ -651,11 +504,12 @@ const CombatMechanics = () => {
                                                     {condition.description}
                                                 </EnhancedKeywordLinker>
                                             </Typography>
-                                        </Paper>
+                                        </Box>
                                     ))}
                                 </>
                             )}
-                        </Paper>
+                        </Box>
+                        </Slide>
                     </EditableSection>
                 ))}
             </Container>

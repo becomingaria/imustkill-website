@@ -284,12 +284,14 @@ export default function EditableSection({
 
     return (
         <>
-            {/* ── Main wrapper ──────────────────────────────────────────── */}
+            {/* ── Wrapper: centres content + provides position context for buttons ── */}
             <Box
                 sx={{
                     position: "relative",
                     width: "100%",
                     overflow: "visible",
+                    display: "flex",
+                    justifyContent: "center",
                 }}
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}

@@ -7,89 +7,38 @@ import {
     CircularProgress,
     Alert,
 } from "@mui/material"
-import { useState, useEffect, useRef } from "react"
+import { useEffect } from "react"
 import { useLocation } from "react-router-dom"
 import GMToolsButton from "../components/GMToolsButton"
-import useRulesEngine from "../hooks/useRulesEngine"
+import useSectionManager from "../hooks/useSectionManager"
 import EnhancedKeywordLinker from "../components/RulesSearch/EnhancedKeywordLinker"
 import EditableSection from "../components/EditableSection"
 import { scrollToAnchor } from "../utils/scrollToAnchor"
-
-// Custom hook for detecting when an element is in viewport
-const useInView = (options = {}) => {
-    const ref = useRef(null)
-    const [isInView, setIsInView] = useState(false)
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setIsInView(true)
-                }
-            },
-            {
-                threshold: options.threshold || 0.2,
-                rootMargin: options.rootMargin || "0px",
-            },
-        )
-
-        const currentRef = ref.current
-        if (currentRef) {
-            observer.observe(currentRef)
-        }
-
-        return () => {
-            if (currentRef) {
-                observer.unobserve(currentRef)
-            }
-        }
-    }, [options.threshold, options.rootMargin])
-
-    return [ref, isInView]
-}
-
-// Animated slide component
-const Slide = ({ children, delay = 0 }) => {
-    const [ref, isInView] = useInView({ threshold: 0.2 })
-
-    return (
-        <Box
-            ref={ref}
-            sx={{
-                opacity: isInView ? 1 : 0,
-                transform: isInView ? "translateY(0)" : "translateY(60px)",
-                transition: `all 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
-                width: "100%",
-            }}
-        >
-            {children}
-        </Box>
-    )
-}
+import { Slide, glassSection } from "../components/RulesPageShared"
 
 const RunningTheGame = () => {
-    const { getCategoryRules, loading, error } = useRulesEngine()
-    const [runningGameData, setRunningGameData] = useState(null)
+    const {
+        title,
+        sections,
+        loading,
+        error,
+        handleUpdate,
+        handleDelete,
+        handleInsertAfter,
+        handleInsertBefore,
+    } = useSectionManager("running-the-game")
     const location = useLocation()
 
+    // Handle scrolling to anchor sections once data is loaded
     useEffect(() => {
-        if (!loading && !error) {
-            const data = getCategoryRules("running-the-game")
-            setRunningGameData(data)
-        }
-    }, [loading, error, getCategoryRules])
-
-    // Handle scrolling to anchor sections
-    useEffect(() => {
-        if (runningGameData && location.hash) {
+        if (sections.length > 0 && location.hash) {
             const timer = setTimeout(() => {
                 const elementId = location.hash.substring(1)
                 scrollToAnchor(elementId)
             }, 100)
-
             return () => clearTimeout(timer)
         }
-    }, [runningGameData, location.hash])
+    }, [sections.length, location.hash])
 
     if (loading) {
         return (
@@ -107,14 +56,6 @@ const RunningTheGame = () => {
                 <Alert severity='error'>
                     Error loading running the game rules: {error}
                 </Alert>
-            </Container>
-        )
-    }
-
-    if (!runningGameData) {
-        return (
-            <Container sx={{ py: 4 }}>
-                <Alert severity='warning'>No running the game data found</Alert>
             </Container>
         )
     }
@@ -156,7 +97,7 @@ const RunningTheGame = () => {
                                 marginBottom: "20px",
                             }}
                         >
-                            {runningGameData.title}
+                            {title}
                         </Typography>
                     </Slide>
                     <Slide delay={200}>
@@ -201,78 +142,24 @@ const RunningTheGame = () => {
                         width: "100%",
                     }}
                 >
-                    {runningGameData.sections.map((section, sectionIndex) => (
+                    {sections.map((section, sectionIndex) => (
                         <EditableSection
                             key={section.id}
                             category='running-the-game'
                             sectionId={section.id}
                             sectionOrder={sectionIndex}
                             section={section}
-                            onUpdate={(updated) =>
-                                setRunningGameData((prev) =>
-                                    prev
-                                        ? {
-                                              ...prev,
-                                              sections: prev.sections.map(
-                                                  (s) =>
-                                                      s.id === section.id
-                                                          ? updated
-                                                          : s,
-                                              ),
-                                          }
-                                        : prev,
-                                )
-                            }
-                            onDelete={(deletedId) =>
-                                setRunningGameData((prev) =>
-                                    prev
-                                        ? {
-                                              ...prev,
-                                              sections: prev.sections.filter(
-                                                  (s) => s.id !== deletedId,
-                                              ),
-                                          }
-                                        : prev,
-                                )
-                            }
-                            onInsertAfter={(afterId, newSec) =>
-                                setRunningGameData((prev) => {
-                                    if (!prev) return prev
-                                    const idx = prev.sections.findIndex(
-                                        (s) => s.id === afterId,
-                                    )
-                                    const next = [...prev.sections]
-                                    next.splice(idx + 1, 0, newSec)
-                                    return { ...prev, sections: next }
-                                })
-                            }
-                            onInsertBefore={(beforeId, newSec) =>
-                                setRunningGameData((prev) => {
-                                    if (!prev) return prev
-                                    const idx = prev.sections.findIndex(
-                                        (s) => s.id === beforeId,
-                                    )
-                                    const next = [...prev.sections]
-                                    next.splice(Math.max(0, idx), 0, newSec)
-                                    return { ...prev, sections: next }
-                                })
-                            }
+                            onUpdate={handleUpdate}
+                            onDelete={handleDelete}
+                            onInsertAfter={handleInsertAfter}
+                            onInsertBefore={handleInsertBefore}
                         >
                             <Slide delay={100}>
                                 <Box
                                     id={section.id}
                                     sx={{
-                                        padding: { xs: "20px", sm: "40px" },
-                                        borderRadius: "16px",
-                                        bgcolor: (theme) =>
-                                            theme.palette.mode === "dark"
-                                                ? "rgba(255, 255, 255, 0.05)"
-                                                : "rgba(0, 0, 0, 0.03)",
-                                        backdropFilter: "blur(10px)",
-                                        border: (theme) =>
-                                            theme.palette.mode === "dark"
-                                                ? "1px solid rgba(255, 255, 255, 0.1)"
-                                                : "1px solid rgba(0, 0, 0, 0.1)",
+                                        ...glassSection,
+                                        p: { xs: "20px", sm: "40px" },
                                     }}
                                 >
                                     <Typography

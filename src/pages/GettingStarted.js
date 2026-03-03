@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react"
+import React from "react"
 import { Link } from "react-router-dom"
 import {
     Container,
@@ -17,74 +17,9 @@ import {
     ChevronDownIcon,
     D10Icon,
 } from "../components/icons"
-import useRulesEngine from "../hooks/useRulesEngine"
+import useSectionManager from "../hooks/useSectionManager"
 import EditableSection from "../components/EditableSection"
-
-// Custom hook for detecting when an element is in viewport
-const useInView = (options = {}) => {
-    const ref = useRef(null)
-    const [isInView, setIsInView] = useState(false)
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setIsInView(true)
-                }
-            },
-            {
-                threshold: options.threshold || 0.2,
-                rootMargin: options.rootMargin || "0px",
-            },
-        )
-
-        const currentRef = ref.current
-        if (currentRef) {
-            observer.observe(currentRef)
-        }
-
-        return () => {
-            if (currentRef) {
-                observer.unobserve(currentRef)
-            }
-        }
-    }, [options.threshold, options.rootMargin])
-
-    return [ref, isInView]
-}
-
-// Animated slide component
-const Slide = ({ children, delay = 0 }) => {
-    const [ref, isInView] = useInView({ threshold: 0.2 })
-
-    return (
-        <Box
-            ref={ref}
-            sx={{
-                opacity: isInView ? 1 : 0,
-                transform: isInView ? "translateY(0)" : "translateY(60px)",
-                transition: `all 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
-                width: "100%",
-            }}
-        >
-            {children}
-        </Box>
-    )
-}
-
-// Glass section styling
-const glassSection = {
-    bgcolor: (theme) =>
-        theme.palette.mode === "dark"
-            ? "rgba(255, 255, 255, 0.05)"
-            : "rgba(0, 0, 0, 0.03)",
-    border: (theme) =>
-        theme.palette.mode === "dark"
-            ? "1px solid rgba(255, 255, 255, 0.1)"
-            : "1px solid rgba(0, 0, 0, 0.1)",
-    borderRadius: "16px",
-    backdropFilter: "blur(10px)",
-}
+import { Slide, glassSection } from "../components/RulesPageShared"
 
 const SECTION_ICONS = {
     "the-core-mechanic": TargetIcon,
@@ -435,15 +370,15 @@ const renderSectionContent = (section, glassSection) => {
 }
 
 const GettingStarted = () => {
-    const { getCategoryRules, loading, error } = useRulesEngine()
-    const [gettingStartedData, setGettingStartedData] = useState(null)
-
-    useEffect(() => {
-        if (!loading && !error) {
-            const data = getCategoryRules("getting-started")
-            setGettingStartedData(data)
-        }
-    }, [loading, error, getCategoryRules])
+    const {
+        sections,
+        loading,
+        error,
+        handleUpdate,
+        handleDelete,
+        handleInsertAfter,
+        handleInsertBefore,
+    } = useSectionManager("getting-started")
 
     return (
         <Container
@@ -546,7 +481,7 @@ const GettingStarted = () => {
                     <Alert severity='error'>Error loading rules: {error}</Alert>
                 )}
 
-                {gettingStartedData?.sections.map((section, idx) => {
+                {sections.map((section, idx) => {
                     const IconComp = SECTION_ICONS[section.id]
                     const isCallout = section.id === "quick-reference-callout"
                     return (
@@ -556,55 +491,10 @@ const GettingStarted = () => {
                             sectionId={section.id}
                             sectionOrder={idx}
                             section={section}
-                            onUpdate={(updated) =>
-                                setGettingStartedData((prev) =>
-                                    prev
-                                        ? {
-                                              ...prev,
-                                              sections: prev.sections.map(
-                                                  (s) =>
-                                                      s.id === section.id
-                                                          ? updated
-                                                          : s,
-                                              ),
-                                          }
-                                        : prev,
-                                )
-                            }
-                            onDelete={(deletedId) =>
-                                setGettingStartedData((prev) =>
-                                    prev
-                                        ? {
-                                              ...prev,
-                                              sections: prev.sections.filter(
-                                                  (s) => s.id !== deletedId,
-                                              ),
-                                          }
-                                        : prev,
-                                )
-                            }
-                            onInsertAfter={(afterId, newSec) =>
-                                setGettingStartedData((prev) => {
-                                    if (!prev) return prev
-                                    const idx = prev.sections.findIndex(
-                                        (s) => s.id === afterId,
-                                    )
-                                    const next = [...prev.sections]
-                                    next.splice(idx + 1, 0, newSec)
-                                    return { ...prev, sections: next }
-                                })
-                            }
-                            onInsertBefore={(beforeId, newSec) =>
-                                setGettingStartedData((prev) => {
-                                    if (!prev) return prev
-                                    const idx = prev.sections.findIndex(
-                                        (s) => s.id === beforeId,
-                                    )
-                                    const next = [...prev.sections]
-                                    next.splice(Math.max(0, idx), 0, newSec)
-                                    return { ...prev, sections: next }
-                                })
-                            }
+                            onUpdate={handleUpdate}
+                            onDelete={handleDelete}
+                            onInsertAfter={handleInsertAfter}
+                            onInsertBefore={handleInsertBefore}
                         >
                             <Slide>
                                 <Box

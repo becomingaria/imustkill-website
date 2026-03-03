@@ -3,43 +3,43 @@ import {
     Typography,
     List,
     ListItem,
-    Paper,
     CircularProgress,
     Alert,
     Grid,
     Box,
 } from "@mui/material"
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { useLocation } from "react-router-dom"
 import HomeButton from "../components/HomeButton"
-import useRulesEngine from "../hooks/useRulesEngine"
+import useSectionManager from "../hooks/useSectionManager"
 import EnhancedKeywordLinker from "../components/RulesSearch/EnhancedKeywordLinker"
 import EditableSection from "../components/EditableSection"
 import { scrollToAnchor } from "../utils/scrollToAnchor"
+import { Slide, glassSection } from "../components/RulesPageShared"
 
 const CharacterCreation = () => {
-    const { getCategoryRules, loading, error } = useRulesEngine()
-    const [characterCreationData, setCharacterCreationData] = useState(null)
+    const {
+        title,
+        sections,
+        loading,
+        error,
+        handleUpdate,
+        handleDelete,
+        handleInsertAfter,
+        handleInsertBefore,
+    } = useSectionManager("character-creation")
     const location = useLocation()
 
+    // Handle scrolling to anchor sections once data is loaded
     useEffect(() => {
-        if (!loading && !error) {
-            const data = getCategoryRules("character-creation")
-            setCharacterCreationData(data)
-        }
-    }, [loading, error, getCategoryRules])
-
-    // Handle scrolling to anchor sections
-    useEffect(() => {
-        if (characterCreationData && location.hash) {
+        if (sections.length > 0 && location.hash) {
             const timer = setTimeout(() => {
                 const elementId = location.hash.substring(1)
                 scrollToAnchor(elementId)
             }, 100)
-
             return () => clearTimeout(timer)
         }
-    }, [characterCreationData, location.hash])
+    }, [sections.length, location.hash])
 
     if (loading) {
         return (
@@ -61,19 +61,7 @@ const CharacterCreation = () => {
         )
     }
 
-    if (!characterCreationData) {
-        return (
-            <Container sx={{ py: 4 }}>
-                <Alert severity='warning'>
-                    No character creation data found
-                </Alert>
-            </Container>
-        )
-    }
-
-    const statsSection = characterCreationData.sections.find(
-        (section) => section.id === "stats",
-    )
+    const statsSection = sections.find((section) => section.id === "stats")
 
     return (
         <>
@@ -105,7 +93,7 @@ const CharacterCreation = () => {
                         textAlign: "center",
                     }}
                 >
-                    {characterCreationData.title}
+                    {title}
                 </Typography>
 
                 <EditableSection
@@ -113,70 +101,19 @@ const CharacterCreation = () => {
                     sectionId='stats'
                     sectionOrder={0}
                     section={statsSection}
-                    onUpdate={(updated) =>
-                        setCharacterCreationData((prev) =>
-                            prev
-                                ? {
-                                      ...prev,
-                                      sections: prev.sections.map((s) =>
-                                          s.id === "stats" ? updated : s,
-                                      ),
-                                  }
-                                : prev,
-                        )
-                    }
-                    onDelete={(deletedId) =>
-                        setCharacterCreationData((prev) =>
-                            prev
-                                ? {
-                                      ...prev,
-                                      sections: prev.sections.filter(
-                                          (s) => s.id !== deletedId,
-                                      ),
-                                  }
-                                : prev,
-                        )
-                    }
-                    onInsertAfter={(afterId, newSec) =>
-                        setCharacterCreationData((prev) => {
-                            if (!prev) return prev
-                            const idx = prev.sections.findIndex(
-                                (s) => s.id === afterId,
-                            )
-                            const next = [...prev.sections]
-                            next.splice(idx + 1, 0, newSec)
-                            return { ...prev, sections: next }
-                        })
-                    }
-                    onInsertBefore={(beforeId, newSec) =>
-                        setCharacterCreationData((prev) => {
-                            if (!prev) return prev
-                            const idx = prev.sections.findIndex(
-                                (s) => s.id === beforeId,
-                            )
-                            const next = [...prev.sections]
-                            next.splice(Math.max(0, idx), 0, newSec)
-                            return { ...prev, sections: next }
-                        })
-                    }
+                    onUpdate={handleUpdate}
+                    onDelete={handleDelete}
+                    onInsertAfter={handleInsertAfter}
+                    onInsertBefore={handleInsertBefore}
                 >
-                    <Paper
+                    <Slide>
+                    <Box
                         id='stats'
                         sx={{
-                            bgcolor: (theme) =>
-                                theme.palette.mode === "dark"
-                                    ? "rgba(255, 255, 255, 0.05)"
-                                    : "rgba(0, 0, 0, 0.03)",
-                            padding: { xs: "15px", sm: "20px" },
+                            ...glassSection,
+                            p: { xs: "15px", sm: "20px" },
                             width: "100%",
                             maxWidth: "800px",
-                            marginBottom: { xs: "15px", sm: "20px" },
-                            border: (theme) =>
-                                theme.palette.mode === "dark"
-                                    ? "1px solid rgba(255, 255, 255, 0.1)"
-                                    : "1px solid rgba(0, 0, 0, 0.1)",
-                            borderRadius: "16px",
-                            backdropFilter: "blur(10px)",
                         }}
                     >
                         <Typography variant='h3' gutterBottom sx={{ mb: 3 }}>
@@ -249,11 +186,12 @@ const CharacterCreation = () => {
                                 </Grid>
                             ))}
                         </Grid>
-                    </Paper>
+                    </Box>
+                    </Slide>
                 </EditableSection>
 
                 {/* Render all other sections dynamically */}
-                {characterCreationData.sections
+                {sections
                     .filter((section) => section.id !== "stats")
                     .map((section, idx) => (
                         <EditableSection
@@ -262,77 +200,19 @@ const CharacterCreation = () => {
                             sectionId={section.id}
                             sectionOrder={idx + 1}
                             section={section}
-                            onUpdate={(updated) =>
-                                setCharacterCreationData((prev) =>
-                                    prev
-                                        ? {
-                                              ...prev,
-                                              sections: prev.sections.map(
-                                                  (s) =>
-                                                      s.id === section.id
-                                                          ? updated
-                                                          : s,
-                                              ),
-                                          }
-                                        : prev,
-                                )
-                            }
-                            onDelete={(deletedId) =>
-                                setCharacterCreationData((prev) =>
-                                    prev
-                                        ? {
-                                              ...prev,
-                                              sections: prev.sections.filter(
-                                                  (s) => s.id !== deletedId,
-                                              ),
-                                          }
-                                        : prev,
-                                )
-                            }
-                            onInsertAfter={(afterId, newSec) =>
-                                setCharacterCreationData((prev) => {
-                                    if (!prev) return prev
-                                    const idx = prev.sections.findIndex(
-                                        (s) => s.id === afterId,
-                                    )
-                                    const next = [...prev.sections]
-                                    next.splice(idx + 1, 0, newSec)
-                                    return { ...prev, sections: next }
-                                })
-                            }
-                            onInsertBefore={(beforeId, newSec) =>
-                                setCharacterCreationData((prev) => {
-                                    if (!prev) return prev
-                                    const idx = prev.sections.findIndex(
-                                        (s) => s.id === beforeId,
-                                    )
-                                    const next = [...prev.sections]
-                                    next.splice(Math.max(0, idx), 0, newSec)
-                                    return { ...prev, sections: next }
-                                })
-                            }
+                            onUpdate={handleUpdate}
+                            onDelete={handleDelete}
+                            onInsertAfter={handleInsertAfter}
+                            onInsertBefore={handleInsertBefore}
                         >
-                            <Paper
+                            <Slide delay={idx * 50}>
+                            <Box
                                 id={section.id}
                                 sx={{
-                                    bgcolor: (theme) =>
-                                        theme.palette.mode === "dark"
-                                            ? "rgba(255, 255, 255, 0.05)"
-                                            : "rgba(0, 0, 0, 0.03)",
-                                    color: (theme) =>
-                                        theme.palette.mode === "dark"
-                                            ? "#e0e0e0"
-                                            : "#121212",
-                                    padding: "20px",
+                                    ...glassSection,
+                                    p: 3,
                                     width: "100%",
                                     maxWidth: "800px",
-                                    marginBottom: "20px",
-                                    border: (theme) =>
-                                        theme.palette.mode === "dark"
-                                            ? "1px solid rgba(255, 255, 255, 0.1)"
-                                            : "1px solid rgba(0, 0, 0, 0.1)",
-                                    borderRadius: "16px",
-                                    backdropFilter: "blur(10px)",
                                 }}
                             >
                                 <Typography variant='h3' gutterBottom>
@@ -412,7 +292,8 @@ const CharacterCreation = () => {
                                         )}
                                     </>
                                 )}
-                            </Paper>
+                            </Box>
+                            </Slide>
                         </EditableSection>
                     ))}
             </Container>

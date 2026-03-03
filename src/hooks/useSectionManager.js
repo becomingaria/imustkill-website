@@ -10,7 +10,7 @@
  *           handleUpdate, handleDelete,
  *           handleInsertAfter, handleInsertBefore } = useSectionManager("combat-mechanics")
  *
- *   Then pass the callbacks to <EditableSection ... onUpdate onDelete onInsertAfter onInsertBefore>
+ *   Then pass the callbacks to <EditableSection ... onUpdate={handleUpdate} onDelete={handleDelete} onInsertAfter={handleInsertAfter} onInsertBefore={handleInsertBefore}>
  */
 
 import { useState, useEffect } from "react"
@@ -33,9 +33,10 @@ export default function useSectionManager(categoryKey) {
     }, [loading, error, categoryKey, getCategoryRules])
 
     // ── Update one section in place ─────────────────────────────────────────
-    const handleUpdate = (sectionId, updatedSection) => {
+    // EditableSection calls onUpdate(updatedSection) with one arg; derive id from it.
+    const handleUpdate = (updatedSection) => {
         setSections((prev) =>
-            prev.map((s) => (s.id === sectionId ? updatedSection : s)),
+            prev.map((s) => (s.id === updatedSection.id ? updatedSection : s)),
         )
     }
 
