@@ -15,6 +15,7 @@ import {
     Divider,
     TextField,
     InputAdornment,
+    Popover,
 } from "@mui/material"
 import {
     Shuffle,
@@ -32,6 +33,12 @@ import {
     Search,
     RotateRight,
     ReplyAll,
+    Star,
+    StarBorder,
+    VerticalAlignTop,
+    Add,
+    Remove,
+    AutoAwesome,
 } from "@mui/icons-material"
 import { D10Icon } from "./icons"
 import { fetchPowers } from "../utils/cardsClient"
@@ -178,7 +185,12 @@ const PowerDeckManager = () => {
 
     // ─── Zones ───
     const [deckCards, setDeckCards] = useState([]) // draw pile (shuffled)
-    const [hand, setHand] = useState([]) // up to MAX_HAND_SIZE
+    const [hand, setHand] = useState([]) // up to handSizeLimit
+    const [handSizeLimit, setHandSizeLimit] = useState(MAX_HAND_SIZE)
+    const handSizeLimitRef = useRef(MAX_HAND_SIZE)
+    useEffect(() => {
+        handSizeLimitRef.current = handSizeLimit
+    }, [handSizeLimit])
     const [charges, setCharges] = useState([]) // face-down charged cards (fuel for rare/mythic)
     const [inPlay, setInPlay] = useState([]) // cards actively played
     const [discardPile, setDiscardPile] = useState([]) // discarded cards
@@ -197,9 +209,44 @@ const PowerDeckManager = () => {
     const [showDiscardPile, setShowDiscardPile] = useState(false)
     const [showBrowseDeck, setShowBrowseDeck] = useState(false)
     const [deckSearchQuery, setDeckSearchQuery] = useState("")
+    const [browseShowFavoritesOnly, setBrowseShowFavoritesOnly] =
+        useState(false)
+    // Special-play sub-menu state: { anchorEl, uid }
+    const [handSpecialMenu, setHandSpecialMenu] = useState(null)
+    const [discardCardMenu, setDiscardCardMenu] = useState(null)
+    const [favoritedCards, setFavoritedCards] = useState(() => {
+        try {
+            const saved = localStorage.getItem("imk_deck_favorites")
+            return saved ? new Set(JSON.parse(saved)) : new Set()
+        } catch {
+            return new Set()
+        }
+    })
     const [lastAction, setLastAction] = useState("") // for status message
 
     const fileInputRef = useRef(null)
+
+    // ─── Persist favorites to localStorage ───
+    useEffect(() => {
+        localStorage.setItem(
+            "imk_deck_favorites",
+            JSON.stringify([...favoritedCards]),
+        )
+    }, [favoritedCards])
+
+    // ─── Toggle a card favorite by its deck/name key ───
+    const toggleFavorite = useCallback((cardKey) => {
+        setFavoritedCards((prev) => {
+            const next = new Set(prev)
+            if (next.has(cardKey)) {
+                next.delete(cardKey)
+            } else {
+                if (next.size >= 3) return prev // max 3 favorites
+                next.add(cardKey)
+            }
+            return next
+        })
+    }, [])
 
     // ─── Action logging helper ───
     const logAction = useCallback((action) => {
@@ -304,10 +351,13 @@ const PowerDeckManager = () => {
                 if (data.deckCards) setDeckCards(data.deckCards)
                 if (data.hand) setHand(data.hand)
                 if (data.charges) setCharges(data.charges)
+                if (data.handSizeLimit) setHandSizeLimit(data.handSizeLimit)
                 if (data.inPlay) setInPlay(data.inPlay)
                 if (data.discardPile) setDiscardPile(data.discardPile)
                 if (data.deckName) setDeckName(data.deckName)
-                if (data.deckImage) setDeckImage(data.deckImage)
+                // Only restore deckImage if it's a data URL (blob: URLs expire on reload)
+                if (data.deckImage && data.deckImage.startsWith("data:"))
+                    setDeckImage(data.deckImage)
                 if (data.cardLog) setCardLog(data.cardLog)
 
                 // Restore descriptions from API for persisted deck
@@ -339,6 +389,7 @@ const PowerDeckManager = () => {
                     deckName,
                     deckImage,
                     cardLog,
+                    handSizeLimit,
                 }),
             )
         }
@@ -351,6 +402,7 @@ const PowerDeckManager = () => {
         deckName,
         deckImage,
         cardLog,
+        handSizeLimit,
     ])
 
     // ─── Auto-reshuffle when deck is empty and discardPile has cards ───
@@ -399,8 +451,12 @@ const PowerDeckManager = () => {
                 setDiscardPile([])
                 setDeckName(deckData.name || "Loaded Deck")
 
-                // Store deck image URL from dropped file
-                const imageUrl = URL.createObjectURL(file)
+                // Store deck image as base64 data URL so it survives page refreshes
+                const imageUrl = await new Promise((resolve) => {
+                    const reader = new FileReader()
+                    reader.onload = (e) => resolve(e.target.result)
+                    reader.readAsDataURL(file)
+                })
                 setDeckImage(imageUrl)
 
                 // Fetch descriptions from API
@@ -455,8 +511,10 @@ const PowerDeckManager = () => {
 
     // ─── Draw a card ───
     const drawCard = useCallback(() => {
-        if (hand.length >= MAX_HAND_SIZE) {
-            setLastAction("Hand is full! You can only hold 3 powers at once.")
+        if (hand.length >= handSizeLimitRef.current) {
+            setLastAction(
+                `Hand is full! You can only hold ${handSizeLimitRef.current} power${handSizeLimitRef.current !== 1 ? "s" : ""} at once.`,
+            )
             return
         }
         if (deckCards.length === 0) {
@@ -507,22 +565,32 @@ const PowerDeckManager = () => {
             saveSnapshot()
             setPlayingCardId(uid)
             setTimeout(() => {
-                setHand((prev) => {
-                    const c = prev.find((c) => c.uid === uid)
-                    if (c) {
-                        setInPlay((ip) => [...ip, c])
-                        logAction(`Played: ${c.name}`)
-                    }
-                    return prev.filter((c) => c.uid !== uid)
-                })
                 if (needsCharge) {
                     setCharges((ch) => {
                         const [consumed, ...remaining] = ch
-                        setDiscardPile((dp) => [...dp, consumed])
-                        logAction(
-                            `Charge consumed: ${consumed.name} → discarded`,
-                        )
+                        setHand((prev) => {
+                            const c = prev.find((c) => c.uid === uid)
+                            if (c) {
+                                setInPlay((ip) => [
+                                    ...ip,
+                                    { ...c, chargedWith: consumed },
+                                ])
+                                logAction(
+                                    `Played: ${c.name} (charged by ${consumed.name})`,
+                                )
+                            }
+                            return prev.filter((c) => c.uid !== uid)
+                        })
                         return remaining
+                    })
+                } else {
+                    setHand((prev) => {
+                        const c = prev.find((c) => c.uid === uid)
+                        if (c) {
+                            setInPlay((ip) => [...ip, c])
+                            logAction(`Played: ${c.name}`)
+                        }
+                        return prev.filter((c) => c.uid !== uid)
                     })
                 }
                 setPlayingCardId(null)
@@ -608,8 +676,19 @@ const PowerDeckManager = () => {
             setInPlay((prev) => {
                 const card = prev.find((c) => c.uid === uid)
                 if (card) {
-                    setDiscardPile((dp) => [...dp, card])
-                    logAction(`Discarded from play: ${card.name}`)
+                    // Discard the charge attached to this card too
+                    const toDiscard = card.chargedWith
+                        ? [
+                              { ...card, chargedWith: undefined },
+                              card.chargedWith,
+                          ]
+                        : [card]
+                    setDiscardPile((dp) => [...dp, ...toDiscard])
+                    logAction(
+                        card.chargedWith
+                            ? `Discarded from play: ${card.name} + charge ${card.chargedWith.name}`
+                            : `Discarded from play: ${card.name}`,
+                    )
                 }
                 return prev.filter((c) => c.uid !== uid)
             })
@@ -633,16 +712,13 @@ const PowerDeckManager = () => {
         )
     }, [discardPile, saveSnapshot])
 
-    // ─── Grit Teeth: auto-draw 3 (combat respite, no Focus test) ───
+    // ─── Grit Teeth: auto-draw up to handSizeLimit (combat respite, resets hand size) ───
     const gritTeeth = useCallback(() => {
-        // Grit Teeth: draw up to 3 from deck, no test needed
-        const drawCount = Math.min(
-            MAX_HAND_SIZE - hand.length,
-            deckCards.length,
-        )
+        const limit = handSizeLimitRef.current
+        const drawCount = Math.min(limit - hand.length, deckCards.length)
         if (drawCount <= 0) {
             setLastAction(
-                hand.length >= MAX_HAND_SIZE
+                hand.length >= limit
                     ? "Hand already full."
                     : "No cards in deck to draw.",
             )
@@ -651,15 +727,16 @@ const PowerDeckManager = () => {
         const drawn = deckCards.slice(0, drawCount)
         setDeckCards((prev) => prev.slice(drawCount))
         setHand((prev) => [...prev, ...drawn])
+        setHandSizeLimit(MAX_HAND_SIZE) // always reset hand size limit back to 3
         setLastAction(
-            `Grit Teeth — drew ${drawCount} power${drawCount > 1 ? "s" : ""}!`,
+            `Grit Teeth — drew ${drawCount} power${drawCount > 1 ? "s" : ""}! Hand size reset to ${MAX_HAND_SIZE}.`,
         )
     }, [hand.length, deckCards])
 
     // ─── Return a card from discard pile → hand ───
     const returnFromDiscard = useCallback(
         (uid) => {
-            if (hand.length >= MAX_HAND_SIZE) {
+            if (hand.length >= handSizeLimitRef.current) {
                 setLastAction("Hand is full — discard a card first.")
                 return
             }
@@ -680,7 +757,7 @@ const PowerDeckManager = () => {
     // ─── Take a specific card from the deck → hand (search/tutor) ───
     const takeFromDeck = useCallback(
         (uid) => {
-            if (hand.length >= MAX_HAND_SIZE) {
+            if (hand.length >= handSizeLimitRef.current) {
                 setLastAction("Hand is full — discard a card first.")
                 return
             }
@@ -697,6 +774,38 @@ const PowerDeckManager = () => {
             setShowBrowseDeck(false)
         },
         [hand.length, logAction, saveSnapshot],
+    )
+
+    // ─── Send a card from hand or discard pile to the top of the deck ───
+    const sendToTopOfDeck = useCallback(
+        (uid, fromZone) => {
+            saveSnapshot()
+            if (fromZone === "hand") {
+                setHand((prev) => {
+                    const card = prev.find((c) => c.uid === uid)
+                    if (card) {
+                        setDeckCards((dk) => [card, ...dk])
+                        logAction(
+                            `Sent to top of deck (from hand): ${card.name}`,
+                        )
+                    }
+                    return prev.filter((c) => c.uid !== uid)
+                })
+            } else {
+                setDiscardPile((prev) => {
+                    const card = prev.find((c) => c.uid === uid)
+                    if (card) {
+                        setDeckCards((dk) => [card, ...dk])
+                        logAction(
+                            `Sent to top of deck (from discard): ${card.name}`,
+                        )
+                    }
+                    return prev.filter((c) => c.uid !== uid)
+                })
+            }
+            setLastAction("Card moved to top of deck.")
+        },
+        [logAction, saveSnapshot],
     )
 
     // ─── Toggle reversed state on an in-play card ───
@@ -963,7 +1072,14 @@ const PowerDeckManager = () => {
                                 {deckName}
                             </Typography>
                         </Box>
-                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                gap: 1,
+                                flexWrap: "wrap",
+                                alignItems: "center",
+                            }}
+                        >
                             <Chip
                                 icon={<Layers sx={{ fontSize: 14 }} />}
                                 label={`Deck: ${deckCards.length}`}
@@ -997,6 +1113,104 @@ const PowerDeckManager = () => {
                                     fontSize: "0.65rem",
                                 }}
                             />
+                            {/* Hand size limit stepper */}
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    border: "1px solid",
+                                    borderColor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255,255,255,0.2)"
+                                            : "rgba(0,0,0,0.18)",
+                                    borderRadius: "16px",
+                                    height: 24,
+                                    overflow: "hidden",
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255,255,255,0.05)"
+                                            : "rgba(0,0,0,0.03)",
+                                }}
+                            >
+                                <Tooltip title='Decrease hand size'>
+                                    <span>
+                                        <IconButton
+                                            size='small'
+                                            disabled={handSizeLimit <= 1}
+                                            onClick={() =>
+                                                setHandSizeLimit((v) =>
+                                                    Math.max(1, v - 1),
+                                                )
+                                            }
+                                            sx={{
+                                                width: 22,
+                                                height: 22,
+                                                borderRadius: 0,
+                                                color: (theme) =>
+                                                    theme.palette.mode ===
+                                                    "dark"
+                                                        ? "#ccc"
+                                                        : "#555",
+                                                "&:hover": {
+                                                    bgcolor:
+                                                        "rgba(139,0,0,0.12)",
+                                                },
+                                            }}
+                                        >
+                                            <Remove sx={{ fontSize: 10 }} />
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
+                                <Tooltip
+                                    title={`Max hand size (Grit Teeth resets to ${MAX_HAND_SIZE})`}
+                                >
+                                    <Typography
+                                        sx={{
+                                            fontFamily: '"Cinzel", serif',
+                                            fontSize: "0.62rem",
+                                            fontWeight: "bold",
+                                            px: 0.75,
+                                            userSelect: "none",
+                                            color:
+                                                handSizeLimit !== MAX_HAND_SIZE
+                                                    ? "#c77d00"
+                                                    : "inherit",
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        Hand: {handSizeLimit}
+                                    </Typography>
+                                </Tooltip>
+                                <Tooltip title='Increase hand size'>
+                                    <span>
+                                        <IconButton
+                                            size='small'
+                                            disabled={handSizeLimit >= 6}
+                                            onClick={() =>
+                                                setHandSizeLimit((v) =>
+                                                    Math.min(6, v + 1),
+                                                )
+                                            }
+                                            sx={{
+                                                width: 22,
+                                                height: 22,
+                                                borderRadius: 0,
+                                                color: (theme) =>
+                                                    theme.palette.mode ===
+                                                    "dark"
+                                                        ? "#ccc"
+                                                        : "#555",
+                                                "&:hover": {
+                                                    bgcolor:
+                                                        "rgba(0,100,0,0.12)",
+                                                },
+                                            }}
+                                        >
+                                            <Add sx={{ fontSize: 10 }} />
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
+                            </Box>
                         </Box>
                     </Box>
 
@@ -1039,20 +1253,27 @@ const PowerDeckManager = () => {
                                         <Box
                                             key={card.uid}
                                             sx={{
+                                                position: "relative",
+                                                // extra left padding so the peeking charge card doesn't clip
+                                                pl: card.chargedWith
+                                                    ? "18px"
+                                                    : 0,
                                                 transition:
                                                     "transform 0.25s, filter 0.25s",
                                                 "&:hover": {
                                                     transform:
                                                         "translateY(-10px) scale(1.12)",
                                                     zIndex: 10,
-                                                    position: "relative",
                                                 },
                                             }}
                                         >
-                                            <Zoom in timeout={400}>
-                                                <Paper
-                                                    elevation={8}
+                                            {/* Attached charge card peeking behind */}
+                                            {card.chargedWith && (
+                                                <Box
                                                     sx={{
+                                                        position: "absolute",
+                                                        left: 0,
+                                                        top: 8,
                                                         width: {
                                                             xs: 110,
                                                             sm: 140,
@@ -1061,253 +1282,343 @@ const PowerDeckManager = () => {
                                                             xs: 165,
                                                             sm: 210,
                                                         },
-                                                        aspectRatio: "2/3",
-                                                        display: "flex",
-                                                        flexDirection: "column",
                                                         borderRadius: "12px",
-                                                        border: card.reversed
-                                                            ? "2px solid #7e57c2"
-                                                            : "2px solid #8B0000",
+                                                        border: "2px solid #f9a825",
                                                         bgcolor: (theme) =>
                                                             theme.palette
                                                                 .mode === "dark"
-                                                                ? "rgba(60,10,10,0.95)"
-                                                                : "#fff5f0",
-                                                        boxShadow: card.reversed
-                                                            ? "0 6px 20px rgba(126,87,194,0.45)"
-                                                            : "0 6px 20px rgba(139,0,0,0.4)",
-                                                        overflow: "hidden",
-                                                        transform: card.reversed
-                                                            ? "rotate(180deg)"
-                                                            : "none",
-                                                        transition:
-                                                            "transform 0.4s ease, border-color 0.3s, box-shadow 0.3s",
+                                                                ? "rgba(30,20,0,0.97)"
+                                                                : "#fffde7",
+                                                        boxShadow:
+                                                            "0 4px 12px rgba(249,168,37,0.3)",
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "center",
+                                                        gap: 0.5,
+                                                        transform:
+                                                            "rotate(-6deg)",
+                                                        zIndex: 0,
+                                                        pointerEvents: "none",
                                                     }}
                                                 >
-                                                    {/* Card Art */}
-                                                    <Box
-                                                        sx={{
-                                                            width: "100%",
-                                                            height: "55%",
-                                                            bgcolor: "#f5f0e6",
-                                                            display: "flex",
-                                                            alignItems:
-                                                                "center",
-                                                            justifyContent:
-                                                                "center",
-                                                            borderBottom:
-                                                                "1px solid rgba(139,0,0,0.2)",
-                                                            overflow: "hidden",
-                                                        }}
-                                                    >
+                                                    {deckImage ? (
                                                         <Box
                                                             component='img'
-                                                            {...getCardImageProps(
-                                                                card,
-                                                            )}
+                                                            src={deckImage}
+                                                            alt='charge'
                                                             sx={{
-                                                                width: "100%",
-                                                                height: "100%",
+                                                                width: "70%",
+                                                                height: "65%",
                                                                 objectFit:
-                                                                    "cover",
+                                                                    "contain",
+                                                                opacity: 0.55,
+                                                                filter: "grayscale(0.3) brightness(0.8)",
                                                             }}
                                                         />
-                                                    </Box>
-
-                                                    {/* Card Info */}
-                                                    <Box
+                                                    ) : (
+                                                        <FlipToBack
+                                                            sx={{
+                                                                fontSize: 28,
+                                                                color: "#f9a825",
+                                                                opacity: 0.7,
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <Typography
                                                         sx={{
-                                                            height: "45%",
-                                                            p: {
-                                                                xs: 0.75,
-                                                                sm: 1,
+                                                            fontFamily:
+                                                                '"Cinzel", serif',
+                                                            fontSize: "0.48rem",
+                                                            fontWeight: "bold",
+                                                            color: "#f9a825",
+                                                            letterSpacing:
+                                                                "0.08em",
+                                                            textAlign: "center",
+                                                            px: 0.5,
+                                                        }}
+                                                    >
+                                                        CHARGE
+                                                    </Typography>
+                                                </Box>
+                                            )}
+                                            <Box
+                                                sx={{
+                                                    position: "relative",
+                                                    zIndex: 1,
+                                                }}
+                                            >
+                                                <Zoom in timeout={400}>
+                                                    <Paper
+                                                        elevation={8}
+                                                        sx={{
+                                                            width: {
+                                                                xs: 110,
+                                                                sm: 140,
                                                             },
+                                                            height: {
+                                                                xs: 165,
+                                                                sm: 210,
+                                                            },
+                                                            aspectRatio: "2/3",
                                                             display: "flex",
                                                             flexDirection:
                                                                 "column",
-                                                            justifyContent:
-                                                                "space-between",
-                                                            gap: 0.5,
+                                                            borderRadius:
+                                                                "12px",
+                                                            border: card.reversed
+                                                                ? "2px solid #7e57c2"
+                                                                : "2px solid #8B0000",
+                                                            bgcolor: (theme) =>
+                                                                theme.palette
+                                                                    .mode ===
+                                                                "dark"
+                                                                    ? "rgba(60,10,10,0.95)"
+                                                                    : "#fff5f0",
+                                                            boxShadow:
+                                                                card.reversed
+                                                                    ? "0 6px 20px rgba(126,87,194,0.45)"
+                                                                    : "0 6px 20px rgba(139,0,0,0.4)",
                                                             overflow: "hidden",
+                                                            transform:
+                                                                card.reversed
+                                                                    ? "rotate(180deg)"
+                                                                    : "none",
+                                                            transition:
+                                                                "transform 0.4s ease, border-color 0.3s, box-shadow 0.3s",
                                                         }}
                                                     >
-                                                        {/* Title & Rarity */}
+                                                        {/* Card Art */}
                                                         <Box
                                                             sx={{
-                                                                minWidth: 0,
+                                                                width: "100%",
+                                                                height: "55%",
+                                                                bgcolor:
+                                                                    "#f5f0e6",
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                                justifyContent:
+                                                                    "center",
+                                                                borderBottom:
+                                                                    "1px solid rgba(139,0,0,0.2)",
+                                                                overflow:
+                                                                    "hidden",
                                                             }}
                                                         >
-                                                            <Typography
+                                                            <Box
+                                                                component='img'
+                                                                {...getCardImageProps(
+                                                                    card,
+                                                                )}
                                                                 sx={{
-                                                                    fontFamily:
-                                                                        '"Cinzel", serif',
-                                                                    fontWeight:
-                                                                        "bold",
-                                                                    fontSize: {
-                                                                        xs: "0.65rem",
-                                                                        sm: "0.75rem",
-                                                                    },
-                                                                    lineHeight: 1.1,
-                                                                    color: (
-                                                                        theme,
-                                                                    ) =>
-                                                                        theme
-                                                                            .palette
-                                                                            .mode ===
-                                                                        "dark"
-                                                                            ? "#f0e6d2"
-                                                                            : "#1a1a1a",
-                                                                    wordBreak:
-                                                                        "break-word",
+                                                                    width: "100%",
+                                                                    height: "100%",
+                                                                    objectFit:
+                                                                        "cover",
+                                                                }}
+                                                            />
+                                                        </Box>
+
+                                                        {/* Card Info */}
+                                                        <Box
+                                                            sx={{
+                                                                height: "45%",
+                                                                p: {
+                                                                    xs: 0.75,
+                                                                    sm: 1,
+                                                                },
+                                                                display: "flex",
+                                                                flexDirection:
+                                                                    "column",
+                                                                justifyContent:
+                                                                    "space-between",
+                                                                gap: 0.5,
+                                                                overflow:
+                                                                    "hidden",
+                                                            }}
+                                                        >
+                                                            {/* Title & Rarity */}
+                                                            <Box
+                                                                sx={{
+                                                                    minWidth: 0,
                                                                 }}
                                                             >
-                                                                {card.name}
-                                                            </Typography>
+                                                                <Typography
+                                                                    sx={{
+                                                                        fontFamily:
+                                                                            '"Cinzel", serif',
+                                                                        fontWeight:
+                                                                            "bold",
+                                                                        fontSize:
+                                                                            {
+                                                                                xs: "0.65rem",
+                                                                                sm: "0.75rem",
+                                                                            },
+                                                                        lineHeight: 1.1,
+                                                                        color: (
+                                                                            theme,
+                                                                        ) =>
+                                                                            theme
+                                                                                .palette
+                                                                                .mode ===
+                                                                            "dark"
+                                                                                ? "#f0e6d2"
+                                                                                : "#1a1a1a",
+                                                                        wordBreak:
+                                                                            "break-word",
+                                                                    }}
+                                                                >
+                                                                    {card.name}
+                                                                </Typography>
+                                                                <Box
+                                                                    sx={{
+                                                                        display:
+                                                                            "flex",
+                                                                        gap: 0.5,
+                                                                        mt: 0.25,
+                                                                    }}
+                                                                >
+                                                                    <Chip
+                                                                        label={
+                                                                            card.rarity ||
+                                                                            "common"
+                                                                        }
+                                                                        size='small'
+                                                                        sx={{
+                                                                            height: 14,
+                                                                            fontSize:
+                                                                                "0.4rem",
+                                                                            fontWeight:
+                                                                                "bold",
+                                                                            bgcolor:
+                                                                                rarityColor[
+                                                                                    card.rarity ||
+                                                                                        "common"
+                                                                                ],
+                                                                            color: "#fff",
+                                                                        }}
+                                                                    />
+                                                                </Box>
+                                                            </Box>
+
+                                                            {/* Action Buttons */}
                                                             <Box
                                                                 sx={{
                                                                     display:
                                                                         "flex",
                                                                     gap: 0.5,
-                                                                    mt: 0.25,
+                                                                    justifyContent:
+                                                                        "center",
+                                                                    alignItems:
+                                                                        "center",
                                                                 }}
                                                             >
-                                                                <Chip
-                                                                    label={
-                                                                        card.rarity ||
-                                                                        "common"
+                                                                <Tooltip title='More info'>
+                                                                    <IconButton
+                                                                        size='small'
+                                                                        onClick={(
+                                                                            e,
+                                                                        ) => {
+                                                                            e.stopPropagation()
+                                                                            setDetailCard(
+                                                                                {
+                                                                                    ...card,
+                                                                                    ...(fullCard ||
+                                                                                        {}),
+                                                                                },
+                                                                            )
+                                                                        }}
+                                                                        sx={{
+                                                                            bgcolor:
+                                                                                "rgba(30,100,180,0.85)",
+                                                                            color: "#fff",
+                                                                            width: 26,
+                                                                            height: 26,
+                                                                            "&:hover":
+                                                                                {
+                                                                                    bgcolor:
+                                                                                        "#1565c0",
+                                                                                },
+                                                                        }}
+                                                                    >
+                                                                        <MenuBook
+                                                                            sx={{
+                                                                                fontSize: 13,
+                                                                            }}
+                                                                        />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                                <Tooltip
+                                                                    title={
+                                                                        card.reversed
+                                                                            ? "Un-reverse"
+                                                                            : "Reverse 180°"
                                                                     }
-                                                                    size='small'
-                                                                    sx={{
-                                                                        height: 14,
-                                                                        fontSize:
-                                                                            "0.4rem",
-                                                                        fontWeight:
-                                                                            "bold",
-                                                                        bgcolor:
-                                                                            rarityColor[
-                                                                                card.rarity ||
-                                                                                    "common"
-                                                                            ],
-                                                                        color: "#fff",
-                                                                    }}
-                                                                />
+                                                                >
+                                                                    <IconButton
+                                                                        size='small'
+                                                                        onClick={() =>
+                                                                            toggleReversed(
+                                                                                card.uid,
+                                                                            )
+                                                                        }
+                                                                        sx={{
+                                                                            bgcolor:
+                                                                                card.reversed
+                                                                                    ? "rgba(94,53,177,0.9)"
+                                                                                    : "rgba(80,80,80,0.7)",
+                                                                            color: "#fff",
+                                                                            width: 26,
+                                                                            height: 26,
+                                                                            "&:hover":
+                                                                                {
+                                                                                    bgcolor:
+                                                                                        "rgba(94,53,177,0.9)",
+                                                                                },
+                                                                        }}
+                                                                    >
+                                                                        <RotateRight
+                                                                            sx={{
+                                                                                fontSize: 13,
+                                                                            }}
+                                                                        />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                                <Tooltip title='Discard'>
+                                                                    <IconButton
+                                                                        size='small'
+                                                                        onClick={() =>
+                                                                            discardFromPlay(
+                                                                                card.uid,
+                                                                            )
+                                                                        }
+                                                                        sx={{
+                                                                            bgcolor:
+                                                                                "rgba(100,100,100,0.85)",
+                                                                            color: "#fff",
+                                                                            width: 26,
+                                                                            height: 26,
+                                                                            "&:hover":
+                                                                                {
+                                                                                    bgcolor:
+                                                                                        "#666",
+                                                                                },
+                                                                        }}
+                                                                    >
+                                                                        <LayersClear
+                                                                            sx={{
+                                                                                fontSize: 13,
+                                                                            }}
+                                                                        />
+                                                                    </IconButton>
+                                                                </Tooltip>
                                                             </Box>
                                                         </Box>
-
-                                                        {/* Action Buttons */}
-                                                        <Box
-                                                            sx={{
-                                                                display: "flex",
-                                                                gap: 0.5,
-                                                                justifyContent:
-                                                                    "center",
-                                                                alignItems:
-                                                                    "center",
-                                                            }}
-                                                        >
-                                                            <Tooltip title='More info'>
-                                                                <IconButton
-                                                                    size='small'
-                                                                    onClick={(
-                                                                        e,
-                                                                    ) => {
-                                                                        e.stopPropagation()
-                                                                        setDetailCard(
-                                                                            {
-                                                                                ...card,
-                                                                                ...(fullCard ||
-                                                                                    {}),
-                                                                            },
-                                                                        )
-                                                                    }}
-                                                                    sx={{
-                                                                        bgcolor:
-                                                                            "rgba(30,100,180,0.85)",
-                                                                        color: "#fff",
-                                                                        width: 26,
-                                                                        height: 26,
-                                                                        "&:hover":
-                                                                            {
-                                                                                bgcolor:
-                                                                                    "#1565c0",
-                                                                            },
-                                                                    }}
-                                                                >
-                                                                    <MenuBook
-                                                                        sx={{
-                                                                            fontSize: 13,
-                                                                        }}
-                                                                    />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                            <Tooltip
-                                                                title={
-                                                                    card.reversed
-                                                                        ? "Un-reverse"
-                                                                        : "Reverse 180°"
-                                                                }
-                                                            >
-                                                                <IconButton
-                                                                    size='small'
-                                                                    onClick={() =>
-                                                                        toggleReversed(
-                                                                            card.uid,
-                                                                        )
-                                                                    }
-                                                                    sx={{
-                                                                        bgcolor:
-                                                                            card.reversed
-                                                                                ? "rgba(94,53,177,0.9)"
-                                                                                : "rgba(80,80,80,0.7)",
-                                                                        color: "#fff",
-                                                                        width: 26,
-                                                                        height: 26,
-                                                                        "&:hover":
-                                                                            {
-                                                                                bgcolor:
-                                                                                    "rgba(94,53,177,0.9)",
-                                                                            },
-                                                                    }}
-                                                                >
-                                                                    <RotateRight
-                                                                        sx={{
-                                                                            fontSize: 13,
-                                                                        }}
-                                                                    />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                            <Tooltip title='Discard'>
-                                                                <IconButton
-                                                                    size='small'
-                                                                    onClick={() =>
-                                                                        discardFromPlay(
-                                                                            card.uid,
-                                                                        )
-                                                                    }
-                                                                    sx={{
-                                                                        bgcolor:
-                                                                            "rgba(100,100,100,0.85)",
-                                                                        color: "#fff",
-                                                                        width: 26,
-                                                                        height: 26,
-                                                                        "&:hover":
-                                                                            {
-                                                                                bgcolor:
-                                                                                    "#666",
-                                                                            },
-                                                                    }}
-                                                                >
-                                                                    <LayersClear
-                                                                        sx={{
-                                                                            fontSize: 13,
-                                                                        }}
-                                                                    />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                        </Box>
-                                                    </Box>
-                                                </Paper>
-                                            </Zoom>
+                                                    </Paper>
+                                                </Zoom>
+                                            </Box>
                                         </Box>
                                     )
                                 })}
@@ -1514,7 +1825,7 @@ const PowerDeckManager = () => {
                                             : "#1a1a1a",
                                 }}
                             >
-                                Your Hand ({hand.length}/{MAX_HAND_SIZE})
+                                Your Hand ({hand.length}/{handSizeLimit})
                             </Typography>
                             <Box
                                 sx={{
@@ -1860,32 +2171,47 @@ const PowerDeckManager = () => {
                                                                     />
                                                                 </IconButton>
                                                             </Tooltip>
+                                                            {/* Top of deck button */}
                                                             {/* Charge button */}
-                                                            <Tooltip title='Play face-down as charge (fuels Rare/Mythic)'>
+                                                            {/* ─ Special Play trigger ─ */}
+                                                            <Tooltip title='Special play…'>
                                                                 <IconButton
                                                                     size='small'
                                                                     onClick={(
                                                                         e,
                                                                     ) => {
                                                                         e.stopPropagation()
-                                                                        chargeCard(
-                                                                            card.uid,
+                                                                        setHandSpecialMenu(
+                                                                            (
+                                                                                prev,
+                                                                            ) =>
+                                                                                prev?.uid ===
+                                                                                card.uid
+                                                                                    ? null
+                                                                                    : {
+                                                                                          anchorEl:
+                                                                                              e.currentTarget,
+                                                                                          uid: card.uid,
+                                                                                      },
                                                                         )
                                                                     }}
                                                                     sx={{
                                                                         bgcolor:
-                                                                            "rgba(180,120,0,0.85)",
+                                                                            handSpecialMenu?.uid ===
+                                                                            card.uid
+                                                                                ? "rgba(94,53,177,0.9)"
+                                                                                : "rgba(80,40,140,0.7)",
                                                                         color: "#fff",
                                                                         width: 22,
                                                                         height: 22,
                                                                         "&:hover":
                                                                             {
                                                                                 bgcolor:
-                                                                                    "#f9a825",
+                                                                                    "rgba(94,53,177,0.9)",
                                                                             },
                                                                     }}
                                                                 >
-                                                                    <FlipToBack
+                                                                    <AutoAwesome
                                                                         sx={{
                                                                             fontSize: 11,
                                                                         }}
@@ -2156,7 +2482,7 @@ const PowerDeckManager = () => {
                                 onClick={drawCard}
                                 disabled={
                                     deckCards.length === 0 ||
-                                    hand.length >= MAX_HAND_SIZE
+                                    hand.length >= handSizeLimit
                                 }
                                 sx={{
                                     bgcolor: "#8B0000",
@@ -2172,7 +2498,7 @@ const PowerDeckManager = () => {
                                     },
                                 }}
                             >
-                                Draw ({hand.length}/{MAX_HAND_SIZE})
+                                Draw ({hand.length}/{handSizeLimit})
                             </Button>
                             <Button
                                 variant='outlined'
@@ -2205,7 +2531,7 @@ const PowerDeckManager = () => {
                                 variant='outlined'
                                 onClick={gritTeeth}
                                 disabled={
-                                    hand.length >= MAX_HAND_SIZE ||
+                                    hand.length >= handSizeLimit ||
                                     deckCards.length === 0
                                 }
                                 size='small'
@@ -2470,17 +2796,28 @@ const PowerDeckManager = () => {
                                         >
                                             <CardFace card={card} compact />
                                         </Box>
-                                        <Tooltip title='Return to hand'>
-                                            <span style={{ width: "100%" }}>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                width: "100%",
+                                                borderTop:
+                                                    "1px solid rgba(255,255,255,0.08)",
+                                            }}
+                                        >
+                                            <Tooltip title='Move card…'>
                                                 <IconButton
                                                     size='small'
-                                                    disabled={
-                                                        hand.length >=
-                                                        MAX_HAND_SIZE
-                                                    }
-                                                    onClick={() =>
-                                                        returnFromDiscard(
-                                                            card.uid,
+                                                    onClick={(e) =>
+                                                        setDiscardCardMenu(
+                                                            (prev) =>
+                                                                prev?.uid ===
+                                                                card.uid
+                                                                    ? null
+                                                                    : {
+                                                                          anchorEl:
+                                                                              e.currentTarget,
+                                                                          uid: card.uid,
+                                                                      },
                                                         )
                                                     }
                                                     sx={{
@@ -2489,25 +2826,23 @@ const PowerDeckManager = () => {
                                                         borderRadius:
                                                             "0 0 6px 6px",
                                                         bgcolor:
-                                                            hand.length >=
-                                                            MAX_HAND_SIZE
-                                                                ? "rgba(80,80,80,0.3)"
-                                                                : "rgba(30,100,180,0.75)",
+                                                            discardCardMenu?.uid ===
+                                                            card.uid
+                                                                ? "rgba(94,53,177,0.9)"
+                                                                : "rgba(60,30,110,0.7)",
                                                         color: "#fff",
                                                         "&:hover": {
-                                                            bgcolor: "#1565c0",
-                                                        },
-                                                        "&.Mui-disabled": {
-                                                            color: "rgba(255,255,255,0.25)",
+                                                            bgcolor:
+                                                                "rgba(94,53,177,0.9)",
                                                         },
                                                     }}
                                                 >
-                                                    <ReplyAll
-                                                        sx={{ fontSize: 11 }}
+                                                    <AutoAwesome
+                                                        sx={{ fontSize: 10 }}
                                                     />
                                                 </IconButton>
-                                            </span>
-                                        </Tooltip>
+                                            </Tooltip>
+                                        </Box>
                                     </Paper>
                                 ))}
                             </Box>
@@ -2572,6 +2907,353 @@ const PowerDeckManager = () => {
                 </Paper>
             )}
 
+            {/* ═══ Hand card SpecialPlay sub-menu Popover ═══ */}
+            <Popover
+                open={Boolean(handSpecialMenu)}
+                anchorEl={handSpecialMenu?.anchorEl}
+                onClose={() => setHandSpecialMenu(null)}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                transformOrigin={{
+                    vertical: "bottom",
+                    horizontal: "center",
+                }}
+                PaperProps={{
+                    sx: {
+                        bgcolor: "transparent",
+                        boxShadow: "none",
+                        overflow: "visible",
+                        p: 0,
+                    },
+                }}
+            >
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        pb: "2px",
+                    }}
+                >
+                    {/* Two bubble buttons */}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            gap: 1.5,
+                            alignItems: "flex-end",
+                        }}
+                    >
+                        {/* Bubble 1: Top of Deck */}
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "3px",
+                            }}
+                        >
+                            <Tooltip title='Send to top of deck'>
+                                <IconButton
+                                    size='small'
+                                    onClick={() => {
+                                        sendToTopOfDeck(
+                                            handSpecialMenu.uid,
+                                            "hand",
+                                        )
+                                        setHandSpecialMenu(null)
+                                    }}
+                                    sx={{
+                                        width: 34,
+                                        height: 34,
+                                        borderRadius: "50%",
+                                        bgcolor: "rgba(0,110,65,0.95)",
+                                        border: "1.5px solid rgba(0,200,100,0.45)",
+                                        color: "#fff",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.45)",
+                                        "&:hover": {
+                                            bgcolor: "rgba(0,140,80,1)",
+                                        },
+                                    }}
+                                >
+                                    <VerticalAlignTop sx={{ fontSize: 15 }} />
+                                </IconButton>
+                            </Tooltip>
+                            <Typography
+                                sx={{
+                                    fontSize: "0.42rem",
+                                    color: "rgba(255,255,255,0.65)",
+                                    fontFamily: '"Cinzel", serif',
+                                    lineHeight: 1,
+                                    whiteSpace: "nowrap",
+                                    letterSpacing: "0.03em",
+                                }}
+                            >
+                                Top of Deck
+                            </Typography>
+                        </Box>
+
+                        {/* Bubble 2: Charge */}
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "3px",
+                            }}
+                        >
+                            <Tooltip title='Play face-down as charge'>
+                                <IconButton
+                                    size='small'
+                                    onClick={() => {
+                                        chargeCard(handSpecialMenu.uid)
+                                        setHandSpecialMenu(null)
+                                    }}
+                                    sx={{
+                                        width: 34,
+                                        height: 34,
+                                        borderRadius: "50%",
+                                        bgcolor: "rgba(160,100,0,0.95)",
+                                        border: "1.5px solid rgba(249,168,37,0.45)",
+                                        color: "#fff",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.45)",
+                                        "&:hover": {
+                                            bgcolor: "rgba(199,125,0,1)",
+                                        },
+                                    }}
+                                >
+                                    <FlipToBack sx={{ fontSize: 15 }} />
+                                </IconButton>
+                            </Tooltip>
+                            <Typography
+                                sx={{
+                                    fontSize: "0.42rem",
+                                    color: "rgba(255,255,255,0.65)",
+                                    fontFamily: '"Cinzel", serif',
+                                    lineHeight: 1,
+                                    whiteSpace: "nowrap",
+                                    letterSpacing: "0.03em",
+                                }}
+                            >
+                                Charge
+                            </Typography>
+                        </Box>
+                    </Box>
+
+                    {/* Connector: horizontal bar + vertical stem */}
+                    <Box
+                        sx={{
+                            position: "relative",
+                            width: 68,
+                            height: 10,
+                            mt: "2px",
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: 4,
+                                right: 4,
+                                height: "1px",
+                                bgcolor: "rgba(200,200,200,0.25)",
+                            }}
+                        />
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                width: "1px",
+                                height: "100%",
+                                bgcolor: "rgba(200,200,200,0.25)",
+                            }}
+                        />
+                    </Box>
+                </Box>
+            </Popover>
+
+            {/* ═══ Discard card move sub-menu Popover ═══ */}
+            <Popover
+                open={Boolean(discardCardMenu)}
+                anchorEl={discardCardMenu?.anchorEl}
+                onClose={() => setDiscardCardMenu(null)}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                transformOrigin={{
+                    vertical: "bottom",
+                    horizontal: "center",
+                }}
+                PaperProps={{
+                    sx: {
+                        bgcolor: "transparent",
+                        boxShadow: "none",
+                        overflow: "visible",
+                        p: 0,
+                    },
+                }}
+            >
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        pb: "2px",
+                    }}
+                >
+                    <Box
+                        sx={{
+                            display: "flex",
+                            gap: 1.5,
+                            alignItems: "flex-end",
+                        }}
+                    >
+                        {/* Bubble 1: Return to Hand */}
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "3px",
+                            }}
+                        >
+                            <Tooltip
+                                title={
+                                    hand.length >= handSizeLimit
+                                        ? "Hand is full"
+                                        : "Return to hand"
+                                }
+                            >
+                                <span>
+                                    <IconButton
+                                        size='small'
+                                        disabled={hand.length >= handSizeLimit}
+                                        onClick={() => {
+                                            returnFromDiscard(
+                                                discardCardMenu.uid,
+                                            )
+                                            setDiscardCardMenu(null)
+                                        }}
+                                        sx={{
+                                            width: 34,
+                                            height: 34,
+                                            borderRadius: "50%",
+                                            bgcolor:
+                                                hand.length >= handSizeLimit
+                                                    ? "rgba(60,60,60,0.5)"
+                                                    : "rgba(20,80,180,0.95)",
+                                            border: "1.5px solid rgba(80,160,255,0.4)",
+                                            color: "#fff",
+                                            boxShadow:
+                                                "0 2px 8px rgba(0,0,0,0.45)",
+                                            "&:hover": {
+                                                bgcolor: "rgba(21,101,192,1)",
+                                            },
+                                            "&.Mui-disabled": {
+                                                color: "rgba(255,255,255,0.2)",
+                                            },
+                                        }}
+                                    >
+                                        <ReplyAll sx={{ fontSize: 15 }} />
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                            <Typography
+                                sx={{
+                                    fontSize: "0.42rem",
+                                    color: "rgba(255,255,255,0.65)",
+                                    fontFamily: '"Cinzel", serif',
+                                    lineHeight: 1,
+                                    whiteSpace: "nowrap",
+                                    letterSpacing: "0.03em",
+                                }}
+                            >
+                                To Hand
+                            </Typography>
+                        </Box>
+
+                        {/* Bubble 2: Top of Deck */}
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "3px",
+                            }}
+                        >
+                            <Tooltip title='Send to top of deck'>
+                                <IconButton
+                                    size='small'
+                                    onClick={() => {
+                                        sendToTopOfDeck(
+                                            discardCardMenu.uid,
+                                            "discard",
+                                        )
+                                        setDiscardCardMenu(null)
+                                    }}
+                                    sx={{
+                                        width: 34,
+                                        height: 34,
+                                        borderRadius: "50%",
+                                        bgcolor: "rgba(0,110,65,0.95)",
+                                        border: "1.5px solid rgba(0,200,100,0.45)",
+                                        color: "#fff",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.45)",
+                                        "&:hover": {
+                                            bgcolor: "rgba(0,140,80,1)",
+                                        },
+                                    }}
+                                >
+                                    <VerticalAlignTop sx={{ fontSize: 15 }} />
+                                </IconButton>
+                            </Tooltip>
+                            <Typography
+                                sx={{
+                                    fontSize: "0.42rem",
+                                    color: "rgba(255,255,255,0.65)",
+                                    fontFamily: '"Cinzel", serif',
+                                    lineHeight: 1,
+                                    whiteSpace: "nowrap",
+                                    letterSpacing: "0.03em",
+                                }}
+                            >
+                                Top of Deck
+                            </Typography>
+                        </Box>
+                    </Box>
+
+                    {/* Connector lines */}
+                    <Box
+                        sx={{
+                            position: "relative",
+                            width: 68,
+                            height: 10,
+                            mt: "2px",
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: 4,
+                                right: 4,
+                                height: "1px",
+                                bgcolor: "rgba(200,200,200,0.25)",
+                            }}
+                        />
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                width: "1px",
+                                height: "100%",
+                                bgcolor: "rgba(200,200,200,0.25)",
+                            }}
+                        />
+                    </Box>
+                </Box>
+            </Popover>
+
             {/* ═══ Browse Deck Modal ═══ */}
             <Modal
                 open={showBrowseDeck}
@@ -2619,8 +3301,8 @@ const PowerDeckManager = () => {
                             </Typography>
                             <Typography variant='caption' sx={{ opacity: 0.7 }}>
                                 {deckCards.length} card
-                                {deckCards.length !== 1 ? "s" : ""} remaining ·
-                                deck reshuffles after taking
+                                {deckCards.length !== 1 ? "s" : ""} remaining ·{" "}
+                                {favoritedCards.size}/3 favorites
                             </Typography>
                         </Box>
                         <IconButton
@@ -2631,12 +3313,15 @@ const PowerDeckManager = () => {
                         </IconButton>
                     </Box>
 
-                    {/* Search */}
+                    {/* Search + Favorites filter */}
                     <Box
                         sx={{
                             p: 1.5,
                             borderBottom: "1px solid",
                             borderColor: "divider",
+                            display: "flex",
+                            gap: 1,
+                            alignItems: "center",
                         }}
                     >
                         <TextField
@@ -2661,193 +3346,358 @@ const PowerDeckManager = () => {
                                 },
                             }}
                         />
+                        <Tooltip
+                            title={
+                                browseShowFavoritesOnly
+                                    ? "Show all cards"
+                                    : `Show favorites (${favoritedCards.size}/3)`
+                            }
+                        >
+                            <IconButton
+                                size='small'
+                                onClick={() =>
+                                    setBrowseShowFavoritesOnly((v) => !v)
+                                }
+                                sx={{
+                                    flexShrink: 0,
+                                    color: browseShowFavoritesOnly
+                                        ? "#f9a825"
+                                        : "text.secondary",
+                                    bgcolor: browseShowFavoritesOnly
+                                        ? "rgba(249,168,37,0.12)"
+                                        : "transparent",
+                                    border: "1px solid",
+                                    borderColor: browseShowFavoritesOnly
+                                        ? "rgba(249,168,37,0.5)"
+                                        : "divider",
+                                    borderRadius: "8px",
+                                    width: 36,
+                                    height: 36,
+                                }}
+                            >
+                                {browseShowFavoritesOnly ? (
+                                    <Star sx={{ fontSize: 18 }} />
+                                ) : (
+                                    <StarBorder sx={{ fontSize: 18 }} />
+                                )}
+                            </IconButton>
+                        </Tooltip>
                     </Box>
 
                     {/* Card list */}
                     <Box sx={{ flex: 1, overflowY: "auto", p: 1 }}>
-                        {deckCards
-                            .filter((card) => {
-                                const q = deckSearchQuery.toLowerCase()
-                                return (
+                        {(() => {
+                            const q = deckSearchQuery.toLowerCase()
+                            const allFiltered = deckCards.filter((card) => {
+                                const key = `${card.deck || ""}/${card.name}`
+                                const matchesQuery =
                                     !q ||
                                     card.name.toLowerCase().includes(q) ||
                                     (card.rarity || "common")
                                         .toLowerCase()
                                         .includes(q) ||
                                     (card.deck || "").toLowerCase().includes(q)
-                                )
+                                const matchesFav =
+                                    !browseShowFavoritesOnly ||
+                                    favoritedCards.has(key)
+                                return matchesQuery && matchesFav
                             })
-                            .map((card) => (
-                                <Box
-                                    key={card.uid}
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 1.5,
-                                        p: 1,
-                                        borderRadius: "8px",
-                                        mb: 0.5,
-                                        border: "1px solid",
-                                        borderColor: (theme) =>
-                                            theme.palette.mode === "dark"
-                                                ? "rgba(255,255,255,0.07)"
-                                                : "rgba(0,0,0,0.07)",
-                                        bgcolor: (theme) =>
-                                            theme.palette.mode === "dark"
-                                                ? "rgba(255,255,255,0.03)"
-                                                : "rgba(0,0,0,0.02)",
-                                        "&:hover": {
-                                            borderColor:
-                                                rarityBorder[
-                                                    card.rarity || "common"
-                                                ],
-                                            bgcolor: (theme) =>
-                                                theme.palette.mode === "dark"
-                                                    ? "rgba(255,255,255,0.06)"
-                                                    : "rgba(0,0,0,0.04)",
-                                        },
-                                    }}
-                                >
-                                    {/* Mini art */}
-                                    <Box
-                                        component='img'
-                                        {...getCardImageProps(card)}
+
+                            // Sort: favorites first
+                            const favoriteRows = allFiltered.filter((c) =>
+                                favoritedCards.has(`${c.deck || ""}/${c.name}`),
+                            )
+                            const otherRows = allFiltered.filter(
+                                (c) =>
+                                    !favoritedCards.has(
+                                        `${c.deck || ""}/${c.name}`,
+                                    ),
+                            )
+                            const sorted = [...favoriteRows, ...otherRows]
+
+                            if (sorted.length === 0)
+                                return (
+                                    <Typography
                                         sx={{
-                                            width: 40,
-                                            height: 40,
-                                            objectFit: "cover",
-                                            borderRadius: "6px",
-                                            flexShrink: 0,
-                                            border: `1px solid ${rarityBorder[card.rarity || "common"]}`,
+                                            textAlign: "center",
+                                            py: 3,
+                                            opacity: 0.4,
+                                            fontFamily: '"Cinzel", serif',
+                                            fontSize: "0.85rem",
                                         }}
-                                    />
-                                    {/* Name + rarity */}
-                                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                                        <Typography
-                                            sx={{
-                                                fontFamily: '"Cinzel", serif',
-                                                fontWeight: "bold",
-                                                fontSize: "0.8rem",
-                                                lineHeight: 1.2,
-                                                color: (theme) =>
-                                                    theme.palette.mode ===
-                                                    "dark"
-                                                        ? "#f0e6d2"
-                                                        : "#1a1a1a",
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "nowrap",
-                                            }}
-                                        >
-                                            {card.name}
-                                        </Typography>
+                                    >
+                                        {browseShowFavoritesOnly
+                                            ? "No favorites marked yet."
+                                            : "No cards match your search."}
+                                    </Typography>
+                                )
+
+                            return sorted.map((card, idx) => {
+                                const cardKey = `${card.deck || ""}/${card.name}`
+                                const isFav = favoritedCards.has(cardKey)
+                                const isFirstOther =
+                                    favoriteRows.length > 0 &&
+                                    idx === favoriteRows.length
+                                return (
+                                    <React.Fragment key={card.uid}>
+                                        {isFirstOther && (
+                                            <Divider
+                                                sx={{
+                                                    my: 1,
+                                                    fontSize: "0.6rem",
+                                                    color: "text.secondary",
+                                                    fontFamily:
+                                                        '"Cinzel", serif',
+                                                    opacity: 0.5,
+                                                }}
+                                            >
+                                                Other cards
+                                            </Divider>
+                                        )}
                                         <Box
                                             sx={{
                                                 display: "flex",
-                                                gap: 0.5,
-                                                mt: 0.25,
-                                                flexWrap: "wrap",
-                                            }}
-                                        >
-                                            <Chip
-                                                label={card.rarity || "common"}
-                                                size='small'
-                                                sx={{
-                                                    height: 14,
-                                                    fontSize: "0.45rem",
-                                                    fontWeight: "bold",
-                                                    bgcolor:
-                                                        rarityColor[
+                                                alignItems: "center",
+                                                gap: 1.5,
+                                                p: 1,
+                                                borderRadius: "8px",
+                                                mb: 0.5,
+                                                border: "1px solid",
+                                                borderColor: isFav
+                                                    ? "rgba(249,168,37,0.45)"
+                                                    : (theme) =>
+                                                          theme.palette.mode ===
+                                                          "dark"
+                                                              ? "rgba(255,255,255,0.07)"
+                                                              : "rgba(0,0,0,0.07)",
+                                                borderLeft: isFav
+                                                    ? "3px solid #f9a825"
+                                                    : undefined,
+                                                bgcolor: isFav
+                                                    ? (theme) =>
+                                                          theme.palette.mode ===
+                                                          "dark"
+                                                              ? "rgba(249,168,37,0.05)"
+                                                              : "rgba(249,168,37,0.04)"
+                                                    : (theme) =>
+                                                          theme.palette.mode ===
+                                                          "dark"
+                                                              ? "rgba(255,255,255,0.03)"
+                                                              : "rgba(0,0,0,0.02)",
+                                                "&:hover": {
+                                                    borderColor:
+                                                        rarityBorder[
                                                             card.rarity ||
                                                                 "common"
                                                         ],
-                                                    color: "#fff",
+                                                    bgcolor: (theme) =>
+                                                        theme.palette.mode ===
+                                                        "dark"
+                                                            ? "rgba(255,255,255,0.06)"
+                                                            : "rgba(0,0,0,0.04)",
+                                                },
+                                            }}
+                                        >
+                                            {/* Mini art */}
+                                            <Box
+                                                component='img'
+                                                {...getCardImageProps(card)}
+                                                sx={{
+                                                    width: 40,
+                                                    height: 40,
+                                                    objectFit: "cover",
+                                                    borderRadius: "6px",
+                                                    flexShrink: 0,
+                                                    border: `1px solid ${rarityBorder[card.rarity || "common"]}`,
                                                 }}
                                             />
-                                            {card.deck && (
-                                                <Chip
-                                                    label={card.deck}
-                                                    size='small'
-                                                    variant='outlined'
+                                            {/* Name + rarity */}
+                                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                <Box
                                                     sx={{
-                                                        height: 14,
-                                                        fontSize: "0.45rem",
-                                                        opacity: 0.7,
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 0.5,
                                                     }}
-                                                />
-                                            )}
-                                        </Box>
-                                    </Box>
-                                    {/* Take button */}
-                                    <Tooltip
-                                        title={
-                                            hand.length >= MAX_HAND_SIZE
-                                                ? "Hand is full"
-                                                : "Take to hand (deck reshuffles)"
-                                        }
-                                    >
-                                        <span>
-                                            <IconButton
-                                                size='small'
-                                                disabled={
-                                                    hand.length >= MAX_HAND_SIZE
+                                                >
+                                                    {isFav && (
+                                                        <Star
+                                                            sx={{
+                                                                fontSize: 11,
+                                                                color: "#f9a825",
+                                                                flexShrink: 0,
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <Typography
+                                                        sx={{
+                                                            fontFamily:
+                                                                '"Cinzel", serif',
+                                                            fontWeight: "bold",
+                                                            fontSize: "0.8rem",
+                                                            lineHeight: 1.2,
+                                                            color: (theme) =>
+                                                                theme.palette
+                                                                    .mode ===
+                                                                "dark"
+                                                                    ? "#f0e6d2"
+                                                                    : "#1a1a1a",
+                                                            overflow: "hidden",
+                                                            textOverflow:
+                                                                "ellipsis",
+                                                            whiteSpace:
+                                                                "nowrap",
+                                                        }}
+                                                    >
+                                                        {card.name}
+                                                    </Typography>
+                                                </Box>
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        gap: 0.5,
+                                                        mt: 0.25,
+                                                        flexWrap: "wrap",
+                                                    }}
+                                                >
+                                                    <Chip
+                                                        label={
+                                                            card.rarity ||
+                                                            "common"
+                                                        }
+                                                        size='small'
+                                                        sx={{
+                                                            height: 14,
+                                                            fontSize: "0.45rem",
+                                                            fontWeight: "bold",
+                                                            bgcolor:
+                                                                rarityColor[
+                                                                    card.rarity ||
+                                                                        "common"
+                                                                ],
+                                                            color: "#fff",
+                                                        }}
+                                                    />
+                                                    {card.deck && (
+                                                        <Chip
+                                                            label={card.deck}
+                                                            size='small'
+                                                            variant='outlined'
+                                                            sx={{
+                                                                height: 14,
+                                                                fontSize:
+                                                                    "0.45rem",
+                                                                opacity: 0.7,
+                                                            }}
+                                                        />
+                                                    )}
+                                                </Box>
+                                            </Box>
+                                            {/* Favorite toggle */}
+                                            <Tooltip
+                                                title={
+                                                    isFav
+                                                        ? "Remove favorite"
+                                                        : favoritedCards.size >=
+                                                            3
+                                                          ? "Max 3 favorites"
+                                                          : "Mark as favorite"
                                                 }
-                                                onClick={() =>
-                                                    takeFromDeck(card.uid)
-                                                }
-                                                sx={{
-                                                    bgcolor:
-                                                        hand.length >=
-                                                        MAX_HAND_SIZE
-                                                            ? "rgba(80,80,80,0.3)"
-                                                            : "rgba(94,53,177,0.85)",
-                                                    color: "#fff",
-                                                    width: 30,
-                                                    height: 30,
-                                                    flexShrink: 0,
-                                                    "&:hover": {
-                                                        bgcolor:
-                                                            "rgba(94,53,177,1)",
-                                                    },
-                                                    "&.Mui-disabled": {
-                                                        color: "rgba(255,255,255,0.25)",
-                                                    },
-                                                }}
                                             >
-                                                <ReplyAll
-                                                    sx={{
-                                                        fontSize: 15,
-                                                        transform: "scaleX(-1)",
-                                                    }}
-                                                />
-                                            </IconButton>
-                                        </span>
-                                    </Tooltip>
-                                </Box>
-                            ))}
-                        {deckCards.filter((card) => {
-                            const q = deckSearchQuery.toLowerCase()
-                            return (
-                                !q ||
-                                card.name.toLowerCase().includes(q) ||
-                                (card.rarity || "common")
-                                    .toLowerCase()
-                                    .includes(q) ||
-                                (card.deck || "").toLowerCase().includes(q)
-                            )
-                        }).length === 0 && (
-                            <Typography
-                                sx={{
-                                    textAlign: "center",
-                                    py: 3,
-                                    opacity: 0.4,
-                                    fontFamily: '"Cinzel", serif',
-                                    fontSize: "0.85rem",
-                                }}
-                            >
-                                No cards match your search.
-                            </Typography>
-                        )}
+                                                <span>
+                                                    <IconButton
+                                                        size='small'
+                                                        disabled={
+                                                            !isFav &&
+                                                            favoritedCards.size >=
+                                                                3
+                                                        }
+                                                        onClick={() =>
+                                                            toggleFavorite(
+                                                                cardKey,
+                                                            )
+                                                        }
+                                                        sx={{
+                                                            color: isFav
+                                                                ? "#f9a825"
+                                                                : "text.disabled",
+                                                            width: 28,
+                                                            height: 28,
+                                                            "&:hover": {
+                                                                color: "#f9a825",
+                                                            },
+                                                        }}
+                                                    >
+                                                        {isFav ? (
+                                                            <Star
+                                                                sx={{
+                                                                    fontSize: 16,
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <StarBorder
+                                                                sx={{
+                                                                    fontSize: 16,
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
+                                            {/* Take button */}
+                                            <Tooltip
+                                                title={
+                                                    hand.length >= handSizeLimit
+                                                        ? "Hand is full"
+                                                        : "Take to hand (deck reshuffles)"
+                                                }
+                                            >
+                                                <span>
+                                                    <IconButton
+                                                        size='small'
+                                                        disabled={
+                                                            hand.length >=
+                                                            handSizeLimit
+                                                        }
+                                                        onClick={() =>
+                                                            takeFromDeck(
+                                                                card.uid,
+                                                            )
+                                                        }
+                                                        sx={{
+                                                            bgcolor:
+                                                                hand.length >=
+                                                                handSizeLimit
+                                                                    ? "rgba(80,80,80,0.3)"
+                                                                    : "rgba(94,53,177,0.85)",
+                                                            color: "#fff",
+                                                            width: 30,
+                                                            height: 30,
+                                                            flexShrink: 0,
+                                                            "&:hover": {
+                                                                bgcolor:
+                                                                    "rgba(94,53,177,1)",
+                                                            },
+                                                            "&.Mui-disabled": {
+                                                                color: "rgba(255,255,255,0.25)",
+                                                            },
+                                                        }}
+                                                    >
+                                                        <ReplyAll
+                                                            sx={{
+                                                                fontSize: 15,
+                                                                transform:
+                                                                    "scaleX(-1)",
+                                                            }}
+                                                        />
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
+                                        </Box>
+                                    </React.Fragment>
+                                )
+                            })
+                        })()}
                     </Box>
 
                     {/* Footer */}

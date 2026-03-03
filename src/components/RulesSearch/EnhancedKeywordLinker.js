@@ -48,6 +48,7 @@ const EnhancedKeywordLinker = ({
         // Add rules content from searchableContent
         searchableContent.forEach((item) => {
             // Add main title
+            if (!item.title) return
             mappings.set(item.title.toLowerCase(), {
                 page: item.category,
                 path: item.path,
@@ -58,6 +59,7 @@ const EnhancedKeywordLinker = ({
 
             // Add keywords
             item.keywords.forEach((keyword) => {
+                if (!keyword) return
                 mappings.set(keyword.toLowerCase(), {
                     page: item.category,
                     path: item.path,
@@ -81,6 +83,7 @@ const EnhancedKeywordLinker = ({
 
         // Add equipment names
         allContent.equipment?.forEach((item) => {
+            if (!item.name) return
             mappings.set(item.name.toLowerCase(), {
                 page: "Equipment",
                 path: "/equipment",
@@ -92,6 +95,7 @@ const EnhancedKeywordLinker = ({
 
         // Add monster names
         allContent.monsters?.forEach((monster) => {
+            if (!monster.Name) return
             mappings.set(monster.Name.toLowerCase(), {
                 page: "Monsters",
                 path: `/monsters/${monster.Name}`,

@@ -1,0 +1,74 @@
+{
+    "navItems": [
+        {
+            "id": "about",
+            "label": "What is \"I Must Kill\"?",
+            "path": "/about",
+            "order": 0,
+            "visible": true
+        },
+        {
+            "id": "getting-started",
+            "label": "Getting Started",
+            "path": "/getting-started",
+            "order": 1,
+            "visible": true
+        },
+        {
+            "id": "character-creation",
+            "label": "Character Creation",
+            "path": "/character-creation",
+            "order": 2,
+            "visible": true
+        },
+        {
+            "id": "player-tools",
+            "label": "Player Tools",
+            "path": "/player-tools",
+            "order": 3,
+            "visible": true
+        },
+        {
+            "id": "combat-mechanics",
+            "label": "Combat Mechanics",
+            "path": "/combat-mechanics",
+            "order": 4,
+            "visible": true
+        },
+        {
+            "id": "death-and-resting",
+            "label": "Death and Resting",
+            "path": "/death-and-resting",
+            "order": 5,
+            "visible": true
+        },
+        {
+            "id": "progression",
+            "label": "Progression",
+            "path": "/progression",
+            "order": 6,
+            "visible": true
+        },
+        {
+            "id": "powers",
+            "label": "Powers",
+            "path": "/powers",
+            "order": 7,
+            "visible": true
+        },
+        {
+            "id": "power-cards",
+            "label": "Power Cards",
+            "path": "/power-cards",
+            "order": 8,
+            "visible": true
+        },
+        {
+            "id": "gm-tools",
+            "label": "GM Tools",
+            "path": "/gm-tools",
+            "order": 9,
+            "visible": true
+        }
+    ]
+}

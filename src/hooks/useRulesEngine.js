@@ -1,4 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
+import {
+    getAllRules,
+    updateRule,
+    deleteRule,
+    rulesApiEnabled,
+} from "../utils/rulesClient"
 
 /* ────────────────────────────────────────────────────────────────
  *  useRulesEngine
@@ -7,27 +13,77 @@ export const useRulesEngine = () => {
     const [rulesData, setRulesData] = useState({})
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [usingApi, setUsingApi] = useState(false)
 
-    /* ───────────────── Load JSON on mount ───────────────────────── */
+    /* ───────────────── Load: API-first, JSON fallback ───────────── */
     useEffect(() => {
         const load = async () => {
             try {
                 setLoading(true)
 
+                // Always load rules-database.json for referenceIds,
+                // category metadata, and quickReference sections
                 const dbResp = await fetch("/rules-database.json")
                 const db = await dbResp.json()
+                const categories = db.rulesDatabase.categories
 
-                const catFiles = Object.entries(
-                    db.rulesDatabase.categories,
-                ).map(async ([key, cat]) => {
-                    const r = await fetch(`/${cat.file}`)
-                    return [key, await r.json()]
-                })
+                let catData = {}
+                let loadedFromApi = false
 
-                setRulesData({
-                    database: db.rulesDatabase,
-                    ...Object.fromEntries(await Promise.all(catFiles)),
-                })
+                // ─ Try API first ──────────────────────────────────────
+                if (rulesApiEnabled()) {
+                    try {
+                        const apiResult = await getAllRules()
+                        if (apiResult?.grouped) {
+                            Object.entries(categories).forEach(
+                                ([catKey, meta]) => {
+                                    const items = apiResult.grouped[catKey]
+                                    if (items?.length) {
+                                        catData[catKey] = {
+                                            _api: {
+                                                title: meta.title,
+                                                sections: items
+                                                    .sort(
+                                                        (a, b) =>
+                                                            (a.order ?? 0) -
+                                                            (b.order ?? 0),
+                                                    )
+                                                    .map(
+                                                        (item) => item.content,
+                                                    ),
+                                            },
+                                        }
+                                    }
+                                },
+                            )
+                            if (Object.keys(catData).length > 0)
+                                loadedFromApi = true
+                        }
+                    } catch (apiErr) {
+                        console.warn(
+                            "Rules API unavailable, falling back to JSON:",
+                            apiErr.message,
+                        )
+                    }
+                }
+
+                // ─ JSON fallback for any missing categories ────────────
+                const missingCats = Object.entries(categories).filter(
+                    ([key]) => !catData[key],
+                )
+                if (missingCats.length > 0) {
+                    const catFiles = missingCats.map(async ([key, cat]) => {
+                        const r = await fetch(`/${cat.file}`)
+                        return [key, await r.json()]
+                    })
+                    Object.assign(
+                        catData,
+                        Object.fromEntries(await Promise.all(catFiles)),
+                    )
+                }
+
+                setRulesData({ database: db.rulesDatabase, ...catData })
+                setUsingApi(loadedFromApi)
                 setError(null)
             } catch (e) {
                 console.error("Error loading rules:", e)
@@ -38,6 +94,70 @@ export const useRulesEngine = () => {
         }
 
         load()
+    }, [])
+
+    /* ───────────────── updateSection ───────────────────────────── */
+    /**
+     * Update one section optimistically in state and persist to the API.
+     * @param {string} category   e.g. "combat-mechanics"
+     * @param {string} sectionId  e.g. "actions"
+     * @param {object} updatedSection  Full section object
+     * @param {number} order  0-based display order
+     * @param {string} idToken  Cognito id_token
+     */
+    const updateSection = useCallback(
+        async (category, sectionId, updatedSection, order, idToken) => {
+            setRulesData((prev) => {
+                const catEntry = prev[category]
+                if (!catEntry) return prev
+                const catData = Object.values(catEntry)[0]
+                if (!catData?.sections) return prev
+                const key = Object.keys(catEntry)[0]
+                const newSections = catData.sections.map((s) =>
+                    s.id === sectionId ? updatedSection : s,
+                )
+                return {
+                    ...prev,
+                    [category]: {
+                        [key]: { ...catData, sections: newSections },
+                    },
+                }
+            })
+            await updateRule(
+                category,
+                sectionId,
+                {
+                    title: updatedSection.title || "",
+                    order: order ?? 0,
+                    content: updatedSection,
+                },
+                idToken,
+            )
+        },
+        [],
+    )
+
+    /* ───────────────── deleteSection ───────────────────────────── */
+    const deleteSection = useCallback(async (category, sectionId, idToken) => {
+        setRulesData((prev) => {
+            const catEntry = prev[category]
+            if (!catEntry) return prev
+            const catData = Object.values(catEntry)[0]
+            if (!catData?.sections) return prev
+            const key = Object.keys(catEntry)[0]
+            return {
+                ...prev,
+                [category]: {
+                    [key]: {
+                        ...catData,
+                        sections: catData.sections.filter(
+                            (s) => s.id !== sectionId,
+                        ),
+                    },
+                },
+            }
+        })
+        await deleteRule(category, sectionId, idToken)
     }, [])
 
     /* ───────────────── Clean-ups ────────────────────────────────── */
@@ -80,22 +200,24 @@ export const useRulesEngine = () => {
         rulesData.database.quickReference &&
             Object.entries(rulesData.database.quickReference).forEach(
                 ([cat, items]) =>
-                    items.forEach((i) =>
+                    items.forEach((i) => {
+                        const title = i.term || i.stat || i.type
+                        if (!title) return // skip non-reference entries (e.g. diceRolls)
                         content.push({
                             type: "quick-reference",
                             category: cat,
-                            title: i.term || i.stat || i.type,
+                            title,
                             description:
                                 i.description ||
                                 i.uses?.join(", ") ||
                                 i.effective_against,
                             keywords: i.keywords || [],
                             path: "/quick-reference",
-                            section: i.term || i.stat || i.type,
-                            id: i.term || i.stat || i.type,
+                            section: title,
+                            id: title,
                             isQuickReference: true,
-                        }),
-                    ),
+                        })
+                    }),
             )
 
         /* categories */
@@ -106,6 +228,7 @@ export const useRulesEngine = () => {
 
             main.sections.forEach((sec) => {
                 /* section */
+                if (!sec.title) return
                 content.push({
                     type: "rule-section",
                     category: catKey,
@@ -118,7 +241,8 @@ export const useRulesEngine = () => {
                 })
 
                 /* subsections */
-                ;(sec.subsections ?? []).forEach((sub) =>
+                ;(sec.subsections ?? []).forEach((sub) => {
+                    if (!sub.title) return
                     content.push({
                         type: "rule-subsection",
                         category: catKey,
@@ -128,12 +252,13 @@ export const useRulesEngine = () => {
                         path: `/${catKey}`,
                         section: sub.title,
                         id: sub.id,
-                    }),
-                )
+                    })
+                })
 
                 /* ── stats in character-creation/stats ── */
                 if (Array.isArray(sec.content)) {
                     sec.content.forEach((entry) => {
+                        if (!entry.name) return
                         const slug = entry.name
                             .toLowerCase()
                             .replace(/\s+/g, "-")
@@ -153,7 +278,8 @@ export const useRulesEngine = () => {
                 }
 
                 /* ── combat actions (PATCHED) ── */
-                ;(sec.actions ?? []).forEach((a) =>
+                ;(sec.actions ?? []).forEach((a) => {
+                    if (!a.name) return
                     content.push({
                         type: "combat-action",
                         category: catKey,
@@ -167,8 +293,8 @@ export const useRulesEngine = () => {
                         id: a.name.toLowerCase().replace(/\s+/g, "-"),
                         isSourceLinked: true, // ← NEW
                         sourceNames: sec["%Source"] || [], // ← NEW
-                    }),
-                )
+                    })
+                })
 
                 /* other blocks unchanged … */
                 ;(sec.types ?? []).forEach((t) =>
@@ -205,7 +331,8 @@ export const useRulesEngine = () => {
                         section: e.name,
                     }),
                 )
-                ;(sec.phases ?? []).forEach((p) =>
+                ;(sec.phases ?? []).forEach((p) => {
+                    if (!p.name) return
                     content.push({
                         type: "hunt-phase",
                         category: catKey,
@@ -217,8 +344,8 @@ export const useRulesEngine = () => {
                         ],
                         path: `/${catKey}`,
                         section: p.name,
-                    }),
-                )
+                    })
+                })
             })
         })
 
@@ -236,12 +363,13 @@ export const useRulesEngine = () => {
 
             /* pass 1: hits (no quick-reference yet) */
             searchableContent.forEach((item) => {
+                if (!item.title) return
                 const haystack = (
-                    item.title +
+                    (item.title || "") +
                     " " +
-                    item.description +
+                    (item.description || "") +
                     " " +
-                    item.keywords.join(" ")
+                    (item.keywords || []).filter(Boolean).join(" ")
                 ).toLowerCase()
 
                 if (!terms.every((t) => haystack.includes(t))) return
@@ -251,16 +379,20 @@ export const useRulesEngine = () => {
                 if (item.title.toLowerCase().includes(query.toLowerCase()))
                     score += 10
                 score +=
-                    item.keywords.filter((k) =>
-                        k.toLowerCase().includes(query.toLowerCase()),
+                    (item.keywords || []).filter(
+                        (k) =>
+                            k && k.toLowerCase().includes(query.toLowerCase()),
                     ).length * 5
                 if (
-                    item.description.toLowerCase().includes(query.toLowerCase())
+                    (item.description || "")
+                        .toLowerCase()
+                        .includes(query.toLowerCase())
                 )
                     score += 2
                 if (
-                    item.keywords.some(
+                    (item.keywords || []).some(
                         (k) =>
+                            k &&
                             k.startsWith("@") &&
                             k.toLowerCase().includes(query.toLowerCase()),
                     )
@@ -565,6 +697,9 @@ export const useRulesEngine = () => {
         rulesData,
         loading,
         error,
+        usingApi,
+        updateSection,
+        deleteSection,
     }
 }
 

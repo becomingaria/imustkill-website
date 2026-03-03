@@ -1,8 +1,9 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { Container, Box, Typography, Button } from "@mui/material"
 import FlashyMenu from "../components/FlashyMenu"
 import EnhancedRulesSearch from "../components/RulesSearch/EnhancedRulesSearch.js"
+import { getNavConfig } from "../utils/rulesClient"
 
 // Helper function for consistent button styling - glassmorphic style
 const getButtonStyles = () => ({
@@ -39,6 +40,38 @@ const getButtonStyles = () => ({
 })
 
 const HomePage = () => {
+    const [navItems, setNavItems] = useState([])
+
+    // Load nav config: DB first, then fall back to static JSON
+    useEffect(() => {
+        const load = async () => {
+            // Try DB override
+            const dbNav = await getNavConfig()
+            if (dbNav) {
+                setNavItems(
+                    dbNav
+                        .filter((n) => n.visible !== false)
+                        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+                )
+                return
+            }
+            // Fall back to static JSON
+            try {
+                const res = await fetch("/nav-config.json")
+                const data = await res.json()
+                setNavItems(
+                    (data.navItems || [])
+                        .filter((n) => n.visible !== false)
+                        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+                )
+            } catch {
+                // ultimate fallback — empty, no nav shown
+                setNavItems([])
+            }
+        }
+        load()
+    }, [])
+
     return (
         <Container
             sx={{
@@ -126,89 +159,20 @@ const HomePage = () => {
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
-                        gap: 2, // Space out the buttons more
+                        gap: 2,
                     }}
                 >
-                    <Button
-                        component={Link}
-                        to='/about'
-                        variant='outlined'
-                        sx={getButtonStyles()}
-                    >
-                        What is "I Must Kill"?
-                    </Button>
-                    <Button
-                        component={Link}
-                        to='/getting-started'
-                        variant='outlined'
-                        sx={getButtonStyles()}
-                    >
-                        Getting Started
-                    </Button>
-                    <Button
-                        component={Link}
-                        to='/character-creation'
-                        variant='outlined'
-                        sx={getButtonStyles()}
-                    >
-                        Character Creation
-                    </Button>
-                    <Button
-                        component={Link}
-                        to='/player-tools'
-                        variant='outlined'
-                        sx={getButtonStyles()}
-                    >
-                        Player Tools
-                    </Button>
-                    <Button
-                        component={Link}
-                        to='/combat-mechanics'
-                        variant='outlined'
-                        sx={getButtonStyles()}
-                    >
-                        Combat Mechanics
-                    </Button>
-                    <Button
-                        component={Link}
-                        to='/death-and-resting'
-                        variant='outlined'
-                        sx={getButtonStyles()}
-                    >
-                        Death and Resting
-                    </Button>
-                    <Button
-                        component={Link}
-                        to='/progression'
-                        variant='outlined'
-                        sx={getButtonStyles()}
-                    >
-                        Progression
-                    </Button>
-                    <Button
-                        component={Link}
-                        to='/powers'
-                        variant='outlined'
-                        sx={getButtonStyles()}
-                    >
-                        Powers
-                    </Button>
-                    <Button
-                        component={Link}
-                        to='/power-cards'
-                        variant='outlined'
-                        sx={getButtonStyles()}
-                    >
-                        Power Cards
-                    </Button>
-                    <Button
-                        component={Link}
-                        to='/gm-tools'
-                        variant='outlined'
-                        sx={getButtonStyles()}
-                    >
-                        GM Tools
-                    </Button>
+                    {navItems.map((item) => (
+                        <Button
+                            key={item.id}
+                            component={Link}
+                            to={item.path}
+                            variant='outlined'
+                            sx={getButtonStyles()}
+                        >
+                            {item.label}
+                        </Button>
+                    ))}
                 </FlashyMenu>
             </Box>
 

@@ -14,6 +14,7 @@ import { useLocation } from "react-router-dom"
 import HomeButton from "../components/HomeButton"
 import useRulesEngine from "../hooks/useRulesEngine"
 import EnhancedKeywordLinker from "../components/RulesSearch/EnhancedKeywordLinker"
+import EditableSection from "../components/EditableSection"
 import { scrollToAnchor } from "../utils/scrollToAnchor"
 
 const CharacterCreation = () => {
@@ -107,186 +108,312 @@ const CharacterCreation = () => {
                     {characterCreationData.title}
                 </Typography>
 
-                <Paper
-                    id='stats'
-                    sx={{
-                        bgcolor: (theme) =>
-                            theme.palette.mode === "dark"
-                                ? "rgba(255, 255, 255, 0.05)"
-                                : "rgba(0, 0, 0, 0.03)",
-                        padding: { xs: "15px", sm: "20px" },
-                        width: "100%",
-                        maxWidth: "800px",
-                        marginBottom: { xs: "15px", sm: "20px" },
-                        border: (theme) =>
-                            theme.palette.mode === "dark"
-                                ? "1px solid rgba(255, 255, 255, 0.1)"
-                                : "1px solid rgba(0, 0, 0, 0.1)",
-                        borderRadius: "16px",
-                        backdropFilter: "blur(10px)",
-                    }}
+                <EditableSection
+                    category='character-creation'
+                    sectionId='stats'
+                    sectionOrder={0}
+                    section={statsSection}
+                    onUpdate={(updated) =>
+                        setCharacterCreationData((prev) =>
+                            prev
+                                ? {
+                                      ...prev,
+                                      sections: prev.sections.map((s) =>
+                                          s.id === "stats" ? updated : s,
+                                      ),
+                                  }
+                                : prev,
+                        )
+                    }
+                    onDelete={(deletedId) =>
+                        setCharacterCreationData((prev) =>
+                            prev
+                                ? {
+                                      ...prev,
+                                      sections: prev.sections.filter(
+                                          (s) => s.id !== deletedId,
+                                      ),
+                                  }
+                                : prev,
+                        )
+                    }
+                    onInsertAfter={(afterId, newSec) =>
+                        setCharacterCreationData((prev) => {
+                            if (!prev) return prev
+                            const idx = prev.sections.findIndex(
+                                (s) => s.id === afterId,
+                            )
+                            const next = [...prev.sections]
+                            next.splice(idx + 1, 0, newSec)
+                            return { ...prev, sections: next }
+                        })
+                    }
+                    onInsertBefore={(beforeId, newSec) =>
+                        setCharacterCreationData((prev) => {
+                            if (!prev) return prev
+                            const idx = prev.sections.findIndex(
+                                (s) => s.id === beforeId,
+                            )
+                            const next = [...prev.sections]
+                            next.splice(Math.max(0, idx), 0, newSec)
+                            return { ...prev, sections: next }
+                        })
+                    }
                 >
-                    <Typography variant='h3' gutterBottom sx={{ mb: 3 }}>
-                        {statsSection?.title}
-                    </Typography>
+                    <Paper
+                        id='stats'
+                        sx={{
+                            bgcolor: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(0, 0, 0, 0.03)",
+                            padding: { xs: "15px", sm: "20px" },
+                            width: "100%",
+                            maxWidth: "800px",
+                            marginBottom: { xs: "15px", sm: "20px" },
+                            border: (theme) =>
+                                theme.palette.mode === "dark"
+                                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                                    : "1px solid rgba(0, 0, 0, 0.1)",
+                            borderRadius: "16px",
+                            backdropFilter: "blur(10px)",
+                        }}
+                    >
+                        <Typography variant='h3' gutterBottom sx={{ mb: 3 }}>
+                            {statsSection?.title}
+                        </Typography>
 
-                    <Grid container spacing={2}>
-                        {statsSection?.content.map((stat, index) => (
-                            <Grid item xs={12} sm={6} key={index}>
-                                <Box
-                                    sx={{
-                                        p: 2,
-                                        border: (theme) =>
-                                            theme.palette.mode === "dark"
-                                                ? "1px solid rgba(255, 255, 255, 0.15)"
-                                                : "1px solid rgba(0, 0, 0, 0.1)",
-                                        borderRadius: "12px",
-                                        backgroundColor: (theme) =>
-                                            theme.palette.mode === "dark"
-                                                ? "rgba(255, 255, 255, 0.03)"
-                                                : "rgba(0, 0, 0, 0.02)",
-                                        height: "100%",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        transition: "all 0.3s ease",
-                                        "&:hover": {
+                        <Grid container spacing={2}>
+                            {statsSection?.content.map((stat, index) => (
+                                <Grid item xs={12} sm={6} key={index}>
+                                    <Box
+                                        sx={{
+                                            p: 2,
                                             border: (theme) =>
                                                 theme.palette.mode === "dark"
-                                                    ? "1px solid rgba(255, 255, 255, 0.3)"
-                                                    : "1px solid rgba(0, 0, 0, 0.2)",
-                                        },
-                                    }}
-                                >
-                                    <Typography
-                                        variant='h5'
-                                        id={
-                                            stat.id ||
-                                            stat.name
-                                                .toLowerCase()
-                                                .replace(/[^a-z0-9]+/g, "-")
-                                                .replace(/^-+|-+$/g, "")
-                                        }
-                                        sx={{
-                                            fontWeight: "bold",
-                                            mb: 1,
-                                            color: (theme) =>
+                                                    ? "1px solid rgba(255, 255, 255, 0.15)"
+                                                    : "1px solid rgba(0, 0, 0, 0.1)",
+                                            borderRadius: "12px",
+                                            backgroundColor: (theme) =>
                                                 theme.palette.mode === "dark"
-                                                    ? "#4fc3f7"
-                                                    : "#1976d2",
+                                                    ? "rgba(255, 255, 255, 0.03)"
+                                                    : "rgba(0, 0, 0, 0.02)",
+                                            height: "100%",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            transition: "all 0.3s ease",
+                                            "&:hover": {
+                                                border: (theme) =>
+                                                    theme.palette.mode ===
+                                                    "dark"
+                                                        ? "1px solid rgba(255, 255, 255, 0.3)"
+                                                        : "1px solid rgba(0, 0, 0, 0.2)",
+                                            },
                                         }}
                                     >
-                                        {stat.name}
-                                    </Typography>
-                                    <Typography
-                                        variant='body1'
-                                        sx={{
-                                            flexGrow: 1,
-                                            lineHeight: 1.6,
-                                        }}
-                                    >
-                                        <EnhancedKeywordLinker
-                                            referencesOnly={true}
+                                        <Typography
+                                            variant='h5'
+                                            id={
+                                                stat.id ||
+                                                stat.name
+                                                    .toLowerCase()
+                                                    .replace(/[^a-z0-9]+/g, "-")
+                                                    .replace(/^-+|-+$/g, "")
+                                            }
+                                            sx={{
+                                                fontWeight: "bold",
+                                                mb: 1,
+                                                color: (theme) =>
+                                                    theme.palette.mode ===
+                                                    "dark"
+                                                        ? "#4fc3f7"
+                                                        : "#1976d2",
+                                            }}
                                         >
-                                            {stat.description}
-                                        </EnhancedKeywordLinker>
-                                    </Typography>
-                                </Box>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Paper>
+                                            {stat.name}
+                                        </Typography>
+                                        <Typography
+                                            variant='body1'
+                                            sx={{
+                                                flexGrow: 1,
+                                                lineHeight: 1.6,
+                                            }}
+                                        >
+                                            <EnhancedKeywordLinker
+                                                referencesOnly={true}
+                                            >
+                                                {stat.description}
+                                            </EnhancedKeywordLinker>
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    </Paper>
+                </EditableSection>
 
                 {/* Render all other sections dynamically */}
                 {characterCreationData.sections
                     .filter((section) => section.id !== "stats")
-                    .map((section) => (
-                        <Paper
+                    .map((section, idx) => (
+                        <EditableSection
                             key={section.id}
-                            id={section.id}
-                            sx={{
-                                bgcolor: (theme) =>
-                                    theme.palette.mode === "dark"
-                                        ? "rgba(255, 255, 255, 0.05)"
-                                        : "rgba(0, 0, 0, 0.03)",
-                                color: (theme) =>
-                                    theme.palette.mode === "dark"
-                                        ? "#e0e0e0"
-                                        : "#121212",
-                                padding: "20px",
-                                width: "100%",
-                                maxWidth: "800px",
-                                marginBottom: "20px",
-                                border: (theme) =>
-                                    theme.palette.mode === "dark"
-                                        ? "1px solid rgba(255, 255, 255, 0.1)"
-                                        : "1px solid rgba(0, 0, 0, 0.1)",
-                                borderRadius: "16px",
-                                backdropFilter: "blur(10px)",
-                            }}
+                            category='character-creation'
+                            sectionId={section.id}
+                            sectionOrder={idx + 1}
+                            section={section}
+                            onUpdate={(updated) =>
+                                setCharacterCreationData((prev) =>
+                                    prev
+                                        ? {
+                                              ...prev,
+                                              sections: prev.sections.map(
+                                                  (s) =>
+                                                      s.id === section.id
+                                                          ? updated
+                                                          : s,
+                                              ),
+                                          }
+                                        : prev,
+                                )
+                            }
+                            onDelete={(deletedId) =>
+                                setCharacterCreationData((prev) =>
+                                    prev
+                                        ? {
+                                              ...prev,
+                                              sections: prev.sections.filter(
+                                                  (s) => s.id !== deletedId,
+                                              ),
+                                          }
+                                        : prev,
+                                )
+                            }
+                            onInsertAfter={(afterId, newSec) =>
+                                setCharacterCreationData((prev) => {
+                                    if (!prev) return prev
+                                    const idx = prev.sections.findIndex(
+                                        (s) => s.id === afterId,
+                                    )
+                                    const next = [...prev.sections]
+                                    next.splice(idx + 1, 0, newSec)
+                                    return { ...prev, sections: next }
+                                })
+                            }
+                            onInsertBefore={(beforeId, newSec) =>
+                                setCharacterCreationData((prev) => {
+                                    if (!prev) return prev
+                                    const idx = prev.sections.findIndex(
+                                        (s) => s.id === beforeId,
+                                    )
+                                    const next = [...prev.sections]
+                                    next.splice(Math.max(0, idx), 0, newSec)
+                                    return { ...prev, sections: next }
+                                })
+                            }
                         >
-                            <Typography variant='h3' gutterBottom>
-                                {section.title}
-                            </Typography>
-
-                            {section.description && (
-                                <Typography variant='body1' paragraph>
-                                    <EnhancedKeywordLinker
-                                        referencesOnly={true}
-                                    >
-                                        {section.description}
-                                    </EnhancedKeywordLinker>
+                            <Paper
+                                id={section.id}
+                                sx={{
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255, 255, 255, 0.05)"
+                                            : "rgba(0, 0, 0, 0.03)",
+                                    color: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "#e0e0e0"
+                                            : "#121212",
+                                    padding: "20px",
+                                    width: "100%",
+                                    maxWidth: "800px",
+                                    marginBottom: "20px",
+                                    border: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "1px solid rgba(255, 255, 255, 0.1)"
+                                            : "1px solid rgba(0, 0, 0, 0.1)",
+                                    borderRadius: "16px",
+                                    backdropFilter: "blur(10px)",
+                                }}
+                            >
+                                <Typography variant='h3' gutterBottom>
+                                    {section.title}
                                 </Typography>
-                            )}
 
-                            {section.subsections && (
-                                <>
-                                    {section.subsections.map((subsection) => (
-                                        <div
-                                            key={subsection.id}
-                                            id={subsection.id}
-                                            style={{ marginBottom: "20px" }}
+                                {section.description && (
+                                    <Typography variant='body1' paragraph>
+                                        <EnhancedKeywordLinker
+                                            referencesOnly={true}
                                         >
-                                            <Typography
-                                                variant='h4'
-                                                gutterBottom
-                                            >
-                                                {subsection.title}
-                                            </Typography>
-                                            <Typography
-                                                variant='body1'
-                                                paragraph
-                                            >
-                                                <EnhancedKeywordLinker
-                                                    referencesOnly={true}
-                                                >
-                                                    {subsection.description}
-                                                </EnhancedKeywordLinker>
-                                            </Typography>
+                                            {section.description}
+                                        </EnhancedKeywordLinker>
+                                    </Typography>
+                                )}
 
-                                            {subsection.options && (
-                                                <List>
-                                                    {subsection.options.map(
-                                                        (option, optIndex) => (
-                                                            <ListItem
-                                                                key={optIndex}
-                                                            >
-                                                                <EnhancedKeywordLinker
-                                                                    referencesOnly={
-                                                                        true
-                                                                    }
-                                                                >
-                                                                    {option}
-                                                                </EnhancedKeywordLinker>
-                                                            </ListItem>
-                                                        ),
+                                {section.subsections && (
+                                    <>
+                                        {section.subsections.map(
+                                            (subsection) => (
+                                                <div
+                                                    key={subsection.id}
+                                                    id={subsection.id}
+                                                    style={{
+                                                        marginBottom: "20px",
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant='h4'
+                                                        gutterBottom
+                                                    >
+                                                        {subsection.title}
+                                                    </Typography>
+                                                    <Typography
+                                                        variant='body1'
+                                                        paragraph
+                                                    >
+                                                        <EnhancedKeywordLinker
+                                                            referencesOnly={
+                                                                true
+                                                            }
+                                                        >
+                                                            {
+                                                                subsection.description
+                                                            }
+                                                        </EnhancedKeywordLinker>
+                                                    </Typography>
+
+                                                    {subsection.options && (
+                                                        <List>
+                                                            {subsection.options.map(
+                                                                (
+                                                                    option,
+                                                                    optIndex,
+                                                                ) => (
+                                                                    <ListItem
+                                                                        key={
+                                                                            optIndex
+                                                                        }
+                                                                    >
+                                                                        <EnhancedKeywordLinker
+                                                                            referencesOnly={
+                                                                                true
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                option
+                                                                            }
+                                                                        </EnhancedKeywordLinker>
+                                                                    </ListItem>
+                                                                ),
+                                                            )}
+                                                        </List>
                                                     )}
-                                                </List>
-                                            )}
-                                        </div>
-                                    ))}
-                                </>
-                            )}
-                        </Paper>
+                                                </div>
+                                            ),
+                                        )}
+                                    </>
+                                )}
+                            </Paper>
+                        </EditableSection>
                     ))}
             </Container>
 

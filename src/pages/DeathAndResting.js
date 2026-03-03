@@ -12,6 +12,7 @@ import { useLocation } from "react-router-dom"
 import HomeButton from "../components/HomeButton"
 import useRulesEngine from "../hooks/useRulesEngine"
 import EnhancedKeywordLinker from "../components/RulesSearch/EnhancedKeywordLinker"
+import EditableSection from "../components/EditableSection"
 import { scrollToAnchor } from "../utils/scrollToAnchor"
 
 const DeathAndResting = () => {
@@ -94,120 +95,183 @@ const DeathAndResting = () => {
                 </Typography>
 
                 {/* Render all sections dynamically */}
-                {deathRestingData.sections.map((section) => (
-                    <Paper
+                {deathRestingData.sections.map((section, idx) => (
+                    <EditableSection
                         key={section.id}
-                        id={section.id} // add anchor id
-                        sx={{
-                            bgcolor: (theme) =>
-                                theme.palette.mode === "dark"
-                                    ? "rgba(255, 255, 255, 0.05)"
-                                    : "rgba(0, 0, 0, 0.03)",
-                            border: (theme) =>
-                                theme.palette.mode === "dark"
-                                    ? "1px solid rgba(255, 255, 255, 0.1)"
-                                    : "1px solid rgba(0, 0, 0, 0.1)",
-                            borderRadius: "16px",
-                            backdropFilter: "blur(10px)",
-                            padding: "20px",
-                            width: "100%",
-                            maxWidth: "800px",
-                            marginBottom: "20px",
-                        }}
+                        category='death-and-resting'
+                        sectionId={section.id}
+                        sectionOrder={idx}
+                        section={section}
+                        onUpdate={(updated) =>
+                            setDeathRestingData((prev) =>
+                                prev
+                                    ? {
+                                          ...prev,
+                                          sections: prev.sections.map((s) =>
+                                              s.id === section.id ? updated : s,
+                                          ),
+                                      }
+                                    : prev,
+                            )
+                        }
+                        onDelete={(deletedId) =>
+                            setDeathRestingData((prev) =>
+                                prev
+                                    ? {
+                                          ...prev,
+                                          sections: prev.sections.filter(
+                                              (s) => s.id !== deletedId,
+                                          ),
+                                      }
+                                    : prev,
+                            )
+                        }
+                        onInsertAfter={(afterId, newSec) =>
+                            setDeathRestingData((prev) => {
+                                if (!prev) return prev
+                                const idx = prev.sections.findIndex(
+                                    (s) => s.id === afterId,
+                                )
+                                const next = [...prev.sections]
+                                next.splice(idx + 1, 0, newSec)
+                                return { ...prev, sections: next }
+                            })
+                        }
+                        onInsertBefore={(beforeId, newSec) =>
+                            setDeathRestingData((prev) => {
+                                if (!prev) return prev
+                                const idx = prev.sections.findIndex(
+                                    (s) => s.id === beforeId,
+                                )
+                                const next = [...prev.sections]
+                                next.splice(Math.max(0, idx), 0, newSec)
+                                return { ...prev, sections: next }
+                            })
+                        }
                     >
-                        <Typography variant='h3' gutterBottom>
-                            {section.title}
-                        </Typography>
-
-                        {/* Section description */}
-                        {section.description && (
-                            <Typography variant='body1' paragraph>
-                                <EnhancedKeywordLinker referencesOnly={true}>
-                                    {section.description}
-                                </EnhancedKeywordLinker>
+                        <Paper
+                            id={section.id} // add anchor id
+                            sx={{
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.05)"
+                                        : "rgba(0, 0, 0, 0.03)",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(255, 255, 255, 0.1)"
+                                        : "1px solid rgba(0, 0, 0, 0.1)",
+                                borderRadius: "16px",
+                                backdropFilter: "blur(10px)",
+                                padding: "20px",
+                                width: "100%",
+                                maxWidth: "800px",
+                                marginBottom: "20px",
+                            }}
+                        >
+                            <Typography variant='h3' gutterBottom>
+                                {section.title}
                             </Typography>
-                        )}
 
-                        {/* Section mechanics */}
-                        {section.mechanics && (
-                            <Typography variant='body1' paragraph>
-                                <EnhancedKeywordLinker referencesOnly={true}>
-                                    {section.mechanics}
-                                </EnhancedKeywordLinker>
-                            </Typography>
-                        )}
-
-                        {/* Section limitations */}
-                        {section.limitations && (
-                            <Typography variant='body1' paragraph>
-                                <strong>Limitations:</strong>{" "}
-                                <EnhancedKeywordLinker referencesOnly={true}>
-                                    {section.limitations}
-                                </EnhancedKeywordLinker>
-                            </Typography>
-                        )}
-
-                        {/* Section benefits */}
-                        {section.benefits && (
-                            <>
+                            {/* Section description */}
+                            {section.description && (
                                 <Typography variant='body1' paragraph>
-                                    <strong>Benefits:</strong>
+                                    <EnhancedKeywordLinker
+                                        referencesOnly={true}
+                                    >
+                                        {section.description}
+                                    </EnhancedKeywordLinker>
                                 </Typography>
-                                <List>
-                                    {section.benefits.map((benefit, index) => (
-                                        <ListItem key={index}>
+                            )}
+
+                            {/* Section mechanics */}
+                            {section.mechanics && (
+                                <Typography variant='body1' paragraph>
+                                    <EnhancedKeywordLinker
+                                        referencesOnly={true}
+                                    >
+                                        {section.mechanics}
+                                    </EnhancedKeywordLinker>
+                                </Typography>
+                            )}
+
+                            {/* Section limitations */}
+                            {section.limitations && (
+                                <Typography variant='body1' paragraph>
+                                    <strong>Limitations:</strong>{" "}
+                                    <EnhancedKeywordLinker
+                                        referencesOnly={true}
+                                    >
+                                        {section.limitations}
+                                    </EnhancedKeywordLinker>
+                                </Typography>
+                            )}
+
+                            {/* Section benefits */}
+                            {section.benefits && (
+                                <>
+                                    <Typography variant='body1' paragraph>
+                                        <strong>Benefits:</strong>
+                                    </Typography>
+                                    <List>
+                                        {section.benefits.map(
+                                            (benefit, index) => (
+                                                <ListItem key={index}>
+                                                    <EnhancedKeywordLinker
+                                                        referencesOnly={true}
+                                                    >
+                                                        {benefit}
+                                                    </EnhancedKeywordLinker>
+                                                </ListItem>
+                                            ),
+                                        )}
+                                    </List>
+                                </>
+                            )}
+
+                            {/* Section examples */}
+                            {section.examples && (
+                                <>
+                                    <Typography variant='body1' paragraph>
+                                        <strong>Examples:</strong>
+                                    </Typography>
+                                    {section.examples.map((example, index) => (
+                                        <Typography
+                                            key={index}
+                                            variant='body1'
+                                            paragraph
+                                            sx={{ fontStyle: "italic", ml: 2 }}
+                                        >
                                             <EnhancedKeywordLinker
                                                 referencesOnly={true}
                                             >
-                                                {benefit}
+                                                {example}
                                             </EnhancedKeywordLinker>
-                                        </ListItem>
+                                        </Typography>
                                     ))}
-                                </List>
-                            </>
-                        )}
+                                </>
+                            )}
 
-                        {/* Section examples */}
-                        {section.examples && (
-                            <>
+                            {/* Available stats */}
+                            {section.available_stats && (
                                 <Typography variant='body1' paragraph>
-                                    <strong>Examples:</strong>
+                                    <strong>Available Stats:</strong>{" "}
+                                    {section.available_stats.join(", ")}
                                 </Typography>
-                                {section.examples.map((example, index) => (
-                                    <Typography
-                                        key={index}
-                                        variant='body1'
-                                        paragraph
-                                        sx={{ fontStyle: "italic", ml: 2 }}
+                            )}
+
+                            {/* Timing */}
+                            {section.timing && (
+                                <Typography variant='body1' paragraph>
+                                    <strong>Timing:</strong>{" "}
+                                    <EnhancedKeywordLinker
+                                        referencesOnly={true}
                                     >
-                                        <EnhancedKeywordLinker
-                                            referencesOnly={true}
-                                        >
-                                            {example}
-                                        </EnhancedKeywordLinker>
-                                    </Typography>
-                                ))}
-                            </>
-                        )}
-
-                        {/* Available stats */}
-                        {section.available_stats && (
-                            <Typography variant='body1' paragraph>
-                                <strong>Available Stats:</strong>{" "}
-                                {section.available_stats.join(", ")}
-                            </Typography>
-                        )}
-
-                        {/* Timing */}
-                        {section.timing && (
-                            <Typography variant='body1' paragraph>
-                                <strong>Timing:</strong>{" "}
-                                <EnhancedKeywordLinker referencesOnly={true}>
-                                    {section.timing}
-                                </EnhancedKeywordLinker>
-                            </Typography>
-                        )}
-                    </Paper>
+                                        {section.timing}
+                                    </EnhancedKeywordLinker>
+                                </Typography>
+                            )}
+                        </Paper>
+                    </EditableSection>
                 ))}
             </Container>
 

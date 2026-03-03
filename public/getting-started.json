@@ -1,0 +1,129 @@
+{
+    "getting-started": {
+        "title": "Getting Started",
+        "sections": [
+            {
+                "id": "the-core-mechanic",
+                "title": "The One Rule to Remember",
+                "description": "Most tests in I Must Kill use one simple mechanic:",
+                "coreRule": "Roll 1d10. Roll equal to or under your stat to succeed.",
+                "coreRuleNote": "A roll of 1 is always a critical success. A roll of 10 always fails.",
+                "body": "That's it. Every action—attacking, dodging, casting spells, tracking monsters—uses this same roll.",
+                "d10Note": "A d10 is a 10-sided die numbered 1–10. I Must Kill typically calls for 4 or fewer at a time — but if you only have one, just roll it multiple times."
+            },
+            {
+                "id": "the-four-stats",
+                "title": "The Four Stats",
+                "description": "Every hunter has four stats, ranging from 2 to 9:",
+                "quickStart": "Use the balanced array (6, 6, 6, 6) for your first character.",
+                "stats": [
+                    {
+                        "name": "Body",
+                        "desc": "Strength & endurance. Used to Brace against attacks.",
+                        "color": "#e57373"
+                    },
+                    {
+                        "name": "Agility",
+                        "desc": "Speed & reflexes. Used to Dodge and Flee.",
+                        "color": "#81c784"
+                    },
+                    {
+                        "name": "Focus",
+                        "desc": "Mental power. Used to cast Powers and negotiate.",
+                        "color": "#64b5f6"
+                    },
+                    {
+                        "name": "Fate",
+                        "desc": "Luck & life force. Determines your Hit Points.",
+                        "color": "#ffb74d"
+                    }
+                ]
+            },
+            {
+                "id": "combat-in-60-seconds",
+                "title": "Combat in 60 Seconds",
+                "description": "Combat is fast and deadly. Each round:",
+                "turnOrder": [
+                    "Monsters act first",
+                    "GM announces who is in danger",
+                    "Players choose their actions"
+                ],
+                "actions": [
+                    {
+                        "action": "Attack",
+                        "stat": "Attack Stat",
+                        "effect": "Deal 1 damage (2 on a crit)"
+                    },
+                    {
+                        "action": "Dodge",
+                        "stat": "Agility",
+                        "effect": "Avoid attacks, heal 1 HP"
+                    },
+                    {
+                        "action": "Brace",
+                        "stat": "Body",
+                        "effect": "Block attacks, heal 1 HP (need equipment)"
+                    },
+                    {
+                        "action": "Draw Power",
+                        "stat": "Focus",
+                        "effect": "Draw a card from your Power deck"
+                    },
+                    {
+                        "action": "Flee",
+                        "stat": "Agility",
+                        "effect": "Escape combat safely"
+                    }
+                ]
+            },
+            {
+                "id": "your-first-hunt",
+                "title": "Your First Hunt",
+                "description": "A typical hunt follows this structure. Use this as a template for your first session:",
+                "phases": [
+                    {
+                        "name": "The Hook",
+                        "desc": "A desperate villager approaches. Livestock have been disappearing. They offer payment to deal with the threat."
+                    },
+                    {
+                        "name": "Negotiate Pay",
+                        "desc": "Roll Focus to bargain. Success means good pay and spending money later. Failure means you're working for scraps."
+                    },
+                    {
+                        "name": "Gather Rumors",
+                        "desc": "Talk to locals. The GM provides 3-4 rumors about the monster—some true, some misleading."
+                    },
+                    {
+                        "name": "Research",
+                        "desc": "Roll Fate to learn a monster weakness. Success reveals something useful: 'It fears fire' or 'Silver burns it.'"
+                    },
+                    {
+                        "name": "Prepare",
+                        "desc": "Buy supplies based on what you learned. Torches? Silver blades? Healing herbs?"
+                    },
+                    {
+                        "name": "Track the Monster",
+                        "desc": "Roll Fate to find the creature's lair. Failure means it finds you first—ambush!"
+                    },
+                    {
+                        "name": "The Fight",
+                        "desc": "Combat! Use your preparation and tactics. Exploit weaknesses. Don't die."
+                    },
+                    {
+                        "name": "Collect Your Bounty",
+                        "desc": "Claim your pay, rest up, and level up. Tomorrow brings another hunt."
+                    }
+                ]
+            },
+            {
+                "id": "quick-reference-callout",
+                "title": "Quick Reference",
+                "items": [
+                    { "label": "Success", "value": "Roll ≤ your stat" },
+                    { "label": "Critical Hit", "value": "Roll a natural 1" },
+                    { "label": "Automatic Fail", "value": "Roll a 10" }
+                ]
+            }
+        ]
+    }
+}

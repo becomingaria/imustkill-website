@@ -1,6 +1,14 @@
 import React, { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
-import { Container, Typography, Box, Button, Grid } from "@mui/material"
+import {
+    Container,
+    Typography,
+    Box,
+    Button,
+    Grid,
+    CircularProgress,
+    Alert,
+} from "@mui/material"
 import {
     CrossedSwordsIcon,
     ScrollIcon,
@@ -9,6 +17,8 @@ import {
     ChevronDownIcon,
     D10Icon,
 } from "../components/icons"
+import useRulesEngine from "../hooks/useRulesEngine"
+import EditableSection from "../components/EditableSection"
 
 // Custom hook for detecting when an element is in viewport
 const useInView = (options = {}) => {
@@ -76,7 +86,365 @@ const glassSection = {
     backdropFilter: "blur(10px)",
 }
 
+const SECTION_ICONS = {
+    "the-core-mechanic": TargetIcon,
+    "the-four-stats": ScrollIcon,
+    "combat-in-60-seconds": CrossedSwordsIcon,
+    "your-first-hunt": SkullIcon,
+}
+
+const renderSectionContent = (section, glassSection) => {
+    switch (section.id) {
+        case "the-core-mechanic":
+            return (
+                <>
+                    <Typography
+                        sx={{
+                            fontSize: { xs: "1rem", sm: "1.1rem" },
+                            lineHeight: 1.8,
+                            mb: 3,
+                        }}
+                    >
+                        {section.description}
+                    </Typography>
+                    <Box
+                        sx={{
+                            ...glassSection,
+                            p: 3,
+                            textAlign: "center",
+                            mb: 3,
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                fontSize: { xs: "1.2rem", sm: "1.4rem" },
+                                fontWeight: "bold",
+                                mb: 1,
+                            }}
+                        >
+                            {section.coreRule}
+                        </Typography>
+                        <Typography
+                            sx={{
+                                color: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "#b0b0b0"
+                                        : "#555",
+                            }}
+                        >
+                            {section.coreRuleNote}
+                        </Typography>
+                    </Box>
+                    <Typography
+                        sx={{
+                            fontSize: { xs: "1rem", sm: "1.1rem" },
+                            lineHeight: 1.8,
+                            mb: 3,
+                        }}
+                    >
+                        {section.body}
+                    </Typography>
+                    <Box
+                        sx={{
+                            ...glassSection,
+                            p: 2.5,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2.5,
+                        }}
+                    >
+                        <Box sx={{ flexShrink: 0 }}>
+                            <D10Icon size={48} />
+                        </Box>
+                        <Box>
+                            <Typography
+                                sx={{
+                                    fontWeight: "bold",
+                                    mb: 0.5,
+                                    fontSize: "1rem",
+                                }}
+                            >
+                                What's a d10?
+                            </Typography>
+                            <Typography
+                                variant='body2'
+                                sx={{
+                                    lineHeight: 1.7,
+                                    color: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "#b0b0b0"
+                                            : "#555",
+                                }}
+                            >
+                                {section.d10Note}
+                            </Typography>
+                        </Box>
+                    </Box>
+                </>
+            )
+
+        case "the-four-stats":
+            return (
+                <>
+                    <Typography
+                        sx={{
+                            fontSize: { xs: "1rem", sm: "1.1rem" },
+                            lineHeight: 1.8,
+                            mb: 3,
+                        }}
+                    >
+                        {section.description}
+                    </Typography>
+                    <Grid container spacing={2}>
+                        {(section.stats || []).map((stat) => (
+                            <Grid item xs={12} sm={6} key={stat.name}>
+                                <Box
+                                    sx={{
+                                        ...glassSection,
+                                        p: 2,
+                                        borderLeft: `3px solid ${stat.color}`,
+                                    }}
+                                >
+                                    <Typography
+                                        sx={{
+                                            fontWeight: "bold",
+                                            fontSize: "1.1rem",
+                                            mb: 0.5,
+                                        }}
+                                    >
+                                        {stat.name}
+                                    </Typography>
+                                    <Typography
+                                        variant='body2'
+                                        sx={{
+                                            color: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? "#b0b0b0"
+                                                    : "#555",
+                                        }}
+                                    >
+                                        {stat.desc}
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                        ))}
+                    </Grid>
+                    {section.quickStart && (
+                        <Typography
+                            sx={{
+                                fontSize: { xs: "0.9rem", sm: "1rem" },
+                                lineHeight: 1.6,
+                                mt: 3,
+                                color: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "#b0b0b0"
+                                        : "#555",
+                            }}
+                        >
+                            <strong>Quick start:</strong> {section.quickStart}
+                        </Typography>
+                    )}
+                </>
+            )
+
+        case "combat-in-60-seconds":
+            return (
+                <>
+                    <Typography
+                        sx={{
+                            fontSize: { xs: "1rem", sm: "1.1rem" },
+                            lineHeight: 1.8,
+                            mb: 3,
+                        }}
+                    >
+                        {section.description}
+                    </Typography>
+                    {section.turnOrder && (
+                        <Box sx={{ ...glassSection, p: 3, mb: 3 }}>
+                            <Typography
+                                sx={{
+                                    fontWeight: "bold",
+                                    mb: 2,
+                                    fontSize: "1.1rem",
+                                }}
+                            >
+                                Turn Order
+                            </Typography>
+                            <Box component='ol' sx={{ pl: 2, m: 0 }}>
+                                {section.turnOrder.map((step, i) => (
+                                    <Typography
+                                        component='li'
+                                        key={i}
+                                        sx={{ mb: 1, lineHeight: 1.6 }}
+                                    >
+                                        {step}
+                                    </Typography>
+                                ))}
+                            </Box>
+                        </Box>
+                    )}
+                    {section.actions && (
+                        <>
+                            <Typography
+                                sx={{
+                                    fontWeight: "bold",
+                                    mb: 2,
+                                    fontSize: "1.1rem",
+                                }}
+                            >
+                                Player Actions
+                            </Typography>
+                            <Grid container spacing={2}>
+                                {section.actions.map((item) => (
+                                    <Grid item xs={12} sm={6} key={item.action}>
+                                        <Box sx={{ ...glassSection, p: 2 }}>
+                                            <Typography
+                                                sx={{ fontWeight: "bold" }}
+                                            >
+                                                {item.action}
+                                            </Typography>
+                                            <Typography
+                                                variant='caption'
+                                                sx={{
+                                                    color: (theme) =>
+                                                        theme.palette.mode ===
+                                                        "dark"
+                                                            ? "#81c784"
+                                                            : "#2e7d32",
+                                                }}
+                                            >
+                                                Roll vs {item.stat}
+                                            </Typography>
+                                            <Typography variant='body2'>
+                                                {item.effect}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </>
+                    )}
+                </>
+            )
+
+        case "your-first-hunt":
+            return (
+                <>
+                    <Typography
+                        sx={{
+                            fontSize: { xs: "1rem", sm: "1.1rem" },
+                            lineHeight: 1.8,
+                            mb: 3,
+                        }}
+                    >
+                        {section.description}
+                    </Typography>
+                    {(section.phases || []).map((item, index) => (
+                        <Box
+                            key={index}
+                            sx={{
+                                display: "flex",
+                                gap: 2,
+                                mb: 2,
+                                pb: 2,
+                                borderBottom:
+                                    index < section.phases.length - 1
+                                        ? (theme) =>
+                                              theme.palette.mode === "dark"
+                                                  ? "1px solid rgba(255,255,255,0.1)"
+                                                  : "1px solid rgba(0,0,0,0.1)"
+                                        : "none",
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    minWidth: "32px",
+                                    height: "32px",
+                                    borderRadius: "50%",
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255,255,255,0.1)"
+                                            : "rgba(0,0,0,0.08)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: "0.9rem",
+                                    fontWeight: "bold",
+                                }}
+                            >
+                                {index + 1}
+                            </Box>
+                            <Box>
+                                <Typography sx={{ fontWeight: "bold" }}>
+                                    {item.name}
+                                </Typography>
+                                <Typography
+                                    variant='body2'
+                                    sx={{
+                                        color: (theme) =>
+                                            theme.palette.mode === "dark"
+                                                ? "#b0b0b0"
+                                                : "#555",
+                                        lineHeight: 1.6,
+                                    }}
+                                >
+                                    {item.desc}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    ))}
+                </>
+            )
+
+        case "quick-reference-callout":
+            return (
+                <Grid container spacing={2}>
+                    {(section.items || []).map((item) => (
+                        <Grid item xs={12} md={4} key={item.label}>
+                            <Box
+                                sx={{
+                                    ...glassSection,
+                                    p: 2,
+                                    height: "100%",
+                                }}
+                            >
+                                <Typography
+                                    sx={{
+                                        fontWeight: "bold",
+                                        mb: 1,
+                                        textAlign: "center",
+                                    }}
+                                >
+                                    {item.label}
+                                </Typography>
+                                <Typography
+                                    variant='body2'
+                                    sx={{ textAlign: "center" }}
+                                >
+                                    {item.value}
+                                </Typography>
+                            </Box>
+                        </Grid>
+                    ))}
+                </Grid>
+            )
+
+        default:
+            return null
+    }
+}
+
 const GettingStarted = () => {
+    const { getCategoryRules, loading, error } = useRulesEngine()
+    const [gettingStartedData, setGettingStartedData] = useState(null)
+
+    useEffect(() => {
+        if (!loading && !error) {
+            const data = getCategoryRules("getting-started")
+            setGettingStartedData(data)
+        }
+    }, [loading, error, getCategoryRules])
+
     return (
         <Container
             sx={{
@@ -169,603 +537,138 @@ const GettingStarted = () => {
                     width: "100%",
                 }}
             >
-                {/* Section 1: The Core Mechanic */}
-                <Slide>
-                    <Box sx={{ ...glassSection, p: { xs: 3, sm: 4 } }}>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 2,
-                                mb: 3,
-                                color: (theme) =>
-                                    theme.palette.mode === "dark"
-                                        ? "rgba(255, 255, 255, 0.8)"
-                                        : "rgba(0, 0, 0, 0.7)",
-                            }}
-                        >
-                            <TargetIcon size={40} />
-                            <Typography
-                                variant='h3'
-                                sx={{
-                                    fontSize: {
-                                        xs: "1.5rem",
-                                        sm: "1.75rem",
-                                        md: "2rem",
-                                    },
-                                    fontWeight: "bold",
-                                }}
-                            >
-                                The One Rule to Remember
-                            </Typography>
-                        </Box>
-                        <Typography
-                            sx={{
-                                fontSize: { xs: "1rem", sm: "1.1rem" },
-                                lineHeight: 1.8,
-                                mb: 3,
-                            }}
-                        >
-                            Most tests in I Must Kill uses one simple mechanic:
-                        </Typography>
-                        <Box
-                            sx={{
-                                ...glassSection,
-                                p: 3,
-                                textAlign: "center",
-                                mb: 3,
-                            }}
-                        >
-                            <Typography
-                                sx={{
-                                    fontSize: { xs: "1.2rem", sm: "1.4rem" },
-                                    fontWeight: "bold",
-                                    mb: 1,
-                                }}
-                            >
-                                Roll 1d10. Roll equal to or under your stat to
-                                succeed.
-                            </Typography>
-                            <Typography
-                                sx={{
-                                    color: (theme) =>
-                                        theme.palette.mode === "dark"
-                                            ? "#b0b0b0"
-                                            : "#555",
-                                }}
-                            >
-                                A roll of 1 is always a critical success. A roll
-                                of 10 always fails.
-                            </Typography>
-                        </Box>
-                        <Typography
-                            sx={{
-                                fontSize: { xs: "1rem", sm: "1.1rem" },
-                                lineHeight: 1.8,
-                                mb: 3,
-                            }}
-                        >
-                            That's it. Every action—attacking, dodging, casting
-                            spells, tracking monsters—uses this same roll.
-                        </Typography>
-                        <Box
-                            sx={{
-                                ...glassSection,
-                                p: 2.5,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 2.5,
-                            }}
-                        >
-                            <Box sx={{ flexShrink: 0 }}>
-                                <D10Icon size={48} />
-                            </Box>
-                            <Box>
-                                <Typography
-                                    sx={{
-                                        fontWeight: "bold",
-                                        mb: 0.5,
-                                        fontSize: "1rem",
-                                    }}
-                                >
-                                    What's a d10?
-                                </Typography>
-                                <Typography
-                                    variant='body2'
-                                    sx={{
-                                        lineHeight: 1.7,
-                                        color: (theme) =>
-                                            theme.palette.mode === "dark"
-                                                ? "#b0b0b0"
-                                                : "#555",
-                                    }}
-                                >
-                                    A d10 is a 10-sided die numbered 1–10. I
-                                    Must Kill typically calls for 4 or fewer at
-                                    a time — but if you only have one, just roll
-                                    it multiple times.
-                                </Typography>
-                            </Box>
-                        </Box>
+                {loading && (
+                    <Box sx={{ display: "flex", justifyContent: "center" }}>
+                        <CircularProgress />
                     </Box>
-                </Slide>
+                )}
+                {error && (
+                    <Alert severity='error'>Error loading rules: {error}</Alert>
+                )}
 
-                {/* Section 2: The Four Stats */}
-                <Slide>
-                    <Box sx={{ ...glassSection, p: { xs: 3, sm: 4 } }}>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 2,
-                                mb: 3,
-                                color: (theme) =>
-                                    theme.palette.mode === "dark"
-                                        ? "rgba(255, 255, 255, 0.8)"
-                                        : "rgba(0, 0, 0, 0.7)",
-                            }}
+                {gettingStartedData?.sections.map((section, idx) => {
+                    const IconComp = SECTION_ICONS[section.id]
+                    const isCallout = section.id === "quick-reference-callout"
+                    return (
+                        <EditableSection
+                            key={section.id}
+                            category='getting-started'
+                            sectionId={section.id}
+                            sectionOrder={idx}
+                            section={section}
+                            onUpdate={(updated) =>
+                                setGettingStartedData((prev) =>
+                                    prev
+                                        ? {
+                                              ...prev,
+                                              sections: prev.sections.map(
+                                                  (s) =>
+                                                      s.id === section.id
+                                                          ? updated
+                                                          : s,
+                                              ),
+                                          }
+                                        : prev,
+                                )
+                            }
+                            onDelete={(deletedId) =>
+                                setGettingStartedData((prev) =>
+                                    prev
+                                        ? {
+                                              ...prev,
+                                              sections: prev.sections.filter(
+                                                  (s) => s.id !== deletedId,
+                                              ),
+                                          }
+                                        : prev,
+                                )
+                            }
+                            onInsertAfter={(afterId, newSec) =>
+                                setGettingStartedData((prev) => {
+                                    if (!prev) return prev
+                                    const idx = prev.sections.findIndex(
+                                        (s) => s.id === afterId,
+                                    )
+                                    const next = [...prev.sections]
+                                    next.splice(idx + 1, 0, newSec)
+                                    return { ...prev, sections: next }
+                                })
+                            }
+                            onInsertBefore={(beforeId, newSec) =>
+                                setGettingStartedData((prev) => {
+                                    if (!prev) return prev
+                                    const idx = prev.sections.findIndex(
+                                        (s) => s.id === beforeId,
+                                    )
+                                    const next = [...prev.sections]
+                                    next.splice(Math.max(0, idx), 0, newSec)
+                                    return { ...prev, sections: next }
+                                })
+                            }
                         >
-                            <ScrollIcon size={40} />
-                            <Typography
-                                variant='h3'
-                                sx={{
-                                    fontSize: {
-                                        xs: "1.5rem",
-                                        sm: "1.75rem",
-                                        md: "2rem",
-                                    },
-                                    fontWeight: "bold",
-                                }}
-                            >
-                                The Four Stats
-                            </Typography>
-                        </Box>
-                        <Typography
-                            sx={{
-                                fontSize: { xs: "1rem", sm: "1.1rem" },
-                                lineHeight: 1.8,
-                                mb: 3,
-                            }}
-                        >
-                            Every hunter has four stats, ranging from
-                            2 to 9:
-                        </Typography>
-                        <Grid container spacing={2}>
-                            {[
-                                {
-                                    name: "Body",
-                                    desc: "Strength & endurance. Used to Brace against attacks.",
-                                    color: "#e57373",
-                                },
-                                {
-                                    name: "Agility",
-                                    desc: "Speed & reflexes. Used to Dodge and Flee.",
-                                    color: "#81c784",
-                                },
-                                {
-                                    name: "Focus",
-                                    desc: "Mental power. Used to cast Powers and negotiate.",
-                                    color: "#64b5f6",
-                                },
-                                {
-                                    name: "Fate",
-                                    desc: "Luck & life force. Determines your Hit Points.",
-                                    color: "#ffb74d",
-                                },
-                            ].map((stat) => (
-                                <Grid item xs={12} sm={6} key={stat.name}>
-                                    <Box
-                                        sx={{
-                                            ...glassSection,
-                                            p: 2,
-                                            borderLeft: `3px solid ${stat.color}`,
-                                        }}
-                                    >
+                            <Slide>
+                                <Box
+                                    sx={{
+                                        ...glassSection,
+                                        p: { xs: 3, sm: 4 },
+                                    }}
+                                >
+                                    {/* Section Header */}
+                                    {isCallout ? (
                                         <Typography
+                                            variant='h4'
                                             sx={{
+                                                fontSize: {
+                                                    xs: "1.25rem",
+                                                    sm: "1.5rem",
+                                                },
                                                 fontWeight: "bold",
-                                                fontSize: "1.1rem",
-                                                mb: 0.5,
+                                                mb: 3,
+                                                textAlign: "center",
                                             }}
                                         >
-                                            {stat.name}
+                                            {section.title}
                                         </Typography>
-                                        <Typography
-                                            variant='body2'
+                                    ) : (
+                                        <Box
                                             sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 2,
+                                                mb: 3,
                                                 color: (theme) =>
                                                     theme.palette.mode ===
                                                     "dark"
-                                                        ? "#b0b0b0"
-                                                        : "#555",
+                                                        ? "rgba(255, 255, 255, 0.8)"
+                                                        : "rgba(0, 0, 0, 0.7)",
                                             }}
                                         >
-                                            {stat.desc}
-                                        </Typography>
-                                    </Box>
-                                </Grid>
-                            ))}
-                        </Grid>
-                        <Typography
-                            sx={{
-                                fontSize: { xs: "0.9rem", sm: "1rem" },
-                                lineHeight: 1.6,
-                                mt: 3,
-                                color: (theme) =>
-                                    theme.palette.mode === "dark"
-                                        ? "#b0b0b0"
-                                        : "#555",
-                            }}
-                        >
-                            <strong>Quick start:</strong> Use the balanced array
-                            (6, 6, 6, 6) for your first character.
-                        </Typography>
-                    </Box>
-                </Slide>
-
-                {/* Section 3: Combat Actions */}
-                <Slide>
-                    <Box sx={{ ...glassSection, p: { xs: 3, sm: 4 } }}>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 2,
-                                mb: 3,
-                                color: (theme) =>
-                                    theme.palette.mode === "dark"
-                                        ? "rgba(255, 255, 255, 0.8)"
-                                        : "rgba(0, 0, 0, 0.7)",
-                            }}
-                        >
-                            <CrossedSwordsIcon size={40} />
-                            <Typography
-                                variant='h3'
-                                sx={{
-                                    fontSize: {
-                                        xs: "1.5rem",
-                                        sm: "1.75rem",
-                                        md: "2rem",
-                                    },
-                                    fontWeight: "bold",
-                                }}
-                            >
-                                Combat in 60 Seconds
-                            </Typography>
-                        </Box>
-                        <Typography
-                            sx={{
-                                fontSize: { xs: "1rem", sm: "1.1rem" },
-                                lineHeight: 1.8,
-                                mb: 3,
-                            }}
-                        >
-                            Combat is fast and deadly. Each round:
-                        </Typography>
-                        <Box
-                            sx={{
-                                ...glassSection,
-                                p: 3,
-                                mb: 3,
-                            }}
-                        >
-                            <Typography
-                                sx={{
-                                    fontWeight: "bold",
-                                    mb: 2,
-                                    fontSize: "1.1rem",
-                                }}
-                            >
-                                Turn Order
-                            </Typography>
-                            <Box component='ol' sx={{ pl: 2, m: 0 }}>
-                                {[
-                                    "Monsters act first",
-                                    "GM announces who is in danger",
-                                    "Players choose their actions",
-                                ].map((step, i) => (
-                                    <Typography
-                                        component='li'
-                                        key={i}
-                                        sx={{ mb: 1, lineHeight: 1.6 }}
-                                    >
-                                        {step}
-                                    </Typography>
-                                ))}
-                            </Box>
-                        </Box>
-                        <Typography
-                            sx={{
-                                fontWeight: "bold",
-                                mb: 2,
-                                fontSize: "1.1rem",
-                            }}
-                        >
-                            Player Actions
-                        </Typography>
-                        <Grid container spacing={2}>
-                            {[
-                                {
-                                    action: "Attack",
-                                    stat: "Attack Stat",
-                                    effect: "Deal 1 damage (2 on a crit)",
-                                },
-                                {
-                                    action: "Dodge",
-                                    stat: "Agility",
-                                    effect: "Avoid attacks, heal 1 HP",
-                                },
-                                {
-                                    action: "Brace",
-                                    stat: "Body",
-                                    effect: "Block attacks, heal 1 HP (need equipment)",
-                                },
-                                {
-                                    action: "Draw Power",
-                                    stat: "Focus",
-                                    effect: "Draw a card from your Power deck",
-                                },
-                                {
-                                    action: "Flee",
-                                    stat: "Agility",
-                                    effect: "Escape combat safely",
-                                },
-                            ].map((item) => (
-                                <Grid item xs={12} sm={6} key={item.action}>
-                                    <Box
-                                        sx={{
-                                            ...glassSection,
-                                            p: 2,
-                                        }}
-                                    >
-                                        <Typography sx={{ fontWeight: "bold" }}>
-                                            {item.action}
-                                        </Typography>
-                                        <Typography
-                                            variant='caption'
-                                            sx={{
-                                                color: (theme) =>
-                                                    theme.palette.mode ===
-                                                    "dark"
-                                                        ? "#81c784"
-                                                        : "#2e7d32",
-                                            }}
-                                        >
-                                            Roll vs {item.stat}
-                                        </Typography>
-                                        <Typography variant='body2'>
-                                            {item.effect}
-                                        </Typography>
-                                    </Box>
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </Box>
-                </Slide>
-
-                {/* Section 4: A Basic Hunt */}
-                <Slide>
-                    <Box sx={{ ...glassSection, p: { xs: 3, sm: 4 } }}>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 2,
-                                mb: 3,
-                                color: (theme) =>
-                                    theme.palette.mode === "dark"
-                                        ? "rgba(255, 255, 255, 0.8)"
-                                        : "rgba(0, 0, 0, 0.7)",
-                            }}
-                        >
-                            <SkullIcon size={40} />
-                            <Typography
-                                variant='h3'
-                                sx={{
-                                    fontSize: {
-                                        xs: "1.5rem",
-                                        sm: "1.75rem",
-                                        md: "2rem",
-                                    },
-                                    fontWeight: "bold",
-                                }}
-                            >
-                                Your First Hunt
-                            </Typography>
-                        </Box>
-                        <Typography
-                            sx={{
-                                fontSize: { xs: "1rem", sm: "1.1rem" },
-                                lineHeight: 1.8,
-                                mb: 3,
-                            }}
-                        >
-                            A typical hunt follows this structure. Use this as a
-                            template for your first session:
-                        </Typography>
-                        {[
-                            {
-                                phase: "1. The Hook",
-                                desc: "A desperate villager approaches. Livestock have been disappearing. They offer payment to deal with the threat.",
-                            },
-                            {
-                                phase: "2. Negotiate Pay",
-                                desc: "Roll Focus to bargain. Success means good pay and spending money later. Failure means you're working for scraps.",
-                            },
-                            {
-                                phase: "3. Gather Rumors",
-                                desc: "Talk to locals. The GM provides 3-4 rumors about the monster—some true, some misleading.",
-                            },
-                            {
-                                phase: "4. Research",
-                                desc: "Roll Fate to learn a monster weakness. Success reveals something useful: 'It fears fire' or 'Silver burns it.'",
-                            },
-                            {
-                                phase: "5. Prepare",
-                                desc: "Buy supplies based on what you learned. Torches? Silver blades? Healing herbs?",
-                            },
-                            {
-                                phase: "6. Track the Monster",
-                                desc: "Roll Fate to find the creature's lair. Failure means it finds you first—ambush!",
-                            },
-                            {
-                                phase: "7. The Fight",
-                                desc: "Combat! Use your preparation and tactics. Exploit weaknesses. Don't die.",
-                            },
-                            {
-                                phase: "8. Collect Your Bounty",
-                                desc: "Claim your pay, rest up, and level up. Tomorrow brings another hunt.",
-                            },
-                        ].map((item, index) => (
-                            <Box
-                                key={index}
-                                sx={{
-                                    display: "flex",
-                                    gap: 2,
-                                    mb: 2,
-                                    pb: 2,
-                                    borderBottom:
-                                        index < 7
-                                            ? (theme) =>
-                                                  theme.palette.mode === "dark"
-                                                      ? "1px solid rgba(255,255,255,0.1)"
-                                                      : "1px solid rgba(0,0,0,0.1)"
-                                            : "none",
-                                }}
-                            >
-                                <Box
-                                    sx={{
-                                        minWidth: "32px",
-                                        height: "32px",
-                                        borderRadius: "50%",
-                                        bgcolor: (theme) =>
-                                            theme.palette.mode === "dark"
-                                                ? "rgba(255,255,255,0.1)"
-                                                : "rgba(0,0,0,0.08)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        fontSize: "0.9rem",
-                                        fontWeight: "bold",
-                                    }}
-                                >
-                                    {index + 1}
+                                            {IconComp && <IconComp size={40} />}
+                                            <Typography
+                                                variant='h3'
+                                                sx={{
+                                                    fontSize: {
+                                                        xs: "1.5rem",
+                                                        sm: "1.75rem",
+                                                        md: "2rem",
+                                                    },
+                                                    fontWeight: "bold",
+                                                }}
+                                            >
+                                                {section.title}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    {/* Section Body */}
+                                    {renderSectionContent(
+                                        section,
+                                        glassSection,
+                                    )}
                                 </Box>
-                                <Box>
-                                    <Typography sx={{ fontWeight: "bold" }}>
-                                        {item.phase.replace(/^\d+\.\s/, "")}
-                                    </Typography>
-                                    <Typography
-                                        variant='body2'
-                                        sx={{
-                                            color: (theme) =>
-                                                theme.palette.mode === "dark"
-                                                    ? "#b0b0b0"
-                                                    : "#555",
-                                            lineHeight: 1.6,
-                                        }}
-                                    >
-                                        {item.desc}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        ))}
-                    </Box>
-                </Slide>
-
-                {/* Quick Reference Box */}
-                <Slide>
-                    <Box sx={{ ...glassSection, p: { xs: 3, sm: 4 } }}>
-                        <Typography
-                            variant='h4'
-                            sx={{
-                                fontSize: { xs: "1.25rem", sm: "1.5rem" },
-                                fontWeight: "bold",
-                                mb: 3,
-                                textAlign: "center",
-                            }}
-                        >
-                            Quick Reference
-                        </Typography>
-                        <Grid container spacing={2}>
-                            <Grid item xs={12} md={4}>
-                                <Box
-                                    sx={{
-                                        ...glassSection,
-                                        p: 2,
-                                        height: "100%",
-                                    }}
-                                >
-                                    <Typography
-                                        sx={{
-                                            fontWeight: "bold",
-                                            mb: 1,
-                                            textAlign: "center",
-                                        }}
-                                    >
-                                        Success
-                                    </Typography>
-                                    <Typography
-                                        variant='body2'
-                                        sx={{ textAlign: "center" }}
-                                    >
-                                        Roll ≤ your stat
-                                    </Typography>
-                                </Box>
-                            </Grid>
-                            <Grid item xs={12} md={4}>
-                                <Box
-                                    sx={{
-                                        ...glassSection,
-                                        p: 2,
-                                        height: "100%",
-                                    }}
-                                >
-                                    <Typography
-                                        sx={{
-                                            fontWeight: "bold",
-                                            mb: 1,
-                                            textAlign: "center",
-                                        }}
-                                    >
-                                        Critical Hit
-                                    </Typography>
-                                    <Typography
-                                        variant='body2'
-                                        sx={{ textAlign: "center" }}
-                                    >
-                                        Roll a natural 1
-                                    </Typography>
-                                </Box>
-                            </Grid>
-                            <Grid item xs={12} md={4}>
-                                <Box
-                                    sx={{
-                                        ...glassSection,
-                                        p: 2,
-                                        height: "100%",
-                                    }}
-                                >
-                                    <Typography
-                                        sx={{
-                                            fontWeight: "bold",
-                                            mb: 1,
-                                            textAlign: "center",
-                                        }}
-                                    >
-                                        Automatic Fail
-                                    </Typography>
-                                    <Typography
-                                        variant='body2'
-                                        sx={{ textAlign: "center" }}
-                                    >
-                                        Roll a 10
-                                    </Typography>
-                                </Box>
-                            </Grid>
-                        </Grid>
-                    </Box>
-                </Slide>
+                            </Slide>
+                        </EditableSection>
+                    )
+                })}
 
                 {/* Call to Action */}
                 <Slide>

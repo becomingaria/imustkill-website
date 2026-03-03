@@ -2,7 +2,6 @@ import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda"
 import {
     DynamoDBClient,
     PutItemCommand,
-    DeleteItemCommand,
     QueryCommand,
     ScanCommand,
     BatchWriteItemCommand,

@@ -10,6 +10,7 @@ import { useLocation } from "react-router-dom"
 import HomeButton from "../components/HomeButton"
 import useRulesEngine from "../hooks/useRulesEngine"
 import EnhancedKeywordLinker from "../components/RulesSearch/EnhancedKeywordLinker"
+import EditableSection from "../components/EditableSection"
 import { scrollToAnchor } from "../utils/scrollToAnchor"
 
 const Progression = () => {
@@ -91,90 +92,155 @@ const Progression = () => {
                 </Typography>
 
                 {/* Render all sections dynamically */}
-                {progressionData.sections.map((section) => (
-                    <Paper
+                {progressionData.sections.map((section, idx) => (
+                    <EditableSection
                         key={section.id}
-                        id={section.id} // add anchor id
-                        sx={{
-                            bgcolor: (theme) =>
-                                theme.palette.mode === "dark"
-                                    ? "rgba(255, 255, 255, 0.05)"
-                                    : "rgba(0, 0, 0, 0.03)",
-                            border: (theme) =>
-                                theme.palette.mode === "dark"
-                                    ? "1px solid rgba(255, 255, 255, 0.1)"
-                                    : "1px solid rgba(0, 0, 0, 0.1)",
-                            borderRadius: "16px",
-                            backdropFilter: "blur(10px)",
-                            padding: "20px",
-                            width: "100%",
-                            maxWidth: "800px",
-                            marginBottom: "20px",
-                        }}
+                        category='progression'
+                        sectionId={section.id}
+                        sectionOrder={idx}
+                        section={section}
+                        onUpdate={(updated) =>
+                            setProgressionData((prev) =>
+                                prev
+                                    ? {
+                                          ...prev,
+                                          sections: prev.sections.map((s) =>
+                                              s.id === section.id ? updated : s,
+                                          ),
+                                      }
+                                    : prev,
+                            )
+                        }
+                        onDelete={(deletedId) =>
+                            setProgressionData((prev) =>
+                                prev
+                                    ? {
+                                          ...prev,
+                                          sections: prev.sections.filter(
+                                              (s) => s.id !== deletedId,
+                                          ),
+                                      }
+                                    : prev,
+                            )
+                        }
+                        onInsertAfter={(afterId, newSec) =>
+                            setProgressionData((prev) => {
+                                if (!prev) return prev
+                                const idx = prev.sections.findIndex(
+                                    (s) => s.id === afterId,
+                                )
+                                const next = [...prev.sections]
+                                next.splice(idx + 1, 0, newSec)
+                                return { ...prev, sections: next }
+                            })
+                        }
+                        onInsertBefore={(beforeId, newSec) =>
+                            setProgressionData((prev) => {
+                                if (!prev) return prev
+                                const idx = prev.sections.findIndex(
+                                    (s) => s.id === beforeId,
+                                )
+                                const next = [...prev.sections]
+                                next.splice(Math.max(0, idx), 0, newSec)
+                                return { ...prev, sections: next }
+                            })
+                        }
                     >
-                        <Typography variant='h3' gutterBottom>
-                            {section.title}
-                        </Typography>
-
-                        {/* Section description */}
-                        {section.description && (
-                            <Typography variant='body1' paragraph>
-                                <EnhancedKeywordLinker referencesOnly={true}>
-                                    {section.description}
-                                </EnhancedKeywordLinker>
+                        <Paper
+                            id={section.id} // add anchor id
+                            sx={{
+                                bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "rgba(255, 255, 255, 0.05)"
+                                        : "rgba(0, 0, 0, 0.03)",
+                                border: (theme) =>
+                                    theme.palette.mode === "dark"
+                                        ? "1px solid rgba(255, 255, 255, 0.1)"
+                                        : "1px solid rgba(0, 0, 0, 0.1)",
+                                borderRadius: "16px",
+                                backdropFilter: "blur(10px)",
+                                padding: "20px",
+                                width: "100%",
+                                maxWidth: "800px",
+                                marginBottom: "20px",
+                            }}
+                        >
+                            <Typography variant='h3' gutterBottom>
+                                {section.title}
                             </Typography>
-                        )}
 
-                        {/* Section mechanics */}
-                        {section.mechanics && (
-                            <Typography variant='body1' paragraph>
-                                <strong>Mechanics:</strong>{" "}
-                                <EnhancedKeywordLinker referencesOnly={true}>
-                                    {section.mechanics}
-                                </EnhancedKeywordLinker>
-                            </Typography>
-                        )}
+                            {/* Section description */}
+                            {section.description && (
+                                <Typography variant='body1' paragraph>
+                                    <EnhancedKeywordLinker
+                                        referencesOnly={true}
+                                    >
+                                        {section.description}
+                                    </EnhancedKeywordLinker>
+                                </Typography>
+                            )}
 
-                        {/* Section limits */}
-                        {section.limits && (
-                            <Typography variant='body1' paragraph>
-                                <strong>Limits:</strong>{" "}
-                                <EnhancedKeywordLinker referencesOnly={true}>
-                                    {section.limits}
-                                </EnhancedKeywordLinker>
-                            </Typography>
-                        )}
+                            {/* Section mechanics */}
+                            {section.mechanics && (
+                                <Typography variant='body1' paragraph>
+                                    <strong>Mechanics:</strong>{" "}
+                                    <EnhancedKeywordLinker
+                                        referencesOnly={true}
+                                    >
+                                        {section.mechanics}
+                                    </EnhancedKeywordLinker>
+                                </Typography>
+                            )}
 
-                        {/* Section perception */}
-                        {section.perception && (
-                            <Typography variant='body1' paragraph>
-                                <strong>Perception:</strong>{" "}
-                                <EnhancedKeywordLinker referencesOnly={true}>
-                                    {section.perception}
-                                </EnhancedKeywordLinker>
-                            </Typography>
-                        )}
+                            {/* Section limits */}
+                            {section.limits && (
+                                <Typography variant='body1' paragraph>
+                                    <strong>Limits:</strong>{" "}
+                                    <EnhancedKeywordLinker
+                                        referencesOnly={true}
+                                    >
+                                        {section.limits}
+                                    </EnhancedKeywordLinker>
+                                </Typography>
+                            )}
 
-                        {/* Section maximum */}
-                        {section.maximum && (
-                            <Typography variant='body1' paragraph>
-                                <strong>Maximum:</strong>{" "}
-                                <EnhancedKeywordLinker referencesOnly={true}>
-                                    {section.maximum}
-                                </EnhancedKeywordLinker>
-                            </Typography>
-                        )}
+                            {/* Section perception */}
+                            {section.perception && (
+                                <Typography variant='body1' paragraph>
+                                    <strong>Perception:</strong>{" "}
+                                    <EnhancedKeywordLinker
+                                        referencesOnly={true}
+                                    >
+                                        {section.perception}
+                                    </EnhancedKeywordLinker>
+                                </Typography>
+                            )}
 
-                        {/* Section ascendant */}
-                        {section.ascendant && (
-                            <Typography variant='body1' paragraph>
-                                <strong>Ascendant:</strong>{" "}
-                                <EnhancedKeywordLinker referencesOnly={true}>
-                                    {section.ascendant}
-                                </EnhancedKeywordLinker>
-                            </Typography>
-                        )}
-                    </Paper>
+                            {/* Section maximum */}
+                            {section.maximum && (
+                                <Typography variant='body1' paragraph>
+                                    <strong>Maximum:</strong>{" "}
+                                    <EnhancedKeywordLinker
+                                        referencesOnly={true}
+                                    >
+                                        {section.maximum}
+                                    </EnhancedKeywordLinker>
+                                </Typography>
+                            )}
+
+                            {/* Section ascendant */}
+                            {section.ascendant && (
+                                <Typography variant='body1' paragraph>
+                                    <strong>Ascendant:</strong>{" "}
+                                    <EnhancedKeywordLinker
+                                        referencesOnly={true}
+                                    >
+                                        {section.ascendant}
+                                    </EnhancedKeywordLinker>
+                                </Typography>
+                            )}
+                        </Paper>
+                    </EditableSection>
                 ))}
             </Container>
 

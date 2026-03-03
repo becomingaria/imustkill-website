@@ -7,15 +7,18 @@ import {
 } from "@mui/material"
 import App from "./App"
 import { ThemeProvider, ThemeContext } from "./context/ThemeContext"
+import { AuthProvider } from "./context/AuthContext"
 import "./theme.css"
 import "./responsive.css" // Import responsive styles
 import "./lightModeContrast.css" // Import light mode contrast overrides
 
 function AppWrapper() {
     return (
-        <ThemeProvider>
-            <ThemedApp />
-        </ThemeProvider>
+        <AuthProvider>
+            <ThemeProvider>
+                <ThemedApp />
+            </ThemeProvider>
+        </AuthProvider>
     )
 }
 

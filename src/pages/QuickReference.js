@@ -46,6 +46,7 @@ const QuickReference = () => {
     }
 
     const { quickReference } = rulesData.database
+    const { diceRolls, ...categories } = quickReference
 
     const getIcon = (category) => {
         switch (category) {
@@ -96,7 +97,7 @@ const QuickReference = () => {
                 </Typography>
 
                 <Grid container spacing={2}>
-                    {Object.entries(quickReference).map(([category, items]) => (
+                    {Object.entries(categories).map(([category, items]) => (
                         <Grid item xs={12} md={4} key={category} id={category}>
                             <Paper
                                 sx={{
@@ -259,46 +260,21 @@ const QuickReference = () => {
                     </Box>
 
                     <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Box sx={{ textAlign: "center", p: 2 }}>
-                                <Typography variant='h6' color='primary'>
-                                    Success
-                                </Typography>
-                                <Typography variant='body2'>
-                                    Roll ≤ Stat Value
-                                </Typography>
-                            </Box>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Box sx={{ textAlign: "center", p: 2 }}>
-                                <Typography variant='h6' color='success.main'>
-                                    Critical Hit
-                                </Typography>
-                                <Typography variant='body2'>
-                                    Natural 1 = 2 Damage
-                                </Typography>
-                            </Box>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Box sx={{ textAlign: "center", p: 2 }}>
-                                <Typography variant='h6' color='success.main'>
-                                    Advantage
-                                </Typography>
-                                <Typography variant='body2'>
-                                    Roll 2d10, choose lower
-                                </Typography>
-                            </Box>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Box sx={{ textAlign: "center", p: 2 }}>
-                                <Typography variant='h6' color='error.main'>
-                                    Disadvantage
-                                </Typography>
-                                <Typography variant='body2'>
-                                    Roll 2d10, choose higher
-                                </Typography>
-                            </Box>
-                        </Grid>
+                        {(diceRolls || []).map((roll) => (
+                            <Grid item xs={12} sm={6} md={3} key={roll.label}>
+                                <Box sx={{ textAlign: "center", p: 2 }}>
+                                    <Typography
+                                        variant='h6'
+                                        color={roll.color || "primary"}
+                                    >
+                                        {roll.label}
+                                    </Typography>
+                                    <Typography variant='body2'>
+                                        {roll.description}
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                        ))}
                     </Grid>
                 </Paper>
             </Container>

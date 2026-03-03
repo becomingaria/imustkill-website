@@ -487,6 +487,20 @@
                 "description": "Equipment and gear database",
                 "file": "equipment.json",
                 "keywords": ["equipment", "gear", "tools", "weapons", "armor"]
+            },
+            "getting-started": {
+                "title": "Getting Started",
+                "description": "Introductory rules and hunt structure for new players",
+                "file": "getting-started.json",
+                "keywords": [
+                    "getting started",
+                    "introduction",
+                    "basics",
+                    "core mechanic",
+                    "stats",
+                    "combat",
+                    "hunt"
+                ]
             }
         },
         "quickReference": {
@@ -665,6 +679,28 @@
                         "firearms",
                         "long range"
                     ]
+                }
+            ],
+            "diceRolls": [
+                {
+                    "label": "Success",
+                    "description": "Roll ≤ Stat Value",
+                    "color": "primary"
+                },
+                {
+                    "label": "Critical Hit",
+                    "description": "Natural 1 = 2 Damage",
+                    "color": "success.main"
+                },
+                {
+                    "label": "Advantage",
+                    "description": "Roll 2d10, choose lower",
+                    "color": "success.main"
+                },
+                {
+                    "label": "Disadvantage",
+                    "description": "Roll 2d10, choose higher",
+                    "color": "error.main"
                 }
             ]
         }

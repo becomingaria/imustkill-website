@@ -279,6 +279,47 @@ export class ImkLiveSessionsStack extends cdk.Stack {
         artworkBucket.grantRead(adminHandler)
 
         // ============================================================
+        // DynamoDB Table for Rules Database
+        // ============================================================
+        // Stores every section of every rules page.
+        // PK: category  ("combat-mechanics", "character-creation", …)
+        // SK: sectionId ("actions", "stats", …)
+        const rulesTable = new dynamodb.Table(this, "RulesTable", {
+            tableName: "imk-rules",
+            partitionKey: {
+                name: "category",
+                type: dynamodb.AttributeType.STRING,
+            },
+            sortKey: {
+                name: "sectionId",
+                type: dynamodb.AttributeType.STRING,
+            },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+            removalPolicy: cdk.RemovalPolicy.RETAIN, // Never accidentally delete game rules
+            pointInTimeRecovery: true,
+        })
+
+        // ── Rules Lambda (CRUD for game rules) ────────────────────────────────
+        const rulesHandler = new NodejsFunction(this, "RulesHandler", {
+            functionName: "imk-rules-handler",
+            entry: path.join(__dirname, "../lambda/rules.ts"),
+            handler: "handler",
+            runtime: lambda.Runtime.NODEJS_20_X,
+            architecture: lambda.Architecture.ARM_64,
+            memorySize: 256,
+            timeout: cdk.Duration.seconds(10),
+            environment: {
+                RULES_TABLE: rulesTable.tableName,
+                NODE_OPTIONS: "--enable-source-maps",
+            },
+            logRetention: logs.RetentionDays.ONE_WEEK,
+            bundling: { minify: true, sourceMap: true },
+        })
+
+        rulesTable.grantReadData(rulesHandler) // public reads
+        rulesTable.grantReadWriteData(rulesHandler) // admin writes
+
+        // ============================================================
         // Cognito User Pool for Admin Authentication
         // ============================================================
         const adminUserPool = new cognito.UserPool(this, "AdminUserPool", {
@@ -396,6 +437,47 @@ export class ImkLiveSessionsStack extends cdk.Stack {
                 "AdminIntegration",
                 adminHandler,
             )
+
+        // ── Rules routes (public reads, admin writes) ──────────────
+        const rulesIntegration =
+            new apigatewayIntegrations.HttpLambdaIntegration(
+                "RulesIntegration",
+                rulesHandler,
+            )
+
+        // Public rule reads
+        httpApi.addRoutes({
+            path: "/rules",
+            methods: [apigateway.HttpMethod.GET],
+            integration: rulesIntegration,
+        })
+
+        httpApi.addRoutes({
+            path: "/rules/{category}",
+            methods: [apigateway.HttpMethod.GET],
+            integration: rulesIntegration,
+        })
+
+        httpApi.addRoutes({
+            path: "/rules/{category}/{sectionId}",
+            methods: [apigateway.HttpMethod.GET],
+            integration: rulesIntegration,
+        })
+
+        // Admin-only rule writes
+        httpApi.addRoutes({
+            path: "/rules/seed",
+            methods: [apigateway.HttpMethod.POST],
+            integration: rulesIntegration,
+            authorizer: adminAuthorizer,
+        })
+
+        httpApi.addRoutes({
+            path: "/rules/{category}/{sectionId}",
+            methods: [apigateway.HttpMethod.PUT, apigateway.HttpMethod.DELETE],
+            integration: rulesIntegration,
+            authorizer: adminAuthorizer,
+        })
 
         // ── Public card reads ──────────────────────────────────────
         httpApi.addRoutes({
@@ -627,6 +709,17 @@ export class ImkLiveSessionsStack extends cdk.Stack {
         new cdk.CfnOutput(this, "AdminUserPoolRegion", {
             value: this.region,
             description: "AWS Region for Cognito User Pool",
+        })
+
+        new cdk.CfnOutput(this, "RulesTableName", {
+            value: rulesTable.tableName,
+            description: "DynamoDB table name for rules database",
+        })
+
+        new cdk.CfnOutput(this, "RulesApiUrl", {
+            value: `${httpApi.url || ""}rules`,
+            description: "Rules API base URL",
+            exportName: "ImkRulesApiUrl",
         })
     }
 }

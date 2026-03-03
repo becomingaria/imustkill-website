@@ -12,6 +12,7 @@ import { useLocation } from "react-router-dom"
 import GMToolsButton from "../components/GMToolsButton"
 import useRulesEngine from "../hooks/useRulesEngine"
 import EnhancedKeywordLinker from "../components/RulesSearch/EnhancedKeywordLinker"
+import EditableSection from "../components/EditableSection"
 import { scrollToAnchor } from "../utils/scrollToAnchor"
 
 // Custom hook for detecting when an element is in viewport
@@ -201,319 +202,353 @@ const RunningTheGame = () => {
                     }}
                 >
                     {runningGameData.sections.map((section, sectionIndex) => (
-                        <Slide key={section.id} delay={100}>
-                            <Box
-                                id={section.id}
-                                sx={{
-                                    padding: { xs: "20px", sm: "40px" },
-                                    borderRadius: "16px",
-                                    bgcolor: (theme) =>
-                                        theme.palette.mode === "dark"
-                                            ? "rgba(255, 255, 255, 0.05)"
-                                            : "rgba(0, 0, 0, 0.03)",
-                                    backdropFilter: "blur(10px)",
-                                    border: (theme) =>
-                                        theme.palette.mode === "dark"
-                                            ? "1px solid rgba(255, 255, 255, 0.1)"
-                                            : "1px solid rgba(0, 0, 0, 0.1)",
-                                }}
-                            >
-                                <Typography
-                                    variant='h3'
+                        <EditableSection
+                            key={section.id}
+                            category='running-the-game'
+                            sectionId={section.id}
+                            sectionOrder={sectionIndex}
+                            section={section}
+                            onUpdate={(updated) =>
+                                setRunningGameData((prev) =>
+                                    prev
+                                        ? {
+                                              ...prev,
+                                              sections: prev.sections.map(
+                                                  (s) =>
+                                                      s.id === section.id
+                                                          ? updated
+                                                          : s,
+                                              ),
+                                          }
+                                        : prev,
+                                )
+                            }
+                            onDelete={(deletedId) =>
+                                setRunningGameData((prev) =>
+                                    prev
+                                        ? {
+                                              ...prev,
+                                              sections: prev.sections.filter(
+                                                  (s) => s.id !== deletedId,
+                                              ),
+                                          }
+                                        : prev,
+                                )
+                            }
+                            onInsertAfter={(afterId, newSec) =>
+                                setRunningGameData((prev) => {
+                                    if (!prev) return prev
+                                    const idx = prev.sections.findIndex(
+                                        (s) => s.id === afterId,
+                                    )
+                                    const next = [...prev.sections]
+                                    next.splice(idx + 1, 0, newSec)
+                                    return { ...prev, sections: next }
+                                })
+                            }
+                            onInsertBefore={(beforeId, newSec) =>
+                                setRunningGameData((prev) => {
+                                    if (!prev) return prev
+                                    const idx = prev.sections.findIndex(
+                                        (s) => s.id === beforeId,
+                                    )
+                                    const next = [...prev.sections]
+                                    next.splice(Math.max(0, idx), 0, newSec)
+                                    return { ...prev, sections: next }
+                                })
+                            }
+                        >
+                            <Slide delay={100}>
+                                <Box
+                                    id={section.id}
                                     sx={{
-                                        fontSize: {
-                                            xs: "1.5rem",
-                                            sm: "2rem",
-                                            md: "2.5rem",
-                                        },
-                                        fontWeight: "bold",
-                                        marginBottom: "24px",
+                                        padding: { xs: "20px", sm: "40px" },
+                                        borderRadius: "16px",
+                                        bgcolor: (theme) =>
+                                            theme.palette.mode === "dark"
+                                                ? "rgba(255, 255, 255, 0.05)"
+                                                : "rgba(0, 0, 0, 0.03)",
+                                        backdropFilter: "blur(10px)",
+                                        border: (theme) =>
+                                            theme.palette.mode === "dark"
+                                                ? "1px solid rgba(255, 255, 255, 0.1)"
+                                                : "1px solid rgba(0, 0, 0, 0.1)",
                                     }}
                                 >
-                                    {section.title}
-                                </Typography>
-
-                                {/* Hunt phases */}
-                                {section.phases && (
-                                    <Box
+                                    <Typography
+                                        variant='h3'
                                         sx={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: 2,
+                                            fontSize: {
+                                                xs: "1.5rem",
+                                                sm: "2rem",
+                                                md: "2.5rem",
+                                            },
+                                            fontWeight: "bold",
+                                            marginBottom: "24px",
                                         }}
                                     >
-                                        {section.phases.map((phase, index) => (
-                                            <Box
-                                                key={phase.name}
-                                                sx={{
-                                                    bgcolor: (theme) =>
-                                                        theme.palette.mode ===
-                                                        "dark"
-                                                            ? "rgba(255, 255, 255, 0.03)"
-                                                            : "rgba(0, 0, 0, 0.02)",
-                                                    padding: {
-                                                        xs: "16px",
-                                                        sm: "20px",
-                                                    },
-                                                    borderRadius: "12px",
-                                                    border: (theme) =>
-                                                        theme.palette.mode ===
-                                                        "dark"
-                                                            ? "1px solid rgba(255, 255, 255, 0.08)"
-                                                            : "1px solid rgba(0, 0, 0, 0.06)",
-                                                }}
-                                            >
-                                                <Typography
-                                                    variant='h4'
-                                                    sx={{
-                                                        fontWeight: "bold",
-                                                        mb: 1,
-                                                        fontSize: {
-                                                            xs: "1.1rem",
-                                                            sm: "1.3rem",
-                                                        },
-                                                    }}
-                                                >
-                                                    {index + 1}. {phase.name}
-                                                </Typography>
-                                                <Typography
-                                                    variant='body1'
-                                                    sx={{ lineHeight: 1.7 }}
-                                                >
-                                                    <EnhancedKeywordLinker>
-                                                        {phase.description}
-                                                    </EnhancedKeywordLinker>
-                                                </Typography>
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                )}
+                                        {section.title}
+                                    </Typography>
 
-                                {/* Subsections */}
-                                {section.subsections && (
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: 3,
-                                        }}
-                                    >
-                                        {section.subsections.map(
-                                            (subsection) => (
-                                                <Box
-                                                    key={subsection.id}
-                                                    id={subsection.id}
-                                                    sx={{
-                                                        bgcolor: (theme) =>
-                                                            theme.palette
-                                                                .mode === "dark"
-                                                                ? "rgba(255, 255, 255, 0.03)"
-                                                                : "rgba(0, 0, 0, 0.02)",
-                                                        padding: {
-                                                            xs: "16px",
-                                                            sm: "24px",
-                                                        },
-                                                        borderRadius: "12px",
-                                                        border: (theme) =>
-                                                            theme.palette
-                                                                .mode === "dark"
-                                                                ? "1px solid rgba(255, 255, 255, 0.08)"
-                                                                : "1px solid rgba(0, 0, 0, 0.06)",
-                                                    }}
-                                                >
-                                                    <Typography
-                                                        variant='h4'
+                                    {/* Hunt phases */}
+                                    {section.phases && (
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: 2,
+                                            }}
+                                        >
+                                            {section.phases.map(
+                                                (phase, index) => (
+                                                    <Box
+                                                        key={phase.name}
                                                         sx={{
-                                                            fontWeight: "bold",
-                                                            mb: 2,
-                                                            fontSize: {
-                                                                xs: "1.2rem",
-                                                                sm: "1.5rem",
+                                                            bgcolor: (theme) =>
+                                                                theme.palette
+                                                                    .mode ===
+                                                                "dark"
+                                                                    ? "rgba(255, 255, 255, 0.03)"
+                                                                    : "rgba(0, 0, 0, 0.02)",
+                                                            padding: {
+                                                                xs: "16px",
+                                                                sm: "20px",
                                                             },
+                                                            borderRadius:
+                                                                "12px",
+                                                            border: (theme) =>
+                                                                theme.palette
+                                                                    .mode ===
+                                                                "dark"
+                                                                    ? "1px solid rgba(255, 255, 255, 0.08)"
+                                                                    : "1px solid rgba(0, 0, 0, 0.06)",
                                                         }}
                                                     >
-                                                        {subsection.title}
-                                                    </Typography>
-
-                                                    {subsection.description && (
+                                                        <Typography
+                                                            variant='h4'
+                                                            sx={{
+                                                                fontWeight:
+                                                                    "bold",
+                                                                mb: 1,
+                                                                fontSize: {
+                                                                    xs: "1.1rem",
+                                                                    sm: "1.3rem",
+                                                                },
+                                                            }}
+                                                        >
+                                                            {index + 1}.{" "}
+                                                            {phase.name}
+                                                        </Typography>
                                                         <Typography
                                                             variant='body1'
                                                             sx={{
                                                                 lineHeight: 1.7,
-                                                                mb: 2,
                                                             }}
                                                         >
                                                             <EnhancedKeywordLinker>
                                                                 {
-                                                                    subsection.description
+                                                                    phase.description
                                                                 }
                                                             </EnhancedKeywordLinker>
                                                         </Typography>
-                                                    )}
+                                                    </Box>
+                                                ),
+                                            )}
+                                        </Box>
+                                    )}
 
-                                                    {subsection.mechanics && (
-                                                        <Box
+                                    {/* Subsections */}
+                                    {section.subsections && (
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: 3,
+                                            }}
+                                        >
+                                            {section.subsections.map(
+                                                (subsection) => (
+                                                    <Box
+                                                        key={subsection.id}
+                                                        id={subsection.id}
+                                                        sx={{
+                                                            bgcolor: (theme) =>
+                                                                theme.palette
+                                                                    .mode ===
+                                                                "dark"
+                                                                    ? "rgba(255, 255, 255, 0.03)"
+                                                                    : "rgba(0, 0, 0, 0.02)",
+                                                            padding: {
+                                                                xs: "16px",
+                                                                sm: "24px",
+                                                            },
+                                                            borderRadius:
+                                                                "12px",
+                                                            border: (theme) =>
+                                                                theme.palette
+                                                                    .mode ===
+                                                                "dark"
+                                                                    ? "1px solid rgba(255, 255, 255, 0.08)"
+                                                                    : "1px solid rgba(0, 0, 0, 0.06)",
+                                                        }}
+                                                    >
+                                                        <Typography
+                                                            variant='h4'
                                                             sx={{
-                                                                fontStyle:
-                                                                    "italic",
-                                                                bgcolor: (
-                                                                    theme,
-                                                                ) =>
-                                                                    theme
-                                                                        .palette
-                                                                        .mode ===
-                                                                    "dark"
-                                                                        ? "rgba(255, 255, 255, 0.05)"
-                                                                        : "rgba(0, 0, 0, 0.04)",
-                                                                p: 2,
-                                                                borderRadius:
-                                                                    "8px",
+                                                                fontWeight:
+                                                                    "bold",
                                                                 mb: 2,
+                                                                fontSize: {
+                                                                    xs: "1.2rem",
+                                                                    sm: "1.5rem",
+                                                                },
                                                             }}
                                                         >
-                                                            <Typography variant='body1'>
-                                                                <strong>
-                                                                    Mechanics:
-                                                                </strong>{" "}
-                                                                <EnhancedKeywordLinker>
-                                                                    {
-                                                                        subsection.mechanics
-                                                                    }
-                                                                </EnhancedKeywordLinker>
-                                                            </Typography>
-                                                        </Box>
-                                                    )}
+                                                            {subsection.title}
+                                                        </Typography>
 
-                                                    {subsection.stat_explanations && (
-                                                        <>
+                                                        {subsection.description && (
                                                             <Typography
                                                                 variant='body1'
                                                                 sx={{
-                                                                    fontWeight:
-                                                                        "bold",
-                                                                    mt: 2,
-                                                                    mb: 1,
+                                                                    lineHeight: 1.7,
+                                                                    mb: 2,
                                                                 }}
                                                             >
-                                                                Stat Breakdown:
+                                                                <EnhancedKeywordLinker>
+                                                                    {
+                                                                        subsection.description
+                                                                    }
+                                                                </EnhancedKeywordLinker>
                                                             </Typography>
+                                                        )}
+
+                                                        {subsection.mechanics && (
                                                             <Box
                                                                 sx={{
-                                                                    display:
-                                                                        "flex",
-                                                                    flexDirection:
-                                                                        "column",
-                                                                    gap: 1,
+                                                                    fontStyle:
+                                                                        "italic",
+                                                                    bgcolor: (
+                                                                        theme,
+                                                                    ) =>
+                                                                        theme
+                                                                            .palette
+                                                                            .mode ===
+                                                                        "dark"
+                                                                            ? "rgba(255, 255, 255, 0.05)"
+                                                                            : "rgba(0, 0, 0, 0.04)",
+                                                                    p: 2,
+                                                                    borderRadius:
+                                                                        "8px",
+                                                                    mb: 2,
                                                                 }}
                                                             >
-                                                                {subsection.stat_explanations.map(
-                                                                    (
-                                                                        statExp,
-                                                                        index,
-                                                                    ) => (
-                                                                        <Box
-                                                                            key={
-                                                                                index
-                                                                            }
-                                                                            sx={{
-                                                                                bgcolor:
-                                                                                    (
+                                                                <Typography variant='body1'>
+                                                                    <strong>
+                                                                        Mechanics:
+                                                                    </strong>{" "}
+                                                                    <EnhancedKeywordLinker>
+                                                                        {
+                                                                            subsection.mechanics
+                                                                        }
+                                                                    </EnhancedKeywordLinker>
+                                                                </Typography>
+                                                            </Box>
+                                                        )}
+
+                                                        {subsection.stat_explanations && (
+                                                            <>
+                                                                <Typography
+                                                                    variant='body1'
+                                                                    sx={{
+                                                                        fontWeight:
+                                                                            "bold",
+                                                                        mt: 2,
+                                                                        mb: 1,
+                                                                    }}
+                                                                >
+                                                                    Stat
+                                                                    Breakdown:
+                                                                </Typography>
+                                                                <Box
+                                                                    sx={{
+                                                                        display:
+                                                                            "flex",
+                                                                        flexDirection:
+                                                                            "column",
+                                                                        gap: 1,
+                                                                    }}
+                                                                >
+                                                                    {subsection.stat_explanations.map(
+                                                                        (
+                                                                            statExp,
+                                                                            index,
+                                                                        ) => (
+                                                                            <Box
+                                                                                key={
+                                                                                    index
+                                                                                }
+                                                                                sx={{
+                                                                                    bgcolor:
+                                                                                        (
+                                                                                            theme,
+                                                                                        ) =>
+                                                                                            theme
+                                                                                                .palette
+                                                                                                .mode ===
+                                                                                            "dark"
+                                                                                                ? "rgba(255, 255, 255, 0.04)"
+                                                                                                : "rgba(0, 0, 0, 0.03)",
+                                                                                    padding:
+                                                                                        "12px",
+                                                                                    borderRadius:
+                                                                                        "8px",
+                                                                                    border: (
                                                                                         theme,
                                                                                     ) =>
                                                                                         theme
                                                                                             .palette
                                                                                             .mode ===
                                                                                         "dark"
-                                                                                            ? "rgba(255, 255, 255, 0.04)"
-                                                                                            : "rgba(0, 0, 0, 0.03)",
-                                                                                padding:
-                                                                                    "12px",
-                                                                                borderRadius:
-                                                                                    "8px",
-                                                                                border: (
-                                                                                    theme,
-                                                                                ) =>
-                                                                                    theme
-                                                                                        .palette
-                                                                                        .mode ===
-                                                                                    "dark"
-                                                                                        ? "1px solid rgba(255, 255, 255, 0.06)"
-                                                                                        : "1px solid rgba(0, 0, 0, 0.05)",
-                                                                            }}
-                                                                        >
-                                                                            <Typography
-                                                                                variant='subtitle2'
-                                                                                sx={{
-                                                                                    fontWeight:
-                                                                                        "bold",
-                                                                                    color: "primary.main",
+                                                                                            ? "1px solid rgba(255, 255, 255, 0.06)"
+                                                                                            : "1px solid rgba(0, 0, 0, 0.05)",
                                                                                 }}
                                                                             >
-                                                                                {
-                                                                                    statExp.stat
-                                                                                }
-                                                                                :
-                                                                            </Typography>
-                                                                            <Typography variant='body2'>
-                                                                                <EnhancedKeywordLinker>
+                                                                                <Typography
+                                                                                    variant='subtitle2'
+                                                                                    sx={{
+                                                                                        fontWeight:
+                                                                                            "bold",
+                                                                                        color: "primary.main",
+                                                                                    }}
+                                                                                >
                                                                                     {
-                                                                                        statExp.description
+                                                                                        statExp.stat
                                                                                     }
-                                                                                </EnhancedKeywordLinker>
-                                                                            </Typography>
-                                                                        </Box>
-                                                                    ),
-                                                                )}
-                                                            </Box>
-                                                        </>
-                                                    )}
 
-                                                    {subsection.rules && (
-                                                        <List sx={{ pl: 1 }}>
-                                                            {subsection.rules.map(
-                                                                (
-                                                                    rule,
-                                                                    index,
-                                                                ) => (
-                                                                    <ListItem
-                                                                        key={
-                                                                            index
-                                                                        }
-                                                                        sx={{
-                                                                            py: 0.5,
-                                                                        }}
-                                                                    >
-                                                                        <Typography variant='body1'>
-                                                                            <EnhancedKeywordLinker>
-                                                                                {
-                                                                                    rule
-                                                                                }
-                                                                            </EnhancedKeywordLinker>
-                                                                        </Typography>
-                                                                    </ListItem>
-                                                                ),
-                                                            )}
-                                                        </List>
-                                                    )}
+                                                                                    :
+                                                                                </Typography>
+                                                                                <Typography variant='body2'>
+                                                                                    <EnhancedKeywordLinker>
+                                                                                        {
+                                                                                            statExp.description
+                                                                                        }
+                                                                                    </EnhancedKeywordLinker>
+                                                                                </Typography>
+                                                                            </Box>
+                                                                        ),
+                                                                    )}
+                                                                </Box>
+                                                            </>
+                                                        )}
 
-                                                    {subsection.example_actions && (
-                                                        <>
-                                                            <Typography
-                                                                variant='body1'
-                                                                sx={{
-                                                                    fontWeight:
-                                                                        "bold",
-                                                                    mt: 2,
-                                                                }}
-                                                            >
-                                                                Example Actions:
-                                                            </Typography>
+                                                        {subsection.rules && (
                                                             <List
                                                                 sx={{ pl: 1 }}
                                                             >
-                                                                {subsection.example_actions.map(
+                                                                {subsection.rules.map(
                                                                     (
-                                                                        action,
+                                                                        rule,
                                                                         index,
                                                                     ) => (
                                                                         <ListItem
@@ -527,7 +562,7 @@ const RunningTheGame = () => {
                                                                             <Typography variant='body1'>
                                                                                 <EnhancedKeywordLinker>
                                                                                     {
-                                                                                        action
+                                                                                        rule
                                                                                     }
                                                                                 </EnhancedKeywordLinker>
                                                                             </Typography>
@@ -535,57 +570,104 @@ const RunningTheGame = () => {
                                                                     ),
                                                                 )}
                                                             </List>
-                                                        </>
-                                                    )}
+                                                        )}
 
-                                                    {subsection.examples && (
-                                                        <>
-                                                            <Typography
-                                                                variant='body1'
-                                                                sx={{
-                                                                    fontWeight:
-                                                                        "bold",
-                                                                    mt: 2,
-                                                                }}
-                                                            >
-                                                                Examples:
-                                                            </Typography>
-                                                            <List
-                                                                sx={{ pl: 1 }}
-                                                            >
-                                                                {subsection.examples.map(
-                                                                    (
-                                                                        example,
-                                                                        index,
-                                                                    ) => (
-                                                                        <ListItem
-                                                                            key={
-                                                                                index
-                                                                            }
-                                                                            sx={{
-                                                                                py: 0.5,
-                                                                            }}
-                                                                        >
-                                                                            <Typography variant='body1'>
-                                                                                <EnhancedKeywordLinker>
-                                                                                    {
-                                                                                        example
-                                                                                    }
-                                                                                </EnhancedKeywordLinker>
-                                                                            </Typography>
-                                                                        </ListItem>
-                                                                    ),
-                                                                )}
-                                                            </List>
-                                                        </>
-                                                    )}
-                                                </Box>
-                                            ),
-                                        )}
-                                    </Box>
-                                )}
-                            </Box>
-                        </Slide>
+                                                        {subsection.example_actions && (
+                                                            <>
+                                                                <Typography
+                                                                    variant='body1'
+                                                                    sx={{
+                                                                        fontWeight:
+                                                                            "bold",
+                                                                        mt: 2,
+                                                                    }}
+                                                                >
+                                                                    Example
+                                                                    Actions:
+                                                                </Typography>
+                                                                <List
+                                                                    sx={{
+                                                                        pl: 1,
+                                                                    }}
+                                                                >
+                                                                    {subsection.example_actions.map(
+                                                                        (
+                                                                            action,
+                                                                            index,
+                                                                        ) => (
+                                                                            <ListItem
+                                                                                key={
+                                                                                    index
+                                                                                }
+                                                                                sx={{
+                                                                                    py: 0.5,
+                                                                                }}
+                                                                            >
+                                                                                <Typography variant='body1'>
+                                                                                    <EnhancedKeywordLinker>
+                                                                                        {
+                                                                                            action
+                                                                                        }
+                                                                                    </EnhancedKeywordLinker>
+                                                                                </Typography>
+                                                                            </ListItem>
+                                                                        ),
+                                                                    )}
+                                                                </List>
+                                                            </>
+                                                        )}
+
+                                                        {subsection.examples && (
+                                                            <>
+                                                                <Typography
+                                                                    variant='body1'
+                                                                    sx={{
+                                                                        fontWeight:
+                                                                            "bold",
+                                                                        mt: 2,
+                                                                    }}
+                                                                >
+                                                                    Examples:
+                                                                </Typography>
+                                                                <List
+                                                                    sx={{
+                                                                        pl: 1,
+                                                                    }}
+                                                                >
+                                                                    {subsection.examples.map(
+                                                                        (
+                                                                            example,
+                                                                            index,
+                                                                        ) => (
+                                                                            <ListItem
+                                                                                key={
+                                                                                    index
+                                                                                }
+                                                                                sx={{
+                                                                                    py: 0.5,
+                                                                                }}
+                                                                            >
+                                                                                <Typography variant='body1'>
+                                                                                    <EnhancedKeywordLinker>
+                                                                                        {
+                                                                                            example
+                                                                                        }
+                                                                                    </EnhancedKeywordLinker>
+                                                                                </Typography>
+                                                                            </ListItem>
+                                                                        ),
+                                                                    )}
+                                                                </List>
+                                                            </>
+                                                        )}
+                                                    </Box>
+                                                ),
+                                            )}
+                                        </Box>
+                                    )}
+                                </Box>
+                            </Slide>
+                        </EditableSection>
                     ))}
                 </Box>
             </Container>

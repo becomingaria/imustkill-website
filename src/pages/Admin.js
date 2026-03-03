@@ -43,9 +43,14 @@ import {
     TableChart,
     CheckCircle,
     Menu as MenuIcon,
+    ArrowUpward,
+    ArrowDownward,
+    Visibility,
+    VisibilityOff,
 } from "@mui/icons-material"
 import { getCardArtUrl, getDeckBackUrl } from "../utils/cardArtwork"
 import { D10Icon } from "../components/icons"
+import { getNavConfig, saveNavConfig } from "../utils/rulesClient"
 
 // ═══════════════════════════════════════════════════════════
 // Configuration — set these env vars after deploying CDK:
@@ -135,7 +140,6 @@ const RARITY_COLORS = {
     mythic: "#8e24aa",
 }
 
-const CARD_TYPES = ["power", "monster"]
 const POWER_RARITIES = ["common", "uncommon", "rare", "mythic"]
 
 // ── CSV helpers ───────────────────────────────────────────────────────────
@@ -1570,12 +1574,943 @@ function CsvImportModal({ open, onClose, onImport, deck }) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// Admin Rules Panel
+// ═══════════════════════════════════════════════════════════
+function AdminRulesPanel() {
+    const [grouped, setGrouped] = useState({})
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState("")
+    const [expandedCat, setExpandedCat] = useState(null)
+    const [search, setSearch] = useState("")
+    const [editModal, setEditModal] = useState(null) // { category, sectionId, section }
+    const [editTitle, setEditTitle] = useState("")
+    const [editJson, setEditJson] = useState("")
+    const [jsonError, setJsonError] = useState("")
+    const [saving, setSaving] = useState(false)
+    const [saveMsg, setSaveMsg] = useState("")
+    const [deleting, setDeleting] = useState(null)
+    const [seeding, setSeeding] = useState(false)
+    const [seedMsg, setSeedMsg] = useState("")
+
+    const loadRules = useCallback(async () => {
+        setLoading(true)
+        setError("")
+        try {
+            const res = await fetch(`${API_URL}/rules`)
+            const data = await res.json()
+            setGrouped(data.grouped || {})
+        } catch (e) {
+            setError("Failed to load rules: " + e.message)
+        } finally {
+            setLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        loadRules()
+    }, [loadRules])
+
+    // ── Edit section ──────────────────────────────────────────────────────────
+    const openEdit = (category, section) => {
+        setEditModal({ category, sectionId: section.sectionId, section })
+        setEditTitle(section.content?.title || section.title || "")
+        setEditJson(JSON.stringify(section.content || {}, null, 2))
+        setJsonError("")
+        setSaveMsg("")
+    }
+
+    const handleSave = async () => {
+        let parsed
+        try {
+            parsed = JSON.parse(editJson)
+        } catch (e) {
+            setJsonError("Invalid JSON: " + e.message)
+            return
+        }
+        parsed.title = editTitle || parsed.title || ""
+        parsed.id = editModal.sectionId
+        setSaving(true)
+        setSaveMsg("")
+        try {
+            await adminFetch(
+                `/rules/${encodeURIComponent(editModal.category)}/${encodeURIComponent(editModal.sectionId)}`,
+                "PUT",
+                {
+                    title: parsed.title,
+                    order: editModal.section.order ?? 0,
+                    content: parsed,
+                    updatedBy:
+                        localStorage.getItem("imk_admin_email") || "admin",
+                },
+            )
+            setSaveMsg("Saved!")
+            await loadRules()
+            setTimeout(() => {
+                setEditModal(null)
+                setSaveMsg("")
+            }, 1200)
+        } catch (e) {
+            setSaveMsg("Error: " + e.message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    // ── Delete section ────────────────────────────────────────────────────────
+    const handleDelete = async (category, sectionId) => {
+        setDeleting(`${category}/${sectionId}`)
+        try {
+            await adminFetch(
+                `/rules/${encodeURIComponent(category)}/${encodeURIComponent(sectionId)}`,
+                "DELETE",
+            )
+            await loadRules()
+        } catch (e) {
+            setError("Delete failed: " + e.message)
+        } finally {
+            setDeleting(null)
+        }
+    }
+
+    // ── Re-seed from public JSON files ────────────────────────────────────────
+    const handleReseed = async () => {
+        setSeeding(true)
+        setSeedMsg("")
+        try {
+            // Load rules-database.json
+            const dbRes = await fetch("/rules-database.json")
+            const db = await dbRes.json()
+            const categories = db.rulesDatabase.categories
+
+            // Fetch each category file and extract sections
+            const sections = []
+            for (const [catKey, meta] of Object.entries(categories)) {
+                const catRes = await fetch(`/${meta.file}`)
+                const catRaw = await catRes.json()
+                const catData = Object.values(catRaw)[0]
+                if (catData?.sections) {
+                    catData.sections.forEach((sec, idx) => {
+                        sections.push({
+                            category: catKey,
+                            sectionId: sec.id,
+                            title: sec.title,
+                            order: idx,
+                            content: sec,
+                        })
+                    })
+                }
+            }
+
+            await adminFetch("/rules/seed", "POST", {
+                sections,
+                updatedBy: localStorage.getItem("imk_admin_email") || "admin",
+            })
+            setSeedMsg(`✅ Seeded ${sections.length} sections from JSON files`)
+            await loadRules()
+        } catch (e) {
+            setSeedMsg("❌ Seed failed: " + e.message)
+        } finally {
+            setSeeding(false)
+        }
+    }
+
+    // ── Filter ────────────────────────────────────────────────────────────────
+    const lowerSearch = search.toLowerCase()
+    const filteredGrouped = {}
+    Object.entries(grouped).forEach(([cat, sections]) => {
+        const matches = sections.filter(
+            (s) =>
+                !lowerSearch ||
+                (s.content?.title || s.title || "")
+                    .toLowerCase()
+                    .includes(lowerSearch) ||
+                s.sectionId.toLowerCase().includes(lowerSearch) ||
+                cat.toLowerCase().includes(lowerSearch),
+        )
+        if (matches.length > 0) filteredGrouped[cat] = matches
+    })
+
+    const totalSections = Object.values(grouped).reduce(
+        (n, arr) => n + arr.length,
+        0,
+    )
+
+    return (
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
+            {/* Header row */}
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    mb: 2,
+                    flexWrap: "wrap",
+                    gap: 1,
+                }}
+            >
+                <Box>
+                    <Typography
+                        sx={{
+                            fontFamily: '"Cinzel", serif',
+                            fontWeight: "bold",
+                            fontSize: "1.1rem",
+                        }}
+                    >
+                        Rules Database
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.72rem", opacity: 0.5 }}>
+                        {totalSections} section{totalSections !== 1 ? "s" : ""}{" "}
+                        across {Object.keys(grouped).length} categories
+                        {totalSections === 0
+                            ? " — seed from JSON files to populate"
+                            : ""}
+                    </Typography>
+                </Box>
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    <Button
+                        size='small'
+                        variant='outlined'
+                        onClick={loadRules}
+                        disabled={loading}
+                        sx={{ fontSize: "0.72rem", textTransform: "none" }}
+                    >
+                        Refresh
+                    </Button>
+                    <Button
+                        size='small'
+                        onClick={handleReseed}
+                        disabled={seeding}
+                        sx={{
+                            bgcolor: "#8B0000",
+                            color: "#fff",
+                            fontSize: "0.72rem",
+                            textTransform: "none",
+                            "&:hover": { bgcolor: "#a00" },
+                        }}
+                    >
+                        {seeding ? "Seeding…" : "Re-seed from JSON"}
+                    </Button>
+                </Box>
+            </Box>
+
+            {seedMsg && (
+                <Alert
+                    severity={seedMsg.startsWith("✅") ? "success" : "error"}
+                    onClose={() => setSeedMsg("")}
+                    sx={{ mb: 2 }}
+                >
+                    {seedMsg}
+                </Alert>
+            )}
+            {error && (
+                <Alert
+                    severity='error'
+                    onClose={() => setError("")}
+                    sx={{ mb: 2 }}
+                >
+                    {error}
+                </Alert>
+            )}
+
+            {/* Search */}
+            <TextField
+                placeholder='Search sections…'
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                size='small'
+                fullWidth
+                sx={{ mb: 2 }}
+                InputProps={{
+                    startAdornment: (
+                        <Typography sx={{ mr: 1, opacity: 0.4 }}>🔍</Typography>
+                    ),
+                }}
+            />
+
+            {loading ? (
+                <Box sx={{ textAlign: "center", py: 4 }}>
+                    <CircularProgress size={24} />
+                </Box>
+            ) : (
+                Object.entries(filteredGrouped)
+                    .sort()
+                    .map(([cat, sections]) => (
+                        <Paper
+                            key={cat}
+                            sx={{
+                                mb: 1.5,
+                                borderRadius: "12px",
+                                overflow: "hidden",
+                                border: "1px solid",
+                                borderColor: "divider",
+                            }}
+                        >
+                            {/* Category header */}
+                            <Box
+                                onClick={() =>
+                                    setExpandedCat(
+                                        expandedCat === cat ? null : cat,
+                                    )
+                                }
+                                sx={{
+                                    px: 2,
+                                    py: 1.2,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    cursor: "pointer",
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(255,255,255,0.05)"
+                                            : "rgba(0,0,0,0.04)",
+                                    "&:hover": {
+                                        bgcolor: (theme) =>
+                                            theme.palette.mode === "dark"
+                                                ? "rgba(255,255,255,0.08)"
+                                                : "rgba(0,0,0,0.07)",
+                                    },
+                                }}
+                            >
+                                <Box>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: '"Cinzel", serif',
+                                            fontWeight: "bold",
+                                            fontSize: "0.8rem",
+                                        }}
+                                    >
+                                        {cat}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontSize: "0.65rem",
+                                            opacity: 0.5,
+                                        }}
+                                    >
+                                        {sections.length} section
+                                        {sections.length !== 1 ? "s" : ""}
+                                    </Typography>
+                                </Box>
+                                <Typography
+                                    sx={{ opacity: 0.4, fontSize: "0.8rem" }}
+                                >
+                                    {expandedCat === cat ? "▲" : "▼"}
+                                </Typography>
+                            </Box>
+
+                            {/* Sections list */}
+                            {expandedCat === cat && (
+                                <Box>
+                                    <Divider />
+                                    {sections
+                                        .sort(
+                                            (a, b) =>
+                                                (a.order ?? 0) - (b.order ?? 0),
+                                        )
+                                        .map((sec) => {
+                                            const key = `${cat}/${sec.sectionId}`
+                                            return (
+                                                <Box
+                                                    key={sec.sectionId}
+                                                    sx={{
+                                                        px: 2,
+                                                        py: 1,
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent:
+                                                            "space-between",
+                                                        borderBottom:
+                                                            "1px solid",
+                                                        borderColor: "divider",
+                                                        "&:last-child": {
+                                                            borderBottom:
+                                                                "none",
+                                                        },
+                                                    }}
+                                                >
+                                                    <Box>
+                                                        <Typography
+                                                            sx={{
+                                                                fontWeight:
+                                                                    "bold",
+                                                                fontSize:
+                                                                    "0.8rem",
+                                                            }}
+                                                        >
+                                                            {sec.content
+                                                                ?.title ||
+                                                                sec.title ||
+                                                                sec.sectionId}
+                                                        </Typography>
+                                                        <Typography
+                                                            sx={{
+                                                                fontSize:
+                                                                    "0.65rem",
+                                                                opacity: 0.45,
+                                                            }}
+                                                        >
+                                                            id: {sec.sectionId}
+                                                            {sec.lastUpdated
+                                                                ? `  ·  updated ${new Date(sec.lastUpdated).toLocaleDateString()}`
+                                                                : ""}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box
+                                                        sx={{
+                                                            display: "flex",
+                                                            gap: 0.5,
+                                                        }}
+                                                    >
+                                                        <Tooltip title='Edit section'>
+                                                            <IconButton
+                                                                size='small'
+                                                                onClick={() =>
+                                                                    openEdit(
+                                                                        cat,
+                                                                        sec,
+                                                                    )
+                                                                }
+                                                                sx={{
+                                                                    color: "#ffa000",
+                                                                    opacity: 0.8,
+                                                                    "&:hover": {
+                                                                        opacity: 1,
+                                                                    },
+                                                                }}
+                                                            >
+                                                                <Edit
+                                                                    sx={{
+                                                                        fontSize: 15,
+                                                                    }}
+                                                                />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title='Delete section'>
+                                                            <IconButton
+                                                                size='small'
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        cat,
+                                                                        sec.sectionId,
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    deleting ===
+                                                                    key
+                                                                }
+                                                                sx={{
+                                                                    color: "#e57373",
+                                                                    opacity: 0.8,
+                                                                    "&:hover": {
+                                                                        opacity: 1,
+                                                                    },
+                                                                }}
+                                                            >
+                                                                {deleting ===
+                                                                key ? (
+                                                                    <CircularProgress
+                                                                        size={
+                                                                            12
+                                                                        }
+                                                                        color='inherit'
+                                                                    />
+                                                                ) : (
+                                                                    <Delete
+                                                                        sx={{
+                                                                            fontSize: 15,
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </Box>
+                                                </Box>
+                                            )
+                                        })}
+                                </Box>
+                            )}
+                        </Paper>
+                    ))
+            )}
+
+            {/* Edit Modal */}
+            {editModal && (
+                <Modal
+                    open
+                    onClose={() => setEditModal(null)}
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        p: 2,
+                    }}
+                >
+                    <Paper
+                        sx={{
+                            width: { xs: "calc(100vw - 32px)", sm: 640 },
+                            maxWidth: 640,
+                            maxHeight: "90vh",
+                            display: "flex",
+                            flexDirection: "column",
+                            borderRadius: "16px",
+                            overflow: "hidden",
+                            outline: "none",
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                px: 2.5,
+                                py: 1.5,
+                                bgcolor: "#1a0a0a",
+                                color: "#fff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                            }}
+                        >
+                            <Box>
+                                <Typography
+                                    sx={{
+                                        fontFamily: '"Cinzel", serif',
+                                        fontWeight: "bold",
+                                        fontSize: "0.95rem",
+                                        color: "#ffa000",
+                                    }}
+                                >
+                                    Edit Rule Section
+                                </Typography>
+                                <Typography
+                                    sx={{ fontSize: "0.68rem", opacity: 0.5 }}
+                                >
+                                    {editModal.category} / {editModal.sectionId}
+                                </Typography>
+                            </Box>
+                            <IconButton
+                                onClick={() => setEditModal(null)}
+                                sx={{ color: "#fff" }}
+                                size='small'
+                            >
+                                <Close />
+                            </IconButton>
+                        </Box>
+
+                        <Box
+                            sx={{
+                                p: 2.5,
+                                overflowY: "auto",
+                                flex: 1,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 2,
+                            }}
+                        >
+                            {saveMsg && (
+                                <Alert
+                                    severity={
+                                        saveMsg.startsWith("Error")
+                                            ? "error"
+                                            : "success"
+                                    }
+                                >
+                                    {saveMsg}
+                                </Alert>
+                            )}
+                            <TextField
+                                label='Section Title'
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                                fullWidth
+                                size='small'
+                            />
+                            <TextField
+                                label='Section Content (JSON)'
+                                value={editJson}
+                                onChange={(e) => {
+                                    setEditJson(e.target.value)
+                                    try {
+                                        JSON.parse(e.target.value)
+                                        setJsonError("")
+                                    } catch (err) {
+                                        setJsonError(err.message)
+                                    }
+                                }}
+                                multiline
+                                minRows={12}
+                                maxRows={22}
+                                fullWidth
+                                error={Boolean(jsonError)}
+                                helperText={jsonError || ""}
+                                inputProps={{
+                                    style: {
+                                        fontFamily: "monospace",
+                                        fontSize: "0.75rem",
+                                    },
+                                }}
+                            />
+                        </Box>
+
+                        <Box
+                            sx={{
+                                px: 2.5,
+                                py: 1.5,
+                                borderTop: "1px solid",
+                                borderColor: "divider",
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                gap: 1.5,
+                            }}
+                        >
+                            <Button
+                                onClick={() => setEditModal(null)}
+                                disabled={saving}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant='contained'
+                                onClick={handleSave}
+                                disabled={saving || Boolean(jsonError)}
+                                startIcon={
+                                    saving ? (
+                                        <CircularProgress
+                                            size={14}
+                                            color='inherit'
+                                        />
+                                    ) : (
+                                        <Save />
+                                    )
+                                }
+                                sx={{
+                                    bgcolor: "#ffa000",
+                                    color: "#1a0a0a",
+                                    fontWeight: "bold",
+                                    "&:hover": { bgcolor: "#ffb300" },
+                                }}
+                            >
+                                {saving ? "Saving…" : "Save Changes"}
+                            </Button>
+                        </Box>
+                    </Paper>
+                </Modal>
+            )}
+        </Box>
+    )
+}
+
+// ═══════════════════════════════════════════════════════════
+// Admin Nav Panel
+// ═══════════════════════════════════════════════════════════
+function AdminNavPanel() {
+    const [items, setItems] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
+    const [msg, setMsg] = useState("")
+    const [newLabel, setNewLabel] = useState("")
+    const [newPath, setNewPath] = useState("")
+
+    // Load: DB first, then static JSON
+    useEffect(() => {
+        const load = async () => {
+            setLoading(true)
+            try {
+                const dbItems = await getNavConfig()
+                if (dbItems) {
+                    setItems(
+                        dbItems
+                            .slice()
+                            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+                    )
+                    setLoading(false)
+                    return
+                }
+                const res = await fetch("/nav-config.json")
+                const data = await res.json()
+                setItems(
+                    (data.navItems || [])
+                        .slice()
+                        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+                )
+            } catch (e) {
+                setMsg("❌ Failed to load nav config: " + e.message)
+            } finally {
+                setLoading(false)
+            }
+        }
+        load()
+    }, [])
+
+    const move = (idx, dir) => {
+        const next = [...items]
+        const swapIdx = idx + dir
+        if (swapIdx < 0 || swapIdx >= next.length) return
+        ;[next[idx], next[swapIdx]] = [next[swapIdx], next[idx]]
+        setItems(next.map((item, i) => ({ ...item, order: i })))
+    }
+
+    const toggleVisible = (idx) => {
+        setItems((prev) =>
+            prev.map((item, i) =>
+                i === idx
+                    ? { ...item, visible: !(item.visible ?? true) }
+                    : item,
+            ),
+        )
+    }
+
+    const removeItem = (idx) => {
+        setItems((prev) =>
+            prev
+                .filter((_, i) => i !== idx)
+                .map((item, i) => ({ ...item, order: i })),
+        )
+    }
+
+    const addItem = () => {
+        if (!newLabel.trim() || !newPath.trim()) return
+        const id = newLabel
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "")
+        setItems((prev) => [
+            ...prev,
+            {
+                id,
+                label: newLabel.trim(),
+                path: newPath.trim().startsWith("/")
+                    ? newPath.trim()
+                    : "/" + newPath.trim(),
+                order: prev.length,
+                visible: true,
+            },
+        ])
+        setNewLabel("")
+        setNewPath("")
+    }
+
+    const handleSave = async () => {
+        setSaving(true)
+        setMsg("")
+        try {
+            const idToken = localStorage.getItem("imk_admin_id_token")
+            const normalised = items.map((item, i) => ({ ...item, order: i }))
+            await saveNavConfig(normalised, idToken)
+            setMsg("✅ Nav config saved! Reload the home page to see changes.")
+        } catch (e) {
+            setMsg("❌ Save failed: " + e.message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    return (
+        <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: 640 }}>
+            <Typography
+                sx={{
+                    fontFamily: '"Cinzel", serif',
+                    fontWeight: "bold",
+                    fontSize: "1.1rem",
+                    mb: 0.5,
+                }}
+            >
+                Nav Pages
+            </Typography>
+            <Typography sx={{ fontSize: "0.72rem", opacity: 0.5, mb: 2 }}>
+                Reorder, hide, or add pages. Changes are saved to the database
+                and reflected live on the home page.
+            </Typography>
+
+            {msg && (
+                <Alert
+                    severity={msg.startsWith("✅") ? "success" : "error"}
+                    onClose={() => setMsg("")}
+                    sx={{ mb: 2 }}
+                >
+                    {msg}
+                </Alert>
+            )}
+
+            {loading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                    <CircularProgress size={24} />
+                </Box>
+            ) : (
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        mb: 3,
+                    }}
+                >
+                    {items.map((item, idx) => (
+                        <Paper
+                            key={item.id}
+                            variant='outlined'
+                            sx={{
+                                p: 1.5,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                opacity: item.visible === false ? 0.45 : 1,
+                                borderColor:
+                                    item.visible === false
+                                        ? "divider"
+                                        : "rgba(255,160,0,0.3)",
+                            }}
+                        >
+                            {/* Reorder */}
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    mr: 0.5,
+                                }}
+                            >
+                                <IconButton
+                                    size='small'
+                                    onClick={() => move(idx, -1)}
+                                    disabled={idx === 0}
+                                    sx={{ p: 0.3 }}
+                                >
+                                    <ArrowUpward sx={{ fontSize: 13 }} />
+                                </IconButton>
+                                <IconButton
+                                    size='small'
+                                    onClick={() => move(idx, 1)}
+                                    disabled={idx === items.length - 1}
+                                    sx={{ p: 0.3 }}
+                                >
+                                    <ArrowDownward sx={{ fontSize: 13 }} />
+                                </IconButton>
+                            </Box>
+
+                            {/* Label + path */}
+                            <Box sx={{ flex: 1 }}>
+                                <Typography
+                                    sx={{
+                                        fontWeight: "bold",
+                                        fontSize: "0.85rem",
+                                    }}
+                                >
+                                    {item.label}
+                                </Typography>
+                                <Typography
+                                    sx={{ fontSize: "0.68rem", opacity: 0.5 }}
+                                >
+                                    {item.path}
+                                </Typography>
+                            </Box>
+
+                            {/* Visibility toggle */}
+                            <Tooltip
+                                title={
+                                    item.visible === false
+                                        ? "Show in menu"
+                                        : "Hide from menu"
+                                }
+                            >
+                                <IconButton
+                                    size='small'
+                                    onClick={() => toggleVisible(idx)}
+                                    sx={{ opacity: 0.7 }}
+                                >
+                                    {item.visible === false ? (
+                                        <VisibilityOff sx={{ fontSize: 16 }} />
+                                    ) : (
+                                        <Visibility sx={{ fontSize: 16 }} />
+                                    )}
+                                </IconButton>
+                            </Tooltip>
+
+                            {/* Delete */}
+                            <Tooltip title='Remove'>
+                                <IconButton
+                                    size='small'
+                                    onClick={() => removeItem(idx)}
+                                    sx={{ color: "#e57373", opacity: 0.7 }}
+                                >
+                                    <Delete sx={{ fontSize: 16 }} />
+                                </IconButton>
+                            </Tooltip>
+                        </Paper>
+                    ))}
+                </Box>
+            )}
+
+            {/* Add new item */}
+            <Paper variant='outlined' sx={{ p: 2, mb: 2 }}>
+                <Typography
+                    sx={{
+                        fontFamily: '"Cinzel", serif',
+                        fontSize: "0.78rem",
+                        fontWeight: "bold",
+                        mb: 1.5,
+                        opacity: 0.7,
+                    }}
+                >
+                    ADD PAGE
+                </Typography>
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    <TextField
+                        label='Label'
+                        value={newLabel}
+                        onChange={(e) => setNewLabel(e.target.value)}
+                        size='small'
+                        sx={{ flex: 2, minWidth: 150 }}
+                        placeholder='Combat Mechanics'
+                    />
+                    <TextField
+                        label='Path'
+                        value={newPath}
+                        onChange={(e) => setNewPath(e.target.value)}
+                        size='small'
+                        sx={{ flex: 2, minWidth: 150 }}
+                        placeholder='/combat-mechanics'
+                    />
+                    <Button
+                        variant='outlined'
+                        onClick={addItem}
+                        disabled={!newLabel.trim() || !newPath.trim()}
+                        startIcon={<Add />}
+                        sx={{ whiteSpace: "nowrap" }}
+                    >
+                        Add
+                    </Button>
+                </Box>
+            </Paper>
+
+            <Button
+                variant='contained'
+                onClick={handleSave}
+                disabled={saving || loading}
+                startIcon={
+                    saving ? (
+                        <CircularProgress size={14} color='inherit' />
+                    ) : (
+                        <Save />
+                    )
+                }
+                sx={{
+                    bgcolor: "#ffa000",
+                    color: "#1a0a0a",
+                    fontWeight: "bold",
+                    "&:hover": { bgcolor: "#ffb300" },
+                }}
+            >
+                {saving ? "Saving…" : "Save Nav Config"}
+            </Button>
+        </Box>
+    )
+}
+
+// ═══════════════════════════════════════════════════════════
 // Dashboard
 // ═══════════════════════════════════════════════════════════
 function AdminDashboard({ email, onLogout }) {
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
     const [sidebarOpen, setSidebarOpen] = useState(false)
+    const [activeView, setActiveView] = useState("cards")
     const [decks, setDecks] = useState([])
     const [selectedDeck, setSelectedDeck] = useState(null)
     const [cards, setCards] = useState([])
@@ -1723,6 +2658,66 @@ function AdminDashboard({ email, onLogout }) {
             </Box>
         ) : (
             <>
+                {/* Rules Database */}
+                <Box
+                    onClick={() => {
+                        setActiveView((v) =>
+                            v === "rules" ? "cards" : "rules",
+                        )
+                        setSelectedDeck(null)
+                        onDeckSelect()
+                    }}
+                    sx={{
+                        mx: 2,
+                        mt: 2,
+                        mb: 1,
+                        px: 1.5,
+                        py: 1,
+                        borderRadius: "10px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        border: "1px solid",
+                        borderColor:
+                            activeView === "rules" ? "#ffa000" : "divider",
+                        bgcolor:
+                            activeView === "rules"
+                                ? "rgba(255,160,0,0.08)"
+                                : "transparent",
+                        "&:hover": {
+                            bgcolor: "rgba(255,160,0,0.06)",
+                            borderColor: "#ffa000",
+                        },
+                        transition: "all 0.15s",
+                    }}
+                >
+                    <Typography
+                        sx={{
+                            fontFamily: '"Cinzel", serif',
+                            fontWeight: "bold",
+                            fontSize: "0.78rem",
+                            color:
+                                activeView === "rules" ? "#ffa000" : "inherit",
+                        }}
+                    >
+                        📜 Rules Database
+                    </Typography>
+                    {activeView === "rules" && (
+                        <Chip
+                            label='Active'
+                            size='small'
+                            sx={{
+                                height: 16,
+                                fontSize: "0.6rem",
+                                bgcolor: "#ffa000",
+                                color: "#1a0a0a",
+                                fontWeight: "bold",
+                            }}
+                        />
+                    )}
+                </Box>
+
                 {/* Power Decks */}
                 <Box sx={{ p: 2 }}>
                     <Box
@@ -2020,7 +3015,11 @@ function AdminDashboard({ email, onLogout }) {
 
                 {/* ── Main Content ── */}
                 <Box sx={{ flex: 1, overflow: "auto", p: { xs: 2, sm: 3 } }}>
-                    {!selectedDeck ? (
+                    {activeView === "nav" ? (
+                        <AdminNavPanel />
+                    ) : activeView === "rules" ? (
+                        <AdminRulesPanel />
+                    ) : !selectedDeck ? (
                         <Box
                             sx={{
                                 display: "flex",
@@ -2974,6 +3973,8 @@ export default function Admin() {
     const handleLoginSuccess = (userEmail) => {
         setEmail(userEmail)
         setAuthState("authenticated")
+        // Notify AuthContext in the same tab so EditableSection buttons appear
+        window.dispatchEvent(new Event("imk-auth-changed"))
     }
 
     const handleLogout = async () => {
@@ -2984,6 +3985,7 @@ export default function Admin() {
         localStorage.removeItem("imk_admin_email")
         setAuthState("unauthenticated")
         setEmail("")
+        window.dispatchEvent(new Event("imk-auth-changed"))
     }
 
     if (authState === "loading") {

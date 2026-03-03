@@ -101,6 +101,23 @@
                     "charge",
                     "face-down"
                 ]
+            },
+            {
+                "id": "deck-building",
+                "title": "Card Rarity & Deck Building",
+                "description": "Power cards come in four levels of rarity: Common, Uncommon, Rare, and Mythic. When building a deck, you must follow these rarity requirements:",
+                "requirements": [
+                    "For every Mythic card, you must include at least 2 Rare cards",
+                    "For every Rare card, you must include at least 2 Uncommon cards",
+                    "For every Uncommon card, you must include at least 2 Common cards"
+                ],
+                "keywords": [
+                    "deck",
+                    "building",
+                    "rarity",
+                    "requirements",
+                    "pyramid"
+                ]
             }
         ]
     }
