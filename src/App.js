@@ -4,14 +4,10 @@ import { Box } from "@mui/material"
 import HomePage from "./pages/HomePage.js"
 import About from "./pages/About.js"
 import GettingStarted from "./pages/GettingStarted.js"
-import CharacterCreation from "./pages/CharacterCreation.js"
+import RulesPage from "./pages/RulesPage.js"
 import Equipment from "./pages/Equipment.js"
-import CombatMechanics from "./pages/CombatMechanics.js"
-import DeathAndResting from "./pages/DeathAndResting.js"
 import Powers from "./pages/Powers.js"
-import Progression from "./pages/Progression.js"
 import PowerCards from "./pages/PowerCards.js"
-import RunningTheGame from "./pages/RunningTheGame.js"
 import Monsters from "./pages/Monsters.js"
 import MonsterDetail from "./components/MonsterDetail.js"
 import DarkwatchGame from "./pages/DarkwatchGame.js"
@@ -53,23 +49,26 @@ function App() {
                     />
                     <Route
                         path='character-creation'
-                        element={<CharacterCreation />}
+                        element={<RulesPage categoryKey='character-creation' />}
                     />
                     <Route path='equipment' element={<Equipment />} />
                     <Route
                         path='combat-mechanics'
-                        element={<CombatMechanics />}
+                        element={<RulesPage categoryKey='combat-mechanics' />}
                     />
                     <Route
                         path='death-and-resting'
-                        element={<DeathAndResting />}
+                        element={<RulesPage categoryKey='death-and-resting' />}
                     />
                     <Route path='powers' element={<Powers />} />
                     <Route path='power-cards' element={<PowerCards />} />
-                    <Route path='progression' element={<Progression />} />
+                    <Route
+                        path='progression'
+                        element={<RulesPage categoryKey='progression' />}
+                    />
                     <Route
                         path='running-the-game'
-                        element={<RunningTheGame />}
+                        element={<RulesPage categoryKey='running-the-game' />}
                     />
                     <Route path='monsters' element={<Monsters />} />
                     <Route path='monsters/:name' element={<MonsterDetail />} />
