@@ -84,7 +84,11 @@ function renderSubsection(sub) {
         >
             <Typography
                 variant='h4'
-                sx={{ fontWeight: "bold", mb: 2, fontSize: { xs: "1.1rem", sm: "1.3rem" } }}
+                sx={{
+                    fontWeight: "bold",
+                    mb: 2,
+                    fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                }}
             >
                 {sub.title}
             </Typography>
@@ -118,10 +122,19 @@ function renderSubsection(sub) {
             {/* Stat breakdown (RunningTheGame) */}
             {sub.stat_explanations && (
                 <>
-                    <Typography variant='body1' sx={{ fontWeight: "bold", mt: 2, mb: 1 }}>
+                    <Typography
+                        variant='body1'
+                        sx={{ fontWeight: "bold", mt: 2, mb: 1 }}
+                    >
                         Stat Breakdown:
                     </Typography>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1,
+                        }}
+                    >
                         {sub.stat_explanations.map((se, i) => (
                             <Box
                                 key={i}
@@ -138,7 +151,13 @@ function renderSubsection(sub) {
                                             : "1px solid rgba(0,0,0,0.05)",
                                 }}
                             >
-                                <Typography variant='subtitle2' sx={{ fontWeight: "bold", color: "primary.main" }}>
+                                <Typography
+                                    variant='subtitle2'
+                                    sx={{
+                                        fontWeight: "bold",
+                                        color: "primary.main",
+                                    }}
+                                >
                                     {se.stat}:
                                 </Typography>
                                 <Typography variant='body2'>
@@ -155,7 +174,9 @@ function renderSubsection(sub) {
                 <List sx={{ pl: 1 }}>
                     {sub.rules.map((rule, i) => (
                         <ListItem key={i} sx={{ py: 0.5 }}>
-                            <Typography variant='body1'><Kw>{rule}</Kw></Typography>
+                            <Typography variant='body1'>
+                                <Kw>{rule}</Kw>
+                            </Typography>
                         </ListItem>
                     ))}
                 </List>
@@ -164,13 +185,18 @@ function renderSubsection(sub) {
             {/* Example actions (RunningTheGame) */}
             {sub.example_actions && (
                 <>
-                    <Typography variant='body1' sx={{ fontWeight: "bold", mt: 2 }}>
+                    <Typography
+                        variant='body1'
+                        sx={{ fontWeight: "bold", mt: 2 }}
+                    >
                         Example Actions:
                     </Typography>
                     <List sx={{ pl: 1 }}>
                         {sub.example_actions.map((a, i) => (
                             <ListItem key={i} sx={{ py: 0.5 }}>
-                                <Typography variant='body1'><Kw>{a}</Kw></Typography>
+                                <Typography variant='body1'>
+                                    <Kw>{a}</Kw>
+                                </Typography>
                             </ListItem>
                         ))}
                     </List>
@@ -180,13 +206,18 @@ function renderSubsection(sub) {
             {/* Examples list (RunningTheGame) */}
             {sub.examples && (
                 <>
-                    <Typography variant='body1' sx={{ fontWeight: "bold", mt: 2 }}>
+                    <Typography
+                        variant='body1'
+                        sx={{ fontWeight: "bold", mt: 2 }}
+                    >
                         Examples:
                     </Typography>
                     <List sx={{ pl: 1 }}>
                         {sub.examples.map((ex, i) => (
                             <ListItem key={i} sx={{ py: 0.5 }}>
-                                <Typography variant='body1'><Kw>{ex}</Kw></Typography>
+                                <Typography variant='body1'>
+                                    <Kw>{ex}</Kw>
+                                </Typography>
                             </ListItem>
                         ))}
                     </List>
@@ -265,8 +296,8 @@ function renderSectionFields(section) {
             )}
 
             {/* Rules: turns grid (id="turns") OR bullet list */}
-            {section.rules && (
-                section.id === "turns" ? (
+            {section.rules &&
+                (section.id === "turns" ? (
                     <Box
                         sx={{
                             display: "grid",
@@ -275,7 +306,10 @@ function renderSectionFields(section) {
                                 sm: "5fr 0.2fr 5fr 0.2fr 5fr 0.2fr 5fr",
                                 md: "5fr 0.15fr 5fr 0.15fr 5fr 0.15fr 5fr",
                             },
-                            gridTemplateRows: { xs: "repeat(7, auto)", sm: "1fr" },
+                            gridTemplateRows: {
+                                xs: "repeat(7, auto)",
+                                sm: "1fr",
+                            },
                             gap: { xs: 1, sm: 0.1 },
                             alignItems: "stretch",
                             justifyItems: "center",
@@ -288,46 +322,81 @@ function renderSectionFields(section) {
                                 <Chip
                                     label={rule}
                                     sx={{
-                                        gridColumn: { xs: "1", sm: `${i * 2 + 1} / ${i * 2 + 2}` },
-                                        gridRow: { xs: `${i * 2 + 1}`, sm: "1" },
+                                        gridColumn: {
+                                            xs: "1",
+                                            sm: `${i * 2 + 1} / ${i * 2 + 2}`,
+                                        },
+                                        gridRow: {
+                                            xs: `${i * 2 + 1}`,
+                                            sm: "1",
+                                        },
                                         height: { xs: "auto", sm: "100%" },
                                         width: "100%",
                                         maxWidth: "none",
-                                        fontSize: { xs: "0.85rem", sm: "0.95rem", md: "1rem" },
+                                        fontSize: {
+                                            xs: "0.85rem",
+                                            sm: "0.95rem",
+                                            md: "1rem",
+                                        },
                                         fontWeight: "600",
                                         textAlign: "center",
                                         "& .MuiChip-label": {
                                             whiteSpace: "normal",
                                             lineHeight: 1.4,
-                                            padding: { xs: "10px 8px", sm: "16px 14px", md: "18px 16px" },
+                                            padding: {
+                                                xs: "10px 8px",
+                                                sm: "16px 14px",
+                                                md: "18px 16px",
+                                            },
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
                                             height: "100%",
                                         },
                                         bgcolor: (theme) =>
-                                            theme.palette.mode === "dark" ? "#424242" : "#f8f9fa",
+                                            theme.palette.mode === "dark"
+                                                ? "#424242"
+                                                : "#f8f9fa",
                                         color: (theme) =>
-                                            theme.palette.mode === "dark" ? "#ffffff" : "#2c3e50",
+                                            theme.palette.mode === "dark"
+                                                ? "#ffffff"
+                                                : "#2c3e50",
                                         border: (theme) =>
                                             theme.palette.mode === "dark"
                                                 ? "1px solid #616161"
                                                 : "1px solid #dee2e6",
                                         boxShadow: "0 3px 8px rgba(0,0,0,0.12)",
-                                        "&:hover": { transform: "translateY(-1px)" },
+                                        "&:hover": {
+                                            transform: "translateY(-1px)",
+                                        },
                                     }}
                                 />
                                 {i < section.rules.length - 1 && (
                                     <Typography
                                         variant='body1'
                                         sx={{
-                                            gridColumn: { xs: "1", sm: `${i * 2 + 2} / ${i * 2 + 3}` },
-                                            gridRow: { xs: `${i * 2 + 2}`, sm: "1" },
+                                            gridColumn: {
+                                                xs: "1",
+                                                sm: `${i * 2 + 2} / ${i * 2 + 3}`,
+                                            },
+                                            gridRow: {
+                                                xs: `${i * 2 + 2}`,
+                                                sm: "1",
+                                            },
                                             color: (theme) =>
-                                                theme.palette.mode === "dark" ? "#81c784" : "#66bb6a",
+                                                theme.palette.mode === "dark"
+                                                    ? "#81c784"
+                                                    : "#66bb6a",
                                             fontWeight: "bold",
-                                            fontSize: { xs: "1.1rem", sm: "1.4rem", md: "1.6rem" },
-                                            transform: { xs: "rotate(90deg)", sm: "none" },
+                                            fontSize: {
+                                                xs: "1.1rem",
+                                                sm: "1.4rem",
+                                                md: "1.6rem",
+                                            },
+                                            transform: {
+                                                xs: "rotate(90deg)",
+                                                sm: "none",
+                                            },
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
@@ -341,8 +410,7 @@ function renderSectionFields(section) {
                     </Box>
                 ) : (
                     <BulletList items={section.rules} />
-                )
-            )}
+                ))}
 
             {/* Combat actions */}
             {section.actions &&
@@ -419,11 +487,18 @@ function renderSectionFields(section) {
                         <Box key={phase.name} sx={{ ...glassItem }}>
                             <Typography
                                 variant='h4'
-                                sx={{ fontWeight: "bold", mb: 1, fontSize: { xs: "1.1rem", sm: "1.3rem" } }}
+                                sx={{
+                                    fontWeight: "bold",
+                                    mb: 1,
+                                    fontSize: { xs: "1.1rem", sm: "1.3rem" },
+                                }}
                             >
                                 {i + 1}. {phase.name}
                             </Typography>
-                            <Typography variant='body1' sx={{ lineHeight: 1.7 }}>
+                            <Typography
+                                variant='body1'
+                                sx={{ lineHeight: 1.7 }}
+                            >
                                 <Kw>{phase.description}</Kw>
                             </Typography>
                         </Box>
@@ -465,7 +540,10 @@ function renderSectionFields(section) {
                                 >
                                     {stat.name}
                                 </Typography>
-                                <Typography variant='body1' sx={{ flexGrow: 1, lineHeight: 1.6 }}>
+                                <Typography
+                                    variant='body1'
+                                    sx={{ flexGrow: 1, lineHeight: 1.6 }}
+                                >
                                     <Kw>{stat.description}</Kw>
                                 </Typography>
                             </Box>
@@ -511,7 +589,9 @@ function RulesPage({ categoryKey }) {
 
     if (loading) {
         return (
-            <Container sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <Container
+                sx={{ display: "flex", justifyContent: "center", py: 4 }}
+            >
                 <CircularProgress />
             </Container>
         )
@@ -560,7 +640,11 @@ function RulesPage({ categoryKey }) {
                             <Typography
                                 variant='h1'
                                 sx={{
-                                    fontSize: { xs: "2rem", sm: "3rem", md: "4rem" },
+                                    fontSize: {
+                                        xs: "2rem",
+                                        sm: "3rem",
+                                        md: "4rem",
+                                    },
                                     fontWeight: "bold",
                                     mb: "20px",
                                 }}
@@ -588,8 +672,12 @@ function RulesPage({ categoryKey }) {
                                     fontSize: "3rem",
                                     animation: "bounce 2s infinite",
                                     "@keyframes bounce": {
-                                        "0%, 100%": { transform: "translateY(0)" },
-                                        "50%": { transform: "translateY(10px)" },
+                                        "0%, 100%": {
+                                            transform: "translateY(0)",
+                                        },
+                                        "50%": {
+                                            transform: "translateY(10px)",
+                                        },
                                     },
                                 }}
                             >
@@ -616,7 +704,9 @@ function RulesPage({ categoryKey }) {
                     sx={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: config.heroSubtitle ? { xs: "60px", sm: "80px" } : "20px",
+                        gap: config.heroSubtitle
+                            ? { xs: "60px", sm: "80px" }
+                            : "20px",
                         maxWidth: config.heroSubtitle ? "900px" : "800px",
                         width: "100%",
                     }}
