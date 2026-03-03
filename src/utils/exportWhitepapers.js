@@ -1,0 +1,564 @@
+/**
+ * exportWhitepapers.js
+ *
+ * Generates the IMK Whitepapers as a .docx file from live rules data.
+ *
+ * Version history:
+ *   1.1  — 2026-03-03  Initial digitized ruleset export
+ *
+ * To bump the version: update CURRENT_VERSION below and re-export.
+ */
+
+import {
+    Document,
+    Packer,
+    Paragraph,
+    TextRun,
+    HeadingLevel,
+    AlignmentType,
+    SectionType,
+    Header,
+    Footer,
+    PageNumber,
+    TabStopType,
+    convertInchesToTwip,
+} from "docx"
+import { saveAs } from "file-saver"
+
+// ── Version (bump before each official export) ────────────────────────────────
+export const CURRENT_VERSION = "1.1"
+
+// ── Typography ────────────────────────────────────────────────────────────────
+const BODY_FONT = "Garamond"
+const HEAD_FONT = "Cinzel"
+
+// Sizes in half-points
+const SZ_TITLE = 64 // 32pt — document title
+const SZ_SUBTITLE = 44 // 22pt — "The Whitepapers"
+const SZ_CHAPTER = 36 // 18pt — category headings
+const SZ_SECTION = 26 // 13pt — section headings
+const SZ_SUBSECT = 22 // 11pt — sub-section headings
+const SZ_BODY = 20 // 10pt — body text
+const SZ_META = 18 // 9pt — captions, headers, footers
+
+// Colours (hex, no #)
+const COL_DARK = "1a0a0a"
+const COL_MUTED = "555555"
+
+// ── Category configuration ────────────────────────────────────────────────────
+const CATEGORY_ORDER = [
+    "getting-started",
+    "character-creation",
+    "progression",
+    "equipment",
+    "combat-mechanics",
+    "death-and-resting",
+    "running-the-game",
+]
+
+const CATEGORY_TITLES = {
+    "getting-started": "Getting Started",
+    "character-creation": "Character Creation",
+    progression: "Progression",
+    equipment: "Equipment",
+    "combat-mechanics": "Combat Mechanics",
+    "death-and-resting": "Death & Resting",
+    "running-the-game": "Running the Game",
+}
+
+// ── Primitive helpers ─────────────────────────────────────────────────────────
+const t = (text, opts = {}) =>
+    new TextRun({
+        text: String(text ?? ""),
+        font: BODY_FONT,
+        size: SZ_BODY,
+        ...opts,
+    })
+
+const th = (text, opts = {}) =>
+    new TextRun({ text: String(text ?? ""), font: HEAD_FONT, ...opts })
+
+const para = (children, opts = {}) =>
+    new Paragraph({
+        spacing: { after: 80, before: 40 },
+        ...opts,
+        children: Array.isArray(children) ? children : [children],
+    })
+
+const emptyLine = () =>
+    new Paragraph({ spacing: { after: 80 }, children: [t("")] })
+
+// Labeled field: bold key followed by body text
+const labeledPara = (label, text) =>
+    para([t(label + ": ", { bold: true }), t(text)])
+
+// Bullet point paragraph
+const bullet = (text, italic = false) =>
+    new Paragraph({
+        bullet: { level: 0 },
+        spacing: { after: 60 },
+        children: [t(String(text ?? ""), { italics: italic })],
+    })
+
+// Named item: "Title — description"
+const namedItem = ({ title, description } = {}) =>
+    para([
+        t((title || "") + (description ? " — " : ""), { bold: true }),
+        t(description || ""),
+    ])
+
+// Sub-heading within a section
+const subHead = (text) =>
+    new Paragraph({
+        spacing: { before: 120, after: 60 },
+        children: [th(text, { size: SZ_SUBSECT, bold: true })],
+    })
+
+// ── Render a section's content fields ────────────────────────────────────────
+const LABELED_FIELDS = [
+    { key: "mechanics", label: "Mechanics" },
+    { key: "limitations", label: "Limitations" },
+    { key: "limits", label: "Limits" },
+    { key: "perception", label: "Perception" },
+    { key: "maximum", label: "Maximum" },
+    { key: "ascendant", label: "Ascendant" },
+    { key: "timing", label: "Timing" },
+]
+
+const LIST_FIELDS = ["actions", "types", "equipment", "conditions"]
+
+function renderContent(c) {
+    if (!c) return []
+    const out = []
+
+    // Description
+    if (c.description) out.push(para([t(c.description)]))
+
+    // Labeled fields
+    for (const { key, label } of LABELED_FIELDS) {
+        if (c[key]) out.push(labeledPara(label, c[key]))
+    }
+
+    // Available stats
+    if (c.available_stats?.length) {
+        out.push(labeledPara("Available Stats", c.available_stats.join(", ")))
+    }
+
+    // Benefits
+    if (c.benefits?.length) {
+        out.push(subHead("Benefits"))
+        c.benefits.forEach((b) => out.push(bullet(String(b))))
+    }
+
+    // Rules
+    if (c.rules?.length) {
+        c.rules.forEach((r) => {
+            if (typeof r === "string") {
+                out.push(bullet(r))
+            } else if (r && (r.title || r.description)) {
+                out.push(namedItem(r))
+            }
+        })
+    }
+
+    // Examples
+    if (c.examples?.length) {
+        out.push(subHead("Examples"))
+        c.examples.forEach((e) => out.push(bullet(String(e), true)))
+    }
+
+    // List fields: actions, types, equipment, conditions
+    for (const field of LIST_FIELDS) {
+        if (c[field]?.length) {
+            out.push(subHead(field.charAt(0).toUpperCase() + field.slice(1)))
+            c[field].forEach((item) => {
+                if (typeof item === "string") out.push(bullet(item))
+                else out.push(namedItem(item))
+            })
+        }
+    }
+
+    // Phases (numbered)
+    if (c.phases?.length) {
+        out.push(subHead("Phases"))
+        c.phases.forEach((phase, i) => {
+            const text =
+                typeof phase === "string"
+                    ? phase
+                    : (phase.title ? phase.title + " — " : "") +
+                      (phase.description || "")
+            out.push(para([t(`${i + 1}. `, { bold: true }), t(text)]))
+        })
+    }
+
+    // Content — stat/description pairs (CharacterCreation stats)
+    if (c.content?.length) {
+        c.content.forEach((item) => {
+            if (item && (item.stat || item.name || item.description)) {
+                out.push(
+                    para([
+                        t((item.stat || item.name || "") + ": ", {
+                            bold: true,
+                        }),
+                        t(item.description || ""),
+                    ]),
+                )
+            }
+        })
+    }
+
+    // Subsections
+    if (c.subsections?.length) {
+        c.subsections.forEach((sub) => {
+            if (sub.title) {
+                out.push(
+                    new Paragraph({
+                        spacing: { before: 160, after: 80 },
+                        children: [
+                            th(sub.title, { size: SZ_SUBSECT, bold: true }),
+                        ],
+                    }),
+                )
+            }
+            out.push(...renderContent(sub))
+        })
+    }
+
+    return out
+}
+
+// ── Build the header for content pages ───────────────────────────────────────
+function makeHeader(version) {
+    return new Header({
+        children: [
+            new Paragraph({
+                tabStops: [
+                    {
+                        type: TabStopType.RIGHT,
+                        position: convertInchesToTwip(6.5),
+                    },
+                ],
+                spacing: { after: 0 },
+                border: {
+                    bottom: {
+                        style: "single",
+                        size: 6,
+                        space: 4,
+                        color: "cccccc",
+                    },
+                },
+                children: [
+                    th("I Must Kill — The Whitepapers", {
+                        size: SZ_META,
+                        color: COL_MUTED,
+                    }),
+                    new TextRun({ text: "\t", size: SZ_META }),
+                    t(`v${version}`, { size: SZ_META, color: COL_MUTED }),
+                ],
+            }),
+        ],
+    })
+}
+
+// ── Build the footer for content pages ───────────────────────────────────────
+function makeFooter() {
+    return new Footer({
+        children: [
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                border: {
+                    top: {
+                        style: "single",
+                        size: 6,
+                        space: 4,
+                        color: "cccccc",
+                    },
+                },
+                spacing: { before: 0 },
+                children: [
+                    t("— ", { size: SZ_META, color: COL_MUTED }),
+                    new TextRun({
+                        children: [PageNumber.CURRENT],
+                        font: BODY_FONT,
+                        size: SZ_META,
+                        color: COL_MUTED,
+                    }),
+                    t(" —", { size: SZ_META, color: COL_MUTED }),
+                ],
+            }),
+        ],
+    })
+}
+
+// ── Main export function ──────────────────────────────────────────────────────
+/**
+ * Build and download the Whitepapers .docx.
+ *
+ * @param {{ [categoryKey: string]: Array<{ content: object, order: number }> }} grouped
+ *   The grouped rules object from GET /rules (or AdminRulesPanel state).
+ * @param {string} version  e.g. "1.1"
+ */
+export async function exportWhitepapers(grouped, version = CURRENT_VERSION) {
+    const dateStr = new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    })
+
+    // ── Title page ──────────────────────────────────────────────────────────
+    const titleChildren = [
+        // Push title down ~1/3 of the page
+        new Paragraph({
+            spacing: { before: convertInchesToTwip(2.2) },
+            children: [],
+        }),
+
+        // "I MUST KILL"
+        new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 120, before: 0 },
+            children: [
+                th("I MUST KILL", {
+                    size: SZ_TITLE,
+                    bold: true,
+                    color: COL_DARK,
+                }),
+            ],
+        }),
+
+        // "The Whitepapers"
+        new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+            children: [
+                th("The Whitepapers", {
+                    size: SZ_SUBTITLE,
+                    color: COL_DARK,
+                }),
+            ],
+        }),
+
+        // Decorative rule
+        new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+            border: {
+                bottom: {
+                    style: "single",
+                    size: 12,
+                    space: 8,
+                    color: "8B0000",
+                },
+            },
+            children: [],
+        }),
+
+        // Version + date
+        new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 60 },
+            children: [
+                t(`Version ${version}`, {
+                    size: SZ_META + 2,
+                    bold: true,
+                    color: COL_MUTED,
+                }),
+            ],
+        }),
+        new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 },
+            children: [t(dateStr, { size: SZ_META, color: COL_MUTED })],
+        }),
+
+        // "Contents" heading
+        new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 200, after: 160 },
+            children: [
+                th("Contents", {
+                    size: SZ_SECTION,
+                    bold: true,
+                    color: COL_DARK,
+                }),
+            ],
+        }),
+
+        // TOC list
+        ...CATEGORY_ORDER.filter((k) => grouped[k]?.length).map(
+            (k, i) =>
+                new Paragraph({
+                    spacing: { after: 80 },
+                    indent: { left: convertInchesToTwip(0.5) },
+                    children: [
+                        th(`${i + 1}.  `, {
+                            size: SZ_BODY + 2,
+                            color: "8B0000",
+                        }),
+                        t(CATEGORY_TITLES[k] || k, { size: SZ_BODY + 2 }),
+                    ],
+                }),
+        ),
+    ]
+
+    // ── Content section ─────────────────────────────────────────────────────
+    const contentChildren = []
+    let firstChapter = true
+
+    for (const catKey of CATEGORY_ORDER) {
+        const sections = grouped[catKey]
+        if (!sections?.length) continue
+
+        // Chapter heading — page break before every chapter except first
+        contentChildren.push(
+            new Paragraph({
+                pageBreakBefore: !firstChapter,
+                spacing: { before: firstChapter ? 0 : 80, after: 160 },
+                children: [
+                    th((CATEGORY_TITLES[catKey] || catKey).toUpperCase(), {
+                        size: SZ_CHAPTER,
+                        bold: true,
+                        color: COL_DARK,
+                    }),
+                ],
+            }),
+        )
+        // Thin red rule under chapter heading
+        contentChildren.push(
+            new Paragraph({
+                spacing: { before: 0, after: 200 },
+                border: {
+                    bottom: {
+                        style: "single",
+                        size: 8,
+                        space: 4,
+                        color: "8B0000",
+                    },
+                },
+                children: [],
+            }),
+        )
+
+        firstChapter = false
+
+        // Sort sections by order
+        const sorted = [...sections].sort(
+            (a, b) => (a.order ?? 0) - (b.order ?? 0),
+        )
+
+        for (const sec of sorted) {
+            const c = sec.content
+            if (!c) continue
+
+            // Section heading
+            contentChildren.push(
+                new Paragraph({
+                    heading: HeadingLevel.HEADING_2,
+                    spacing: { before: 200, after: 80 },
+                    children: [
+                        th(c.title || sec.sectionId, {
+                            size: SZ_SECTION,
+                            color: COL_DARK,
+                        }),
+                    ],
+                }),
+            )
+
+            // Section content
+            contentChildren.push(...renderContent(c))
+
+            // Spacer between sections
+            contentChildren.push(emptyLine())
+        }
+    }
+
+    // ── Assemble document ────────────────────────────────────────────────────
+    const header = makeHeader(version)
+    const footer = makeFooter()
+
+    const doc = new Document({
+        creator: "I Must Kill",
+        title: `I Must Kill — The Whitepapers v${version}`,
+        description: `Official ruleset document. Version ${version}, ${dateStr}.`,
+
+        styles: {
+            default: {
+                document: {
+                    run: { font: BODY_FONT, size: SZ_BODY },
+                },
+                heading1: {
+                    run: {
+                        font: HEAD_FONT,
+                        size: SZ_CHAPTER,
+                        bold: true,
+                        color: COL_DARK,
+                    },
+                    paragraph: { spacing: { before: 200, after: 160 } },
+                },
+                heading2: {
+                    run: {
+                        font: HEAD_FONT,
+                        size: SZ_SECTION,
+                        bold: false,
+                        color: COL_DARK,
+                    },
+                    paragraph: { spacing: { before: 160, after: 80 } },
+                },
+                heading3: {
+                    run: {
+                        font: HEAD_FONT,
+                        size: SZ_SUBSECT,
+                        bold: false,
+                        color: COL_MUTED,
+                    },
+                    paragraph: { spacing: { before: 120, after: 60 } },
+                },
+            },
+        },
+
+        sections: [
+            // ── Section 1: Title page (no columns, wide margins) ────────────
+            {
+                properties: {
+                    page: {
+                        margin: {
+                            top: convertInchesToTwip(1),
+                            bottom: convertInchesToTwip(1),
+                            left: convertInchesToTwip(1.75),
+                            right: convertInchesToTwip(1.75),
+                        },
+                    },
+                },
+                children: titleChildren,
+            },
+
+            // ── Section 2: Rules content (2 columns) ────────────────────────
+            {
+                properties: {
+                    type: SectionType.NEXT_PAGE,
+                    column: {
+                        count: 2,
+                        space: convertInchesToTwip(0.3),
+                        equalWidth: true,
+                    },
+                    page: {
+                        margin: {
+                            top: convertInchesToTwip(1),
+                            bottom: convertInchesToTwip(1),
+                            left: convertInchesToTwip(0.8),
+                            right: convertInchesToTwip(0.8),
+                            header: convertInchesToTwip(0.5),
+                            footer: convertInchesToTwip(0.5),
+                        },
+                    },
+                },
+                headers: { default: header },
+                footers: { default: footer },
+                children: contentChildren,
+            },
+        ],
+    })
+
+    const blob = await Packer.toBlob(doc)
+    saveAs(blob, `imk-whitepapers-v${version}.docx`)
+}

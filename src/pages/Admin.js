@@ -51,6 +51,7 @@ import {
 import { getCardArtUrl, getDeckBackUrl } from "../utils/cardArtwork"
 import { D10Icon } from "../components/icons"
 import { getNavConfig, saveNavConfig } from "../utils/rulesClient"
+import { exportWhitepapers, CURRENT_VERSION } from "../utils/exportWhitepapers"
 
 // ═══════════════════════════════════════════════════════════
 // Configuration — set these env vars after deploying CDK:
@@ -1591,6 +1592,10 @@ function AdminRulesPanel() {
     const [deleting, setDeleting] = useState(null)
     const [seeding, setSeeding] = useState(false)
     const [seedMsg, setSeedMsg] = useState("")
+    const [exportOpen, setExportOpen] = useState(false)
+    const [exportVersion, setExportVersion] = useState(CURRENT_VERSION)
+    const [exporting, setExporting] = useState(false)
+    const [exportError, setExportError] = useState("")
 
     const loadRules = useCallback(async () => {
         setLoading(true)
@@ -1714,6 +1719,20 @@ function AdminRulesPanel() {
         }
     }
 
+    // ── Export Whitepapers ────────────────────────────────────────────────────
+    const handleExport = async () => {
+        setExporting(true)
+        setExportError("")
+        try {
+            await exportWhitepapers(grouped, exportVersion)
+            setExportOpen(false)
+        } catch (e) {
+            setExportError("Export failed: " + e.message)
+        } finally {
+            setExporting(false)
+        }
+    }
+
     // ── Filter ────────────────────────────────────────────────────────────────
     const lowerSearch = search.toLowerCase()
     const filteredGrouped = {}
@@ -1789,6 +1808,29 @@ function AdminRulesPanel() {
                         }}
                     >
                         {seeding ? "Seeding…" : "Re-seed from JSON"}
+                    </Button>
+                    <Button
+                        size='small'
+                        variant='outlined'
+                        onClick={() => {
+                            setExportVersion(CURRENT_VERSION)
+                            setExportError("")
+                            setExportOpen(true)
+                        }}
+                        disabled={totalSections === 0}
+                        startIcon={<FileDownload sx={{ fontSize: 15 }} />}
+                        sx={{
+                            fontSize: "0.72rem",
+                            textTransform: "none",
+                            borderColor: "rgba(139,0,0,0.4)",
+                            color: "#8B0000",
+                            "&:hover": {
+                                borderColor: "#8B0000",
+                                bgcolor: "rgba(139,0,0,0.04)",
+                            },
+                        }}
+                    >
+                        Export Whitepapers
                     </Button>
                 </Box>
             </Box>
@@ -2034,6 +2076,147 @@ function AdminRulesPanel() {
             )}
 
             {/* Edit Modal */}
+            {/* Export Whitepapers Modal */}
+            <Modal
+                open={exportOpen}
+                onClose={() => setExportOpen(false)}
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
+            >
+                <Paper
+                    sx={{
+                        width: { xs: "calc(100vw - 32px)", sm: 440 },
+                        maxWidth: 440,
+                        borderRadius: "16px",
+                        overflow: "hidden",
+                        outline: "none",
+                    }}
+                >
+                    <Box
+                        sx={{
+                            p: 2.5,
+                            bgcolor: "#1a0a0a",
+                            color: "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                        }}
+                    >
+                        <Box>
+                            <Typography
+                                sx={{
+                                    fontFamily: '"Cinzel", serif',
+                                    fontWeight: "bold",
+                                    fontSize: "1rem",
+                                }}
+                            >
+                                Export Whitepapers
+                            </Typography>
+                            <Typography
+                                sx={{ fontSize: "0.68rem", opacity: 0.5 }}
+                            >
+                                Downloads as a formatted .docx
+                            </Typography>
+                        </Box>
+                        <IconButton
+                            onClick={() => setExportOpen(false)}
+                            sx={{ color: "#fff" }}
+                        >
+                            <Close />
+                        </IconButton>
+                    </Box>
+                    <Box
+                        sx={{
+                            p: 3,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                        }}
+                    >
+                        {exportError && (
+                            <Alert
+                                severity='error'
+                                onClose={() => setExportError("")}
+                            >
+                                {exportError}
+                            </Alert>
+                        )}
+                        <TextField
+                            label='Version Number'
+                            value={exportVersion}
+                            onChange={(e) => setExportVersion(e.target.value)}
+                            fullWidth
+                            size='small'
+                            helperText={`File will save as imk-whitepapers-v${exportVersion}.docx`}
+                        />
+                        <Box
+                            sx={{
+                                p: 1.5,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                borderRadius: "8px",
+                                bgcolor: "action.hover",
+                            }}
+                        >
+                            <Typography
+                                sx={{
+                                    fontSize: "0.72rem",
+                                    fontWeight: "bold",
+                                    mb: 0.5,
+                                }}
+                            >
+                                Document format
+                            </Typography>
+                            <Typography
+                                sx={{ fontSize: "0.68rem", opacity: 0.6 }}
+                            >
+                                Title page · 2-column layout · Garamond + Cinzel
+                                fonts · Running header &amp; page numbers
+                            </Typography>
+                        </Box>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                gap: 1,
+                                justifyContent: "flex-end",
+                            }}
+                        >
+                            <Button
+                                onClick={() => setExportOpen(false)}
+                                disabled={exporting}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant='contained'
+                                onClick={handleExport}
+                                disabled={exporting || !exportVersion.trim()}
+                                startIcon={
+                                    exporting ? (
+                                        <CircularProgress size={14} />
+                                    ) : (
+                                        <FileDownload />
+                                    )
+                                }
+                                sx={{
+                                    bgcolor: "#8B0000",
+                                    "&:hover": { bgcolor: "#a00" },
+                                    fontFamily: '"Cinzel", serif',
+                                    textTransform: "none",
+                                }}
+                            >
+                                {exporting
+                                    ? "Building…"
+                                    : `Export v${exportVersion}`}
+                            </Button>
+                        </Box>
+                    </Box>
+                </Paper>
+            </Modal>
+
             {editModal && (
                 <Modal
                     open
