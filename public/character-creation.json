@@ -35,7 +35,7 @@
                     {
                         "name": "Focus",
                         "id": "focus",
-                        "description": "Mental concentration and magical ability. Use Focus for perceiving, listening, gathering powers with @GatherPowers, tracking prey, controlling will, and resisting enchantment.",
+                        "description": "Mental concentration and magical ability. Use Focus for perceiving, listening, gathering powers with @Gather Powers, tracking prey, controlling will, and resisting enchantment.",
                         "keywords": [
                             "perception",
                             "magic",
@@ -48,7 +48,7 @@
                     {
                         "name": "Fate",
                         "id": "fate",
-                        "description": "Luck, life force, and destiny. Fate determines your @HitPoints and influences survival during @Death situations.",
+                        "description": "Luck, life force, and destiny. Fate determines your @Hit Points and influences survival during @Death situations.",
                         "keywords": [
                             "luck",
                             "fortune",
@@ -122,8 +122,8 @@
             {
                 "id": "attack-stat-hp",
                 "title": "Attack Stat and Hit Points",
-                "%Source": ["@AttackStat", "@HitPoints"],
-                "description": "Choose @Body, @Agility, or @Focus as your @AttackStat for combat rolls. Your @HitPoints equal half of your @Fate score (rounded up).",
+                "%Source": ["@Attack Stat", "@Hit Points"],
+                "description": "Choose @Body, @Agility, or @Focus as your @Attack Stat for combat rolls. Your @Hit Points equal half of your @Fate score (rounded up).",
                 "keywords": [
                     "attack stat",
                     "hit points",

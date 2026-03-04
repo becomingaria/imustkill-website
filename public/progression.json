@@ -5,7 +5,7 @@
             {
                 "id": "leveling-up",
                 "title": "Leveling Up",
-                "%Source": ["@LevelingUp"],
+                "%Source": ["@Leveling Up"],
                 "description": "After you survive at least one Fight with a monster and @Rest, you can level up by testing one of your stats **or** gain 1 additional @Insight",
                 "mechanics": "Roll 1d10 against 1 chosen stat (@Body, @Agility, @Focus, or @Fate). If the roll is **higher** than your current stat value, increase that stat by 1.",
                 "limits": "Maximum stat value is 9. If all your stats are at 9.",
@@ -23,7 +23,7 @@
                 "id": "insight",
                 "title": "Insight",
                 "%Source": ["@Insight"],
-                "description": "All hunters start with 1 Insight. You can reroll any tests a number of times equal to your Insight quantity per day. Insight resets after a @NightsRest.",
+                "description": "All hunters start with 1 Insight. You can reroll any tests a number of times equal to your Insight quantity per day. Insight resets after a @Nights Rest.",
                 "perception": "Insight allows you to see hidden creatures, lights, and objects that others cannot perceive. Higher Insight reveals more about the cosmos and threats to mankind.",
                 "maximum": "Insight is capped at 10.",
                 "keywords": [

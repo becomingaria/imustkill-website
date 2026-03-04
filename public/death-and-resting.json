@@ -12,8 +12,8 @@
                 "id": "death",
                 "title": "Death",
                 "%Source": ["@Death"],
-                "description": "When you reach 0 @HitPoints, test @Fate. On success, you live with 1 hit point. On failure, you die.",
-                "mechanics": "Roll 1d10 against @Fate. If the roll is equal to or less than your @Fate score, you survive with 1 hit point. If your roll on the d10 is a 1, you restore all @Hitpoints",
+                "description": "When you reach 0 @Hit Points, test @Fate. On success, you live with 1 hit point. On failure, you die.",
+                "mechanics": "Roll 1d10 against @Fate. If the roll is equal to or less than your @Fate score, you survive with 1 hit point. If your roll on the d10 is a 1, you restore all @Hit Points",
                 "keywords": [
                     "death",
                     "0 hit points",
@@ -25,9 +25,9 @@
             {
                 "id": "grit-teeth",
                 "title": "Grit Teeth",
-                "%Source": ["@GritTeeth"],
+                "%Source": ["@Grit Teeth"],
                 "description": "You take a 1-minute long respite from combat.",
-                "benefits": ["Restore all @HitPoints", "Draw 3 powers of your choice"],
+                "benefits": ["Restore all @Hit Points", "Draw 3 powers of your choice"],
                 "keywords": [
                     "grit teeth",
                     "regain hit point",
@@ -41,7 +41,7 @@
             {
                 "id": "nights-rest",
                 "title": "Night's Rest",
-                "%Source": ["@NightsRest"],
+                "%Source": ["@Nights Rest"],
                 "description": "A comfortable place to sleep (like an inn or farmer's barn) provides mental recovery.",
                 "benefits": [
                     "Gain @Insight rerolls equal to your number of @Insight tokens"

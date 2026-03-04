@@ -5,7 +5,7 @@
             {
                 "id": "hunt-outline",
                 "title": "Hunt Outline",
-                "%Source": ["@HuntOutline"],
+                "%Source": ["@Hunt Outline"],
                 "phases": [
                     {
                         "name": "The Hook",
@@ -37,16 +37,16 @@
                     },
                     {
                         "name": "Denouement",
-                        "description": "Collect the bounty. Replenish equipment up to 10, and if high pay, everyone can purchase new equipment. @NightsRest and @LevelingUp."
+                        "description": "Collect the bounty. Replenish equipment up to 10, and if high pay, everyone can purchase new equipment. @Nights Rest and @Leveling Up."
                     }
                 ],
                 "keywords": [
-                    "@HuntOutline",
+                    "@Hunt Outline",
                     "@Hook",
-                    "@NegotiatePay",
-                    "@RumorPhase",
-                    "@ResearchPhase",
-                    "@TrackingMonster",
+                    "@Negotiate Pay",
+                    "@Rumor Phase",
+                    "@Research Phase",
+                    "@Tracking Monster",
                     "@Fight",
                     "@Denouement"
                 ]
@@ -58,20 +58,20 @@
                     {
                         "id": "hidden-creatures",
                         "title": "Explanation of Hidden Creatures",
-                        "%Source": ["@HiddenCreatures"],
+                        "%Source": ["@Hidden Creatures"],
                         "rules": [
                             "Monsters have a rating of @Insight required before a hunter can see them as they are. These creatures are metaphysical threats that challenge perception of the physical realm.",
                             "All monsters that lie beyond a human's @Insight appear as beasts rationalized by the context the human has. They might perceive a werewolf as a large bear, or a changeling as a deformed man."
                         ],
-                        "keywords": ["@HiddenCreatures", "@Insight", "@Monster"]
+                        "keywords": ["@Hidden Creatures", "@Insight", "@Monster"]
                     },
                     {
                         "id": "downsides-of-insight",
                         "title": "The Downsides of Insight",
-                        "%Source": ["@DownsidesOfInsight"],
+                        "%Source": ["@Downsides Of Insight"],
                         "description": "Having higher @Insight enables hunters to perceive entities that others cannot. However, exceeding your fellow hunters' @Insight scores may pose risks. If only your hunter has the required @Insight to see a creature, then only your hunter can @Attack it effectively, but this also draws the creature's attention who will target your hunter viciously. Fellow hunters, lacking the required @Insight, would struggle to assist effectively.",
                         "keywords": [
-                            "@DownsidesOfInsight",
+                            "@Downsides Of Insight",
                             "@Insight",
                             "@Attack"
                         ]
@@ -85,19 +85,19 @@
                     {
                         "id": "reading-monster-tables",
                         "title": "Reading Monster Tables",
-                        "%Source": ["@WindUp", "@MonsterTables"],
+                        "%Source": ["@Wind Up", "@Monster Tables"],
                         "description": "Monster actions are determined by rolling a d10 and comparing to the @Attack value.",
-                        "mechanics": "Roll 1d10. If the result is equal to or less than the monster's @Attack value, the monster @Attack actions. If higher, the monster '@WindUp' for a more deadly following @Attack.",
+                        "mechanics": "Roll 1d10. If the result is equal to or less than the monster's @Attack value, the monster @Attack actions. If higher, the monster '@Wind Up' for a more deadly following @Attack.",
                         "example_actions": [
                             "@Attack: Roll ≤ @Attack value to successfully @Attack",
-                            "@WindUp: Failed @Attack roll means next @Attack deals double @Damage",
+                            "@Wind Up: Failed @Attack roll means next @Attack deals double @Damage",
                             "Special Ability: Some monsters have unique powers",
                             "Multi-attack: Some monsters can target multiple creatures"
                         ],
                         "keywords": [
-                            "@MonsterTables",
+                            "@Monster Tables",
                             "@Attack",
-                            "@WindUp",
+                            "@Wind Up",
                             "@Damage"
                         ]
                     },
@@ -152,53 +152,53 @@
                             }
                         ],
                         "keywords": [
-                            "@MonsterStats",
+                            "@Monster Stats",
                             "@Attack",
                             "@Damage",
-                            "@HitPoints",
+                            "@Hit Points",
                             "@Bloodied",
                             "@Insight",
                             "@Guise",
-                            "@SpecialWeaknesses"
+                            "@Special Weaknesses"
                         ]
                     },
                     {
                         "id": "damage",
                         "title": "Damage and Wind Up",
-                        "description": "Monsters deal their @Damage value when they successfully @Attack. The '@WindUp' mechanic makes failed @Attack actions more dangerous.",
-                        "mechanics": "When a monster fails to @Attack (rolls higher than @Attack value), it '@WindUp'. The next successful @Attack deals double the normal @Damage value.",
-                        "keywords": ["@Damage", "@WindUp", "@Attack"]
+                        "description": "Monsters deal their @Damage value when they successfully @Attack. The '@Wind Up' mechanic makes failed @Attack actions more dangerous.",
+                        "mechanics": "When a monster fails to @Attack (rolls higher than @Attack value), it '@Wind Up'. The next successful @Attack deals double the normal @Damage value.",
+                        "keywords": ["@Damage", "@Wind Up", "@Attack"]
                     },
                     {
                         "id": "special-abilities",
                         "title": "Examples of Special Abilities",
-                        "%Source": ["@SpecialAbilities"],
+                        "%Source": ["@Special Abilities"],
                         "examples": [
                             "Some attacks may negate @Dodge or @Brace",
-                            "@DragonsBreath deals @Damage equal to the @Monster's @HitPoints",
-                            "@SpecialAbilities triggered on a 1 (maybe a @BreathWeapon, something that does 3 @Damage)",
+                            "@Dragons Breath deals @Damage equal to the @Monster's @Hit Points",
+                            "@Special Abilities triggered on a 1 (maybe a @Breath Weapon, something that does 3 @Damage)",
                             "Other unique abilities specific to each @Monster"
                         ],
                         "keywords": [
-                            "@SpecialAbilities",
+                            "@Special Abilities",
                             "@Dodge",
                             "@Brace",
-                            "@DragonsBreath",
-                            "@BreathWeapon"
+                            "@Dragons Breath",
+                            "@Breath Weapon"
                         ]
                     },
                     {
                         "id": "explaining-monster-stats",
                         "title": "Hit Points and Bloodied Calculation",
-                        "%Source": ["@HitPoints", "@Bloodied"],
-                        "description": "@HitPoints are calculated based on the number of players, and @Bloodied thresholds determine when @Monster become desperate.",
+                        "%Source": ["@Hit Points", "@Bloodied"],
+                        "description": "@Hit Points are calculated based on the number of players, and @Bloodied thresholds determine when @Monster become desperate.",
                         "examples": [
-                            "@HitPoints '0+1' with 4 players: (4 × 0) + 1 = 1 @HitPoints",
-                            "@HitPoints '5' with 3 players: 3 × 5 = 15 @HitPoints",
-                            "@HitPoints '2+3' with 2 players: (2 × 2) + 3 = 7 @HitPoints",
-                            "@Bloodied '2' with 3 players: @Monster flees or negotiates when below 6 @HitPoints"
+                            "@Hit Points '0+1' with 4 players: (4 × 0) + 1 = 1 @Hit Points",
+                            "@Hit Points '5' with 3 players: 3 × 5 = 15 @Hit Points",
+                            "@Hit Points '2+3' with 2 players: (2 × 2) + 3 = 7 @Hit Points",
+                            "@Bloodied '2' with 3 players: @Monster flees or negotiates when below 6 @Hit Points"
                         ],
-                        "keywords": ["@HitPoints", "@Bloodied", "@Monster"]
+                        "keywords": ["@Hit Points", "@Bloodied", "@Monster"]
                     }
                 ]
             }

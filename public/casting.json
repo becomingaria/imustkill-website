@@ -5,21 +5,21 @@
             {
                 "id": "gathering-powers",
                 "title": "Gathering Powers",
-                "%Source": ["@GatherPowers"],
-                "description": "Test @Focus to gather a power. If you succeed, you can gather a power card from your power deck and keep this card until your next @NightsRest.",
+                "%Source": ["@Gather Powers"],
+                "description": "Test @Focus to gather a power. If you succeed, you can gather a power card from your power deck and keep this card until your next @Nights Rest.",
                 "mechanics": "Roll 1d10 against @Focus. If the roll is equal to or less than your @Focus score, gather one power from your deck. If you fail, take 1 damage and discard your current cards",
                 "limits": "You can only have 3 powers gathered at one time. If you want to discard a power to replace it, you must discard all in your hand.",
-                "recovery": "When you @Gritteeth, you automatically gather 3 powers without needing to test @Focus.",
+                "recovery": "When you @Grit Teeth, you automatically gather 3 powers without needing to test @Focus.",
                 "keywords": []
             },
             {
                 "id": "casting-powers",
                 "title": "Using Powers",
-                "%Source": ["@CastPowers"],
+                "%Source": ["@Cast Powers"],
                 "description": "You can play power cards at any time, as long as any conditions stated in the card's description are fulfilled. Follow the instructions on the power card.",
                 "timing": "Powers have no action cost — they can be played on your turn, on another hunter's turn, or even in response to a monster's action, so long as the card's conditions are met.",
                 "targeting": "You cannot target something with a power if you cannot perceive it, although you might still be able to harm it. You cannot select a target without a clear unbroken line from you to the location of it.",
-                "recovery": "Discarded powers can be returned to your power deck when you complete a @NightsRest.",
+                "recovery": "Discarded powers can be returned to your power deck when you complete a @Nights Rest.",
                 "keywords": []
             },
             {

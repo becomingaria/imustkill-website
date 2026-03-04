@@ -37,7 +37,7 @@
                     {
                         "name": "Attack",
                         "id": "attack",
-                        "description": "Roll 1d10 against @AttackStat. If the roll is lower, deal 1 @PhysicalDamage (2 for a natural 1, aka a crit). If your @Insight is too low to perceive a monster as it is, they take -1 damage from your attacks.",
+                        "description": "Roll 1d10 against @Attack Stat. If the roll is lower, deal 1 @Physical Damage (2 for a natural 1, aka a crit). If your @Insight is too low to perceive a monster as it is, they take -1 damage from your attacks.",
                         "keywords": [
                             "attack",
                             "1d10",
@@ -50,7 +50,7 @@
                     {
                         "name": "Dodge",
                         "id": "dodge",
-                        "description": "Roll 1d10 against @Agility. If the roll is lower, immune to dodgeable attacks until next turn and regain 1 @HitPoints.",
+                        "description": "Roll 1d10 against @Agility. If the roll is lower, immune to dodgeable attacks until next turn and regain 1 @Hit Points.",
                         "keywords": [
                             "dodge",
                             "agility",
@@ -62,7 +62,7 @@
                     {
                         "name": "Brace",
                         "id": "brace",
-                        "description": "Roll 1d10 against @Body. If the roll is lower and you have a weapon, armor, or shield, you are immune to braceable attacks until next turn and regain 1 @HitPoints.",
+                        "description": "Roll 1d10 against @Body. If the roll is lower and you have a weapon, armor, or shield, you are immune to braceable attacks until next turn and regain 1 @Hit Points.",
                         "keywords": [
                             "brace",
                             "body",
@@ -76,7 +76,7 @@
                     {
                         "name": "Draw a Power",
                         "id": "gather-a-power",
-                        "description": "Roll 1d10 against @Focus. If the roll is lower, gather 1 @Power from your @Power deck. If you roll a 10 you lose 1 @HitPoints, and discard all held @Power cards.",
+                        "description": "Roll 1d10 against @Focus. If the roll is lower, gather 1 @Power from your @Power deck. If you roll a 10 you lose 1 @Hit Points, and discard all held @Power cards.",
                         "keywords": [
                             "gather power",
                             "focus",
@@ -160,14 +160,14 @@
                 "id": "damage-types",
                 "title": "Damage Types",
                 "%Source": [
-                    "@PhysicalDamage",
-                    "@SpiritualDamage",
-                    "@HybridDamage"
+                    "@Physical Damage",
+                    "@Spiritual Damage",
+                    "@Hybrid Damage"
                 ],
                 "types": [
                     {
                         "name": "Physical Damage",
-                        "description": "Standard @Damage from conventional weapons such as swords, guns, clubs, and other mundane armaments. Most creatures can be harmed by @PhysicalDamage, though some may have resistance or immunity to certain types of @PhysicalDamage attacks.",
+                        "description": "Standard @Damage from conventional weapons such as swords, guns, clubs, and other mundane armaments. Most creatures can be harmed by @Physical Damage, though some may have resistance or immunity to certain types of @Physical Damage attacks.",
                         "examples": [
                             "swords",
                             "firearms",
@@ -187,7 +187,7 @@
                     },
                     {
                         "name": "Spiritual Damage",
-                        "description": "@Damage that affects the soul or essence of a creature. Particularly effective against undead, demons, and other supernatural entities. Some creatures may be vulnerable to @SpiritualDamage while being resistant to @PhysicalDamage attacks.",
+                        "description": "@Damage that affects the soul or essence of a creature. Particularly effective against undead, demons, and other supernatural entities. Some creatures may be vulnerable to @Spiritual Damage while being resistant to @Physical Damage attacks.",
                         "examples": [
                             "prayers",
                             "holy water",
@@ -209,7 +209,7 @@
                     },
                     {
                         "name": "Hybrid Damage",
-                        "description": "@Damage that combines both @PhysicalDamage and @SpiritualDamage elements, making it effective against a wider range of creatures. These weapons and attacks can harm both corporeal and incorporeal beings.",
+                        "description": "@Damage that combines both @Physical Damage and @Spiritual Damage elements, making it effective against a wider range of creatures. These weapons and attacks can harm both corporeal and incorporeal beings.",
                         "examples": [
                             "silver weapons",
                             "fire",
@@ -290,7 +290,7 @@
                     },
                     {
                         "name": "Way Bigger",
-                        "description": "Anything larger than a small hut — you can climb them. When a @WayBigger creature attacks a hunter, that hunter may roll an extra d10 and choose the lower result when @Dodge-ing.",
+                        "description": "Anything larger than a small hut — you can climb them. When a @Way Bigger creature attacks a hunter, that hunter may roll an extra d10 and choose the lower result when @Dodging.",
                         "examples": ["Giants", "Dragons", "Colossal beasts"]
                     }
                 ],

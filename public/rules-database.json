@@ -57,7 +57,7 @@
                 "section": "actions",
                 "description": "Body-based defense action requiring equipment"
             },
-            "@WindUp": {
+            "@Wind Up": {
                 "title": "Wind Up",
                 "category": "combat-mechanics",
                 "section": "damage",
@@ -69,13 +69,13 @@
                 "section": "insight",
                 "description": "A token gathered to see hidden things and reroll tests"
             },
-            "@GatherPowers": {
+            "@Gather Powers": {
                 "title": "Drawing Powers",
                 "category": "casting",
                 "section": "gathering-powers",
                 "description": "Focus test to gather powers from deck"
             },
-            "@UsePowers": {
+            "@Use Powers": {
                 "title": "Using Powers",
                 "category": "casting",
                 "section": "casting-powers",
@@ -87,49 +87,49 @@
                 "section": "death",
                 "description": "What happens when reaching 0 hit points"
             },
-            "@GritTeeth": {
+            "@Grit Teeth": {
                 "title": "Grit Teeth",
                 "category": "death-and-resting",
                 "section": "grit-teeth",
                 "description": "Recover 1 HP during combat respite"
             },
-            "@NightsRest": {
+            "@Nights Rest": {
                 "title": "Night's Rest",
                 "category": "death-and-resting",
                 "section": "nights-rest",
                 "description": "Full recovery after 8 hours rest"
             },
-            "@LevelingUp": {
+            "@Leveling Up": {
                 "title": "Leveling Up",
                 "category": "progression",
                 "section": "leveling-up",
                 "description": "Character advancement after surviving fights"
             },
-            "@PhysicalDamage": {
+            "@Physical Damage": {
                 "title": "Physical Damage",
                 "category": "combat-mechanics",
                 "section": "damage-types",
                 "description": "Conventional weapon damage type"
             },
-            "@SpiritualDamage": {
+            "@Spiritual Damage": {
                 "title": "Spiritual Damage",
                 "category": "combat-mechanics",
                 "section": "damage-types",
                 "description": "Divine/holy damage effective against supernatural entities"
             },
-            "@HybridDamage": {
+            "@Hybrid Damage": {
                 "title": "Hybrid Damage",
                 "category": "combat-mechanics",
                 "section": "damage-types",
                 "description": "Damage effective against both corporeal and incorporeal beings"
             },
-            "@AttackStat": {
+            "@Attack Stat": {
                 "title": "Attack Stat",
                 "category": "character-creation",
                 "section": "attack-stat-hp",
                 "description": "Chosen stat (Body, Agility, or Focus) used for combat rolls"
             },
-            "@HitPoints": {
+            "@Hit Points": {
                 "title": "Hit Points",
                 "category": "death-and-resting",
                 "section": "hit-points",
@@ -189,7 +189,7 @@
                 "section": "size",
                 "description": "Large dog to a human child. Hunters deal +1 damage to Smaller or smaller creatures if they remember to ask"
             },
-            "@YourSize": {
+            "@Your Size": {
                 "title": "Your Size",
                 "category": "combat-mechanics",
                 "section": "size",
@@ -201,7 +201,7 @@
                 "section": "size",
                 "description": "As big as a horse. Large enough to ride. No size damage bonus for hunters attacking Bigger creatures"
             },
-            "@WayBigger": {
+            "@Way Bigger": {
                 "title": "Way Bigger (Size)",
                 "category": "combat-mechanics",
                 "section": "size",
@@ -249,31 +249,31 @@
                 "section": "actions",
                 "description": "Combat action to attempt diplomacy"
             },
-            "@MonsterTables": {
+            "@Monster Tables": {
                 "title": "Monster Tables",
                 "category": "running-the-game",
                 "section": "reading-monster-tables",
                 "description": "System for determining monster actions using d10 rolls"
             },
-            "@CoreMechanics": {
+            "@Core Mechanics": {
                 "title": "Core Mechanics",
                 "category": "quick-reference",
                 "section": "core-mechanics",
                 "description": "Essential game mechanics at a glance"
             },
-            "@CharacterStats": {
+            "@Character Stats": {
                 "title": "Character Stats Reference",
                 "category": "quick-reference",
                 "section": "character-stats",
                 "description": "Quick reference for all character statistics"
             },
-            "@DamageTypes": {
+            "@Damage Types": {
                 "title": "Damage Types Reference",
                 "category": "quick-reference",
                 "section": "damage-types",
                 "description": "All damage types and their effectiveness"
             },
-            "@HiddenCreatures": {
+            "@Hidden Creatures": {
                 "title": "Hidden Creatures",
                 "category": "running-the-game",
                 "section": "hidden-creatures",
@@ -297,7 +297,7 @@
                 "section": "nights-rest",
                 "description": "Recovery mechanisms including Night's Rest"
             },
-            "@HuntOutline": {
+            "@Hunt Outline": {
                 "title": "Hunt Outline",
                 "category": "running-the-game",
                 "section": "hunt-outline",
@@ -309,25 +309,25 @@
                 "section": "hunt-outline",
                 "description": "Introduce the scenario and monster threat to hunters"
             },
-            "@NegotiatePay": {
+            "@Negotiate Pay": {
                 "title": "Negotiate Pay",
                 "category": "running-the-game",
                 "section": "hunt-outline",
                 "description": "Test Focus to bargain for higher compensation"
             },
-            "@RumorPhase": {
+            "@Rumor Phase": {
                 "title": "Rumor Phase",
                 "category": "running-the-game",
                 "section": "hunt-outline",
                 "description": "Meet contacts who provide information about the monster"
             },
-            "@ResearchPhase": {
+            "@Research Phase": {
                 "title": "Research Phase",
                 "category": "running-the-game",
                 "section": "hunt-outline",
                 "description": "Use old sources to learn monster's weakness by testing Fate"
             },
-            "@TrackingMonster": {
+            "@Tracking Monster": {
                 "title": "Tracking the Monster",
                 "category": "running-the-game",
                 "section": "hunt-outline",
@@ -345,7 +345,7 @@
                 "section": "hunt-outline",
                 "description": "Collect bounty, replenish equipment, rest and level up"
             },
-            "@MonsterStats": {
+            "@Monster Stats": {
                 "title": "Monster Stats",
                 "category": "running-the-game",
                 "section": "monster-stats-explained",
@@ -363,7 +363,7 @@
                 "section": "monster-stats-explained",
                 "description": "How monsters appear to those with insufficient Insight"
             },
-            "@SpecialWeaknesses": {
+            "@Special Weaknesses": {
                 "title": "Special Weaknesses",
                 "category": "running-the-game",
                 "section": "monster-stats-explained",
@@ -375,25 +375,25 @@
                 "section": "monsters",
                 "description": "Supernatural creatures that hunters must track and defeat"
             },
-            "@DownsidesOfInsight": {
+            "@Downsides Of Insight": {
                 "title": "Downsides of Insight",
                 "category": "running-the-game",
                 "section": "downsides-of-insight",
                 "description": "Risks of having higher Insight than fellow hunters"
             },
-            "@SpecialAbilities": {
+            "@Special Abilities": {
                 "title": "Special Abilities",
                 "category": "running-the-game",
                 "section": "special-abilities",
                 "description": "Unique monster powers that can negate defenses or deal extra damage"
             },
-            "@DragonsBreath": {
+            "@Dragons Breath": {
                 "title": "Dragon's Breath",
                 "category": "running-the-game",
                 "section": "special-abilities",
                 "description": "Special ability that deals damage equal to monster's hit points"
             },
-            "@BreathWeapon": {
+            "@Breath Weapon": {
                 "title": "Breath Weapon",
                 "category": "running-the-game",
                 "section": "special-abilities",
@@ -512,7 +512,7 @@
                 },
                 {
                     "term": "Attack Rolls",
-                    "description": "Roll 1d10 against your @AttackStat. Success deals 1 @Damage (2 on natural 1). See @Attack for full rules.",
+                    "description": "Roll 1d10 against your @Attack Stat. Success deals 1 @Damage (2 on natural 1). See @Attack for full rules.",
                     "keywords": ["attack", "damage", "crit", "natural 1"]
                 },
                 {
@@ -546,7 +546,7 @@
                     "stat": "Body",
                     "description": "Physical strength, lifting, and endurance. See @Body for full details.",
                     "uses": [
-                        "@AttackStat option",
+                        "@Attack Stat option",
                         "@Brace action",
                         "Physical activities"
                     ],
@@ -556,7 +556,7 @@
                     "stat": "Agility",
                     "description": "Speed, dexterity, and reaction time. See @Agility for full details.",
                     "uses": [
-                        "@AttackStat option",
+                        "@Attack Stat option",
                         "@Dodge action",
                         "Dexterous activities"
                     ],
@@ -566,8 +566,8 @@
                     "stat": "Focus",
                     "description": "Mental concentration and magical ability. See @Focus for full details.",
                     "uses": [
-                        "@AttackStat option",
-                        "@GatherPowers",
+                        "@Attack Stat option",
+                        "@Gather Powers",
                         "@Negotiate",
                         "Mental activities"
                     ],
@@ -577,7 +577,7 @@
                     "stat": "Fate",
                     "description": "Luck and life force that determines survival. See @Fate for full details.",
                     "uses": [
-                        "Determines @HitPoints",
+                        "Determines @Hit Points",
                         "@Death saves",
                         "Luck-based activities"
                     ],
@@ -590,7 +590,7 @@
                     "effective_against": "Most corporeal creatures",
                     "examples": ["Swords", "Guns", "Clubs"],
                     "keywords": ["physical", "corporeal", "mundane", "weapons"],
-                    "description": "Conventional @PhysicalDamage from weapons and attacks."
+                    "description": "Conventional @Physical Damage from weapons and attacks."
                 },
                 {
                     "type": "Spiritual",
@@ -603,7 +603,7 @@
                         "holy",
                         "supernatural"
                     ],
-                    "description": "@SpiritualDamage effective against supernatural beings."
+                    "description": "@Spiritual Damage effective against supernatural beings."
                 },
                 {
                     "type": "Hybrid",
@@ -616,7 +616,7 @@
                         "enchanted",
                         "incorporeal"
                     ],
-                    "description": "@HybridDamage works on all creature types."
+                    "description": "@Hybrid Damage works on all creature types."
                 }
             ],
             "size": [
@@ -646,7 +646,7 @@
                 },
                 {
                     "term": "Way Bigger",
-                    "description": "Larger than a small hut — you can climb them. When a @WayBigger creature attacks you, roll an extra d10 to dodge and choose the lower result.",
+                    "description": "Larger than a small hut — you can climb them. When a @Way Bigger creature attacks you, roll an extra d10 to dodge and choose the lower result.",
                     "uses": ["Can be climbed", "+1d10 dodge (choose lower)"],
                     "keywords": ["way bigger", "huge", "climbable", "giant"]
                 }

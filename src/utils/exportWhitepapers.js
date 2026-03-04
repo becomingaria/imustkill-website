@@ -73,9 +73,10 @@ const CATEGORY_TITLES = {
  */
 function parseInlineRuns(text, baseOpts = {}) {
     const str = String(text ?? "")
-    // Match @TokenName with an optional single trailing space so that
-    // "@PhysicalDamage " → bold "PhysicalDamage " while stopping at boundaries.
-    const parts = str.split(/(@[A-Za-z0-9_-]+ ?)/)
+    // Match @Tag where each word starts with an uppercase letter.
+    // Supports multi-word tags like "@Hit Points" or "@Physical Damage".
+    // Optionally captures a trailing space so spacing is preserved naturally.
+    const parts = str.split(/(@[A-Z][A-Za-z0-9]*(?:\s[A-Z][A-Za-z0-9]*)* ?)/)
     return parts
         .filter((p) => p.length > 0)
         .map((p) => {
@@ -134,7 +135,7 @@ const bullet = (text, italic = false) =>
 
 // Named item: "Title — description" (name or title; description gets @Token parsing)
 const namedItem = ({ title, name, description } = {}) => {
-    const label = (title || name || "")
+    const label = title || name || ""
     return para([
         t(label + (description ? " — " : ""), { bold: true }),
         ...parseInlineRuns(description || ""),
