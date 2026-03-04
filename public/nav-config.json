@@ -61,7 +61,7 @@
             "label": "Power Cards",
             "path": "/power-cards",
             "order": 8,
-            "visible": true
+            "visible": false
         },
         {
             "id": "gm-tools",

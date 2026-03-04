@@ -50,7 +50,12 @@ import {
 } from "@mui/icons-material"
 import { getCardArtUrl, getDeckBackUrl } from "../utils/cardArtwork"
 import { D10Icon } from "../components/icons"
-import { getNavConfig, saveNavConfig } from "../utils/rulesClient"
+import {
+    getNavConfig,
+    saveNavConfig,
+    getWhitepaperVersion,
+    bumpWhitepaperVersion,
+} from "../utils/rulesClient"
 import { exportWhitepapers, CURRENT_VERSION } from "../utils/exportWhitepapers"
 
 // ═══════════════════════════════════════════════════════════
@@ -1597,6 +1602,11 @@ function AdminRulesPanel() {
     const [exporting, setExporting] = useState(false)
     const [exportError, setExportError] = useState("")
 
+    // Load live version from DB when panel mounts
+    useEffect(() => {
+        getWhitepaperVersion().then((v) => setExportVersion(v))
+    }, [])
+
     const loadRules = useCallback(async () => {
         setLoading(true)
         setError("")
@@ -1649,6 +1659,11 @@ function AdminRulesPanel() {
                 },
             )
             setSaveMsg("Saved!")
+            // Bump whitepaper version on every successful rule edit
+            const idToken = localStorage.getItem("imk_admin_id_token")
+            bumpWhitepaperVersion(idToken, exportVersion).then((newVer) =>
+                setExportVersion(newVer),
+            )
             await loadRules()
             setTimeout(() => {
                 setEditModal(null)

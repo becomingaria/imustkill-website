@@ -38,6 +38,11 @@ const PAGE_CONFIG = {
         heroSubtitle:
             "A comprehensive guide for Game Masters on running hunts, managing encounters, and creating unforgettable sessions.",
     },
+    spellcasting: {
+        footerButton: "home",
+        heroSubtitle:
+            "Hunters can channel supernatural abilities through a deck of power cards drawn during battle.",
+    },
 }
 
 // ── Labeled plain-text fields that appear in many categories ────────────────
@@ -49,6 +54,9 @@ const LABELED_FIELDS = [
     { key: "maximum", label: "Maximum" },
     { key: "ascendant", label: "Ascendant" },
     { key: "timing", label: "Timing" },
+    { key: "recovery", label: "Recovery" },
+    { key: "targeting", label: "Targeting" },
+    { key: "requirements", label: "Requirements" },
 ]
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -556,6 +564,173 @@ function renderSectionFields(section) {
             {section.subsections && (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     {section.subsections.map(renderSubsection)}
+                </Box>
+            )}
+
+            {/* Charge rule callout (spellcasting power-rarities) */}
+            {section.charge && (
+                <Box
+                    sx={{
+                        bgcolor: (theme) =>
+                            theme.palette.mode === "dark"
+                                ? "rgba(249,168,37,0.08)"
+                                : "rgba(249,168,37,0.06)",
+                        border: (theme) =>
+                            theme.palette.mode === "dark"
+                                ? "1px solid rgba(249,168,37,0.4)"
+                                : "1px solid rgba(249,168,37,0.5)",
+                        borderLeft: "4px solid #f9a825",
+                        borderRadius: "12px",
+                        p: { xs: 2, sm: 2.5 },
+                        mb: 2,
+                    }}
+                >
+                    <Typography
+                        variant='caption'
+                        sx={{
+                            display: "block",
+                            color: "#f9a825",
+                            fontWeight: "bold",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                            fontSize: "0.68rem",
+                            mb: 0.5,
+                        }}
+                    >
+                        Charging Rule
+                    </Typography>
+                    <Typography variant='body1'>
+                        <Kw>{section.charge}</Kw>
+                    </Typography>
+                </Box>
+            )}
+
+            {/* Rarities grid (spellcasting power-rarities) */}
+            {section.rarities && (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    {section.rarities.map((rarity) => (
+                        <Box
+                            key={rarity.name}
+                            sx={{
+                                ...glassItem,
+                                borderLeft: `4px solid ${rarity.color}`,
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    flexWrap: "wrap",
+                                    gap: 1,
+                                    mb: 1.5,
+                                }}
+                            >
+                                <Chip
+                                    label={rarity.name}
+                                    size='small'
+                                    sx={{
+                                        bgcolor: rarity.color,
+                                        color: "#fff",
+                                        fontWeight: "bold",
+                                        letterSpacing: "0.04em",
+                                    }}
+                                />
+                                {rarity.charge_required && (
+                                    <Chip
+                                        label='Charge Required'
+                                        size='small'
+                                        variant='outlined'
+                                        sx={{
+                                            borderColor: rarity.color,
+                                            color: rarity.color,
+                                            fontWeight: 600,
+                                        }}
+                                    />
+                                )}
+                            </Box>
+                            <Typography variant='body1' paragraph>
+                                <Kw>{rarity.description}</Kw>
+                            </Typography>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 3,
+                                    mt: 1,
+                                }}
+                            >
+                                {rarity.targets && (
+                                    <Box>
+                                        <Typography
+                                            variant='caption'
+                                            sx={{
+                                                display: "block",
+                                                textTransform: "uppercase",
+                                                letterSpacing: "0.06em",
+                                                fontSize: "0.65rem",
+                                                opacity: 0.6,
+                                                mb: 0.25,
+                                            }}
+                                        >
+                                            Targets
+                                        </Typography>
+                                        <Typography
+                                            variant='body2'
+                                            sx={{ fontWeight: "bold" }}
+                                        >
+                                            {rarity.targets}
+                                        </Typography>
+                                    </Box>
+                                )}
+                                {rarity.range && (
+                                    <Box>
+                                        <Typography
+                                            variant='caption'
+                                            sx={{
+                                                display: "block",
+                                                textTransform: "uppercase",
+                                                letterSpacing: "0.06em",
+                                                fontSize: "0.65rem",
+                                                opacity: 0.6,
+                                                mb: 0.25,
+                                            }}
+                                        >
+                                            Range
+                                        </Typography>
+                                        <Typography
+                                            variant='body2'
+                                            sx={{ fontWeight: "bold" }}
+                                        >
+                                            <Kw>{rarity.range}</Kw>
+                                        </Typography>
+                                    </Box>
+                                )}
+                                {rarity.duration && (
+                                    <Box>
+                                        <Typography
+                                            variant='caption'
+                                            sx={{
+                                                display: "block",
+                                                textTransform: "uppercase",
+                                                letterSpacing: "0.06em",
+                                                fontSize: "0.65rem",
+                                                opacity: 0.6,
+                                                mb: 0.25,
+                                            }}
+                                        >
+                                            Duration
+                                        </Typography>
+                                        <Typography
+                                            variant='body2'
+                                            sx={{ fontWeight: "bold" }}
+                                        >
+                                            <Kw>{rarity.duration}</Kw>
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Box>
+                        </Box>
+                    ))}
                 </Box>
             )}
         </>

@@ -148,3 +148,75 @@ export async function saveNavConfig(navItems, idToken) {
         idToken,
     )
 }
+
+// ── Whitepaper version helpers ────────────────────────────────────────────────
+// Version is stored as { major: number, minor: number } in content.
+// Displayed as "${major}.${minor}" — e.g. "1.1", "1.12", "2.0".
+// Minor rolls over from 99 → major+1, minor=0.
+
+/** Parse a "major.minor" version string into { major, minor }. */
+export function parseVersion(str) {
+    const parts = String(str || "1.1").split(".")
+    return {
+        major: parseInt(parts[0], 10) || 1,
+        minor: parseInt(parts[1], 10) || 1,
+    }
+}
+
+/** Format a { major, minor } object back to a string. */
+export function formatVersion({ major, minor }) {
+    return `${major}.${minor}`
+}
+
+/** Compute the next version after one edit. */
+export function nextVersion({ major, minor }) {
+    if (minor >= 99) return { major: major + 1, minor: 0 }
+    return { major, minor: minor + 1 }
+}
+
+/**
+ * Fetch the current whitepaper version from the DB.
+ * Returns a version string like "1.1". Falls back to "1.1" if not stored yet.
+ */
+export async function getWhitepaperVersion() {
+    if (!BASE) return "1.1"
+    try {
+        const result = await rulesFetch("/rules/_meta/whitepaper-version")
+        const v = result?.item?.content
+        if (v?.major !== undefined) return formatVersion(v)
+        return "1.1"
+    } catch {
+        return "1.1"
+    }
+}
+
+/**
+ * Increment the whitepaper version by one edit and persist to the DB.
+ * Returns the new version string.
+ * @param {string} idToken  Cognito id_token (required to write)
+ * @param {string} [currentVersionStr]  Pass the currently known version to
+ *   avoid an extra round-trip; if omitted the method fetches it first.
+ */
+export async function bumpWhitepaperVersion(idToken, currentVersionStr) {
+    if (!BASE) return currentVersionStr || "1.1"
+    try {
+        const current = currentVersionStr
+            ? parseVersion(currentVersionStr)
+            : parseVersion(await getWhitepaperVersion())
+        const bumped = nextVersion(current)
+        await rulesFetch(
+            "/rules/_meta/whitepaper-version",
+            "PUT",
+            {
+                title: "Whitepaper Version",
+                order: 0,
+                content: bumped,
+                updatedBy: "admin-ui",
+            },
+            idToken,
+        )
+        return formatVersion(bumped)
+    } catch {
+        return currentVersionStr || "1.1"
+    }
+}

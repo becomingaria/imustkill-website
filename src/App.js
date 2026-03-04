@@ -6,7 +6,6 @@ import About from "./pages/About.js"
 import GettingStarted from "./pages/GettingStarted.js"
 import RulesPage from "./pages/RulesPage.js"
 import Equipment from "./pages/Equipment.js"
-import Powers from "./pages/Powers.js"
 import PowerCards from "./pages/PowerCards.js"
 import Monsters from "./pages/Monsters.js"
 import MonsterDetail from "./components/MonsterDetail.js"
@@ -60,7 +59,10 @@ function App() {
                         path='death-and-resting'
                         element={<RulesPage categoryKey='death-and-resting' />}
                     />
-                    <Route path='powers' element={<Powers />} />
+                    <Route
+                        path='powers'
+                        element={<RulesPage categoryKey='spellcasting' />}
+                    />
                     <Route path='power-cards' element={<PowerCards />} />
                     <Route
                         path='progression'
