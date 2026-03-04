@@ -449,7 +449,7 @@ function makeFooter() {
  *   The grouped rules object from GET /rules (or AdminRulesPanel state).
  * @param {string} version  e.g. "1.1"
  */
-export async function exportWhitepapers(grouped, version = CURRENT_VERSION) {
+export async function exportWhitepapers(grouped, version = CURRENT_VERSION, database = null) {
     const dateStr = new Date().toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
@@ -621,6 +621,60 @@ export async function exportWhitepapers(grouped, version = CURRENT_VERSION) {
             // Spacer between sections
             contentChildren.push(emptyLine())
         }
+    }
+
+    // ── Key Words appendix ───────────────────────────────────────────────────
+    // Load referenceIds from rules-database.json if not provided
+    let refIds = database?.referenceIds || null
+    if (!refIds) {
+        try {
+            const dbRes = await fetch("/rules-database.json")
+            const db = await dbRes.json()
+            refIds = db?.rulesDatabase?.referenceIds || null
+        } catch (_) {
+            // silently skip glossary if fetch fails
+        }
+    }
+
+    if (refIds) {
+        // Sort entries alphabetically by the tag label (strip leading @)
+        const entries = Object.entries(refIds).sort(([a], [b]) =>
+            a.slice(1).localeCompare(b.slice(1)),
+        )
+
+        contentChildren.push(
+            new Paragraph({
+                pageBreakBefore: true,
+                spacing: { before: 0, after: 160 },
+                children: [
+                    th("KEY WORDS", {
+                        size: SZ_CHAPTER,
+                        bold: true,
+                        color: COL_DARK,
+                    }),
+                ],
+            }),
+            new Paragraph({
+                spacing: { before: 0, after: 200 },
+                border: {
+                    bottom: {
+                        style: "single",
+                        size: 8,
+                        space: 4,
+                        color: "8B0000",
+                    },
+                },
+                children: [],
+            }),
+            ...entries.map(([tag, entry]) => {
+                const label = tag.slice(1) // strip @
+                const def = entry.definition || entry.description || ""
+                return para([
+                    t(label + " — ", { bold: true }),
+                    ...parseInlineRuns(def),
+                ])
+            }),
+        )
     }
 
     // ── Assemble document ────────────────────────────────────────────────────

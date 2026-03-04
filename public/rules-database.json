@@ -4,400 +4,466 @@
         "lastUpdated": "2025-01-21",
         "referenceIds": {
             "@Body": {
-                "title": "Body Stat",
+                "title": "Body",
                 "category": "character-creation",
                 "section": "stats",
-                "description": "Physical strength and endurance stat"
+                "description": "Physical strength and endurance stat",
+                "definition": "Your physical strength and endurance. Roll against Body to Brace against attacks and to perform feats of strength outside of combat. Body may be chosen as your Attack Stat."
             },
             "@Agility": {
-                "title": "Agility Stat",
+                "title": "Agility",
                 "category": "character-creation",
                 "section": "stats",
-                "description": "Speed and dexterity stat"
+                "description": "Speed and dexterity stat",
+                "definition": "Your speed, reflexes, and dexterity. Roll against Agility to Dodge attacks, Flee combat, and perform feats of acrobatics. Agility may be chosen as your Attack Stat."
             },
             "@Focus": {
-                "title": "Focus Stat",
+                "title": "Focus",
                 "category": "character-creation",
                 "section": "stats",
-                "description": "Mental concentration and magical ability stat"
+                "description": "Mental concentration and magical ability stat",
+                "definition": "Your mental concentration and magical aptitude. Roll against Focus to Gather Powers, Negotiate in combat, and resist enchantments. Focus may be chosen as your Attack Stat."
             },
             "@Fate": {
-                "title": "Fate Stat",
+                "title": "Fate",
                 "category": "character-creation",
                 "section": "stats",
-                "description": "Luck and life force stat that determines hit points"
+                "description": "Luck and life force stat that determines hit points",
+                "definition": "Your luck, life force, and destiny. Fate determines your Hit Points (half Fate, rounded up) and is used for Death saves, Research rolls, and Tracking the Monster."
             },
             "@Advantage": {
                 "title": "Advantage",
                 "category": "combat-mechanics",
                 "section": "advantage-disadvantage",
-                "description": "Roll 2d10, choose lower result"
+                "description": "Roll 2d10, choose lower result",
+                "definition": "When you have Advantage, roll 2d10 and take the lower result. Represents favorable circumstances, specialized equipment, or tactical superiority. Advantage and Disadvantage cancel each other out."
             },
             "@Disadvantage": {
                 "title": "Disadvantage",
                 "category": "combat-mechanics",
                 "section": "advantage-disadvantage",
-                "description": "Roll 2d10, choose higher result"
+                "description": "Roll 2d10, choose higher result",
+                "definition": "When you have Disadvantage, roll 2d10 and take the higher result. Represents illness, hindrance, or unfavorable conditions. Advantage and Disadvantage cancel each other out."
             },
             "@Attack": {
-                "title": "Attack Action",
+                "title": "Attack",
                 "category": "combat-mechanics",
                 "section": "actions",
-                "description": "Combat action to deal damage to enemies"
+                "description": "Combat action to deal damage to enemies",
+                "definition": "A combat action. Roll 1d10 against your Attack Stat. On success, deal 1 damage (2 on a natural 1 critical). If your Insight is insufficient to perceive the monster as it truly is, your attacks deal −1 damage."
             },
             "@Dodge": {
-                "title": "Dodge Action",
+                "title": "Dodge",
                 "category": "combat-mechanics",
                 "section": "actions",
-                "description": "Agility-based defense action"
+                "description": "Agility-based defense action",
+                "definition": "A combat action. Roll 1d10 against Agility. On success, become immune to all dodgeable attacks until your next turn and regain 1 Hit Point."
             },
             "@Brace": {
-                "title": "Brace Action",
+                "title": "Brace",
                 "category": "combat-mechanics",
                 "section": "actions",
-                "description": "Body-based defense action requiring equipment"
+                "description": "Body-based defense action requiring equipment",
+                "definition": "A combat action requiring a weapon, armor, or shield. Roll 1d10 against Body. On success, become immune to all braceable attacks until your next turn and regain 1 Hit Point."
             },
             "@Wind Up": {
                 "title": "Wind Up",
                 "category": "combat-mechanics",
                 "section": "damage",
-                "description": "Monster mechanic that doubles next attack damage"
+                "description": "Monster mechanic that doubles next attack damage",
+                "definition": "A monster mechanic. When a monster fails its attack roll, it winds up. Its next successful attack deals double its normal damage value."
             },
             "@Insight": {
                 "title": "Insight",
                 "category": "progression",
                 "section": "insight",
-                "description": "A token gathered to see hidden things and reroll tests"
+                "description": "A token gathered to see hidden things and reroll tests",
+                "definition": "A resource representing supernatural perception. You may spend Insight tokens to reroll any test, a number of times per day equal to your Insight quantity. Insight resets after a Night's Rest. Higher Insight allows you to perceive Hidden Creatures as they truly are."
             },
             "@Gather Powers": {
-                "title": "Drawing Powers",
+                "title": "Gather Powers",
                 "category": "casting",
                 "section": "gathering-powers",
-                "description": "Focus test to gather powers from deck"
+                "description": "Focus test to gather powers from deck",
+                "definition": "A combat action. Roll 1d10 against Focus. On success, draw one Power card from your deck. On a roll of 10, you lose 1 Hit Point and discard all held Power cards."
             },
             "@Use Powers": {
-                "title": "Using Powers",
+                "title": "Use Powers",
                 "category": "casting",
                 "section": "casting-powers",
-                "description": "Playing power cards to trigger effects"
+                "description": "Playing power cards to trigger effects",
+                "definition": "Play a held Power card to trigger its magical effect. Common and Uncommon powers need no charge. Rare and Mythic powers require at least one Common or Uncommon card played face-down as a charge first."
             },
             "@Death": {
-                "title": "Death Mechanics",
+                "title": "Death",
                 "category": "death-and-resting",
                 "section": "death",
-                "description": "What happens when reaching 0 hit points"
+                "description": "What happens when reaching 0 hit points",
+                "definition": "When you reach 0 Hit Points, roll 1d10 against Fate. On success, survive with 1 HP (a natural 1 restores all HP). On failure, your hunter dies."
             },
             "@Grit Teeth": {
                 "title": "Grit Teeth",
                 "category": "death-and-resting",
                 "section": "grit-teeth",
-                "description": "Recover 1 HP during combat respite"
+                "description": "Recover 1 HP during combat respite",
+                "definition": "During a combat respite, automatically gather 3 Powers from your deck without rolling. This represents pushing through pain and desperation to fight on."
             },
             "@Nights Rest": {
                 "title": "Night's Rest",
                 "category": "death-and-resting",
                 "section": "nights-rest",
-                "description": "Full recovery after 8 hours rest"
+                "description": "Full recovery after 8 hours rest",
+                "definition": "A full recovery following 8 hours of rest. Restores all Hit Points and allows you to draw 3 Power cards of your choice. Resets your daily Insight rerolls."
             },
             "@Leveling Up": {
                 "title": "Leveling Up",
                 "category": "progression",
                 "section": "leveling-up",
-                "description": "Character advancement after surviving fights"
+                "description": "Character advancement after surviving fights",
+                "definition": "After surviving at least one fight and completing a Rest, attempt to improve. Roll 1d10 against one chosen stat — if the result is higher than your current stat, increase it by 1. Alternatively, gain 1 Insight token instead of rolling."
             },
             "@Physical Damage": {
                 "title": "Physical Damage",
                 "category": "combat-mechanics",
                 "section": "damage-types",
-                "description": "Conventional weapon damage type"
+                "description": "Conventional weapon damage type",
+                "definition": "Damage from conventional weapons: swords, clubs, guns, and other mundane armaments. Most creatures can be harmed by Physical Damage, though some may be resistant or immune."
             },
             "@Spiritual Damage": {
                 "title": "Spiritual Damage",
                 "category": "combat-mechanics",
                 "section": "damage-types",
-                "description": "Divine/holy damage effective against supernatural entities"
+                "description": "Divine/holy damage effective against supernatural entities",
+                "definition": "Damage that affects the soul or essence of a creature. Particularly effective against undead, demons, and other supernatural entities. Some creatures are vulnerable to Spiritual Damage while being resistant to Physical Damage."
             },
             "@Hybrid Damage": {
                 "title": "Hybrid Damage",
                 "category": "combat-mechanics",
                 "section": "damage-types",
-                "description": "Damage effective against both corporeal and incorporeal beings"
+                "description": "Damage effective against both corporeal and incorporeal beings",
+                "definition": "Damage combining both Physical and Spiritual elements. Effective against a wide range of creatures — both corporeal and incorporeal — making it the most versatile damage type."
             },
             "@Attack Stat": {
                 "title": "Attack Stat",
                 "category": "character-creation",
                 "section": "attack-stat-hp",
-                "description": "Chosen stat (Body, Agility, or Focus) used for combat rolls"
+                "description": "Chosen stat (Body, Agility, or Focus) used for combat rolls",
+                "definition": "The stat you designate during character creation for all attack rolls — Body, Agility, or Focus. This choice reflects your hunter's fighting style and cannot be changed without GM approval."
             },
             "@Hit Points": {
                 "title": "Hit Points",
                 "category": "death-and-resting",
                 "section": "hit-points",
-                "description": "Hit points are a measure of superficial harm and your character's poise and ability to avoid death."
+                "description": "A measure of superficial harm and your character's poise and ability to avoid death",
+                "definition": "A measure of superficial harm and your hunter's ability to stay in the fight. Equals half your Fate score, rounded up. When Hit Points reach 0, make a Death save."
             },
             "@Diseased": {
-                "title": "Diseased Status",
+                "title": "Diseased",
                 "category": "combat-mechanics",
                 "section": "statuses",
-                "description": "Afflicted creatures make all tests with disadvantage"
+                "description": "Afflicted creatures make all tests with disadvantage",
+                "definition": "A status condition representing illness, poison, or debilitating affliction. A Diseased creature makes all tests with Disadvantage."
             },
             "@Frightened": {
-                "title": "Frightened Status",
+                "title": "Frightened",
                 "category": "combat-mechanics",
                 "section": "statuses",
-                "description": "Cannot attack or willingly move towards source of fear"
+                "description": "Cannot attack or willingly move towards source of fear",
+                "definition": "A status condition caused by terror. A Frightened creature cannot Attack on its turn, nor willingly move toward the source of its fear if another route of escape exists."
             },
             "@Unconscious": {
-                "title": "Unconscious Status",
+                "title": "Unconscious",
                 "category": "combat-mechanics",
                 "section": "statuses",
-                "description": "Cannot defend, attack, or move. Attacks automatically succeed"
+                "description": "Cannot defend, attack, or move. Attacks automatically succeed",
+                "definition": "A status condition representing incapacitation. An Unconscious creature cannot defend, attack, or move. All Attack actions against an Unconscious creature automatically succeed. The creature may awaken at the start of its next turn if it survives."
             },
             "@Obscured": {
-                "title": "Obscured Status",
+                "title": "Obscured",
                 "category": "combat-mechanics",
                 "section": "statuses",
-                "description": "Cannot be targeted by attacks or powers. Granted by full cover such as a barricade or building wall"
+                "description": "Cannot be targeted by attacks or powers",
+                "definition": "A status condition granted by full cover — a solid barricade, a wall, or the interior of a building relative to the attacker. An Obscured creature cannot be targeted by attacks or powers, but may still act and target others if it has a way to do so from its position."
             },
             "@Close": {
-                "title": "Close Range",
+                "title": "Close",
                 "category": "combat-mechanics",
                 "section": "range",
-                "description": "Within arm's reach — close enough to touch or strike without stepping"
+                "description": "Within arm's reach",
+                "definition": "A range band describing distance in combat. Close means within arm's reach — close enough to touch, grapple, or strike without taking a step. Most melee weapons and unarmed attacks operate at Close range."
             },
             "@Near": {
-                "title": "Near Range",
+                "title": "Near",
                 "category": "combat-mechanics",
                 "section": "range",
-                "description": "Within the same room or immediate area"
+                "description": "Within the same room or immediate area",
+                "definition": "A range band describing distance in combat. Near means within the same room or immediate area — a gap you could close in a few strides. Thrown weapons, short-range powers, and many creature abilities operate at Near range."
             },
             "@Far": {
-                "title": "Far Range",
+                "title": "Far",
                 "category": "combat-mechanics",
                 "section": "range",
-                "description": "Across a field or large open space — visible but distant"
+                "description": "Across a field or large open space",
+                "definition": "A range band describing distance in combat. Far means across a field or large open space — visible but requiring significant effort to close the gap. Ranged weapons, bows, firearms, and long-range powers operate at Far range."
             },
             "@Tiny": {
-                "title": "Tiny (Size)",
+                "title": "Tiny",
                 "category": "combat-mechanics",
                 "section": "size",
-                "description": "Insect to house cat. Hunters deal +1 damage to Tiny or smaller creatures if they remember to ask"
+                "description": "Size: insect to house cat",
+                "definition": "A size category ranging from an insect to a house cat. Hunters deal +1 damage to Tiny creatures — if they remember to ask for it."
             },
             "@Smaller": {
-                "title": "Smaller (Size)",
+                "title": "Smaller",
                 "category": "combat-mechanics",
                 "section": "size",
-                "description": "Large dog to a human child. Hunters deal +1 damage to Smaller or smaller creatures if they remember to ask"
+                "description": "Size: large dog to a human child",
+                "definition": "A size category ranging from a large dog to a human child. Hunters deal +1 damage to Smaller creatures — if they remember to ask for it."
             },
             "@Your Size": {
                 "title": "Your Size",
                 "category": "combat-mechanics",
                 "section": "size",
-                "description": "Roughly the size of an adult human. The baseline — no size bonuses apply"
+                "description": "Size: roughly the size of an adult human",
+                "definition": "A size category representing creatures roughly the size of an adult human. The baseline — no size damage bonuses apply in either direction."
             },
             "@Bigger": {
-                "title": "Bigger (Size)",
+                "title": "Bigger",
                 "category": "combat-mechanics",
                 "section": "size",
-                "description": "As big as a horse. Large enough to ride. No size damage bonus for hunters attacking Bigger creatures"
+                "description": "Size: as big as a horse",
+                "definition": "A size category for creatures as large as a horse. Big enough to ride. Hunters gain no size damage bonus when attacking Bigger creatures."
             },
             "@Way Bigger": {
-                "title": "Way Bigger (Size)",
+                "title": "Way Bigger",
                 "category": "combat-mechanics",
                 "section": "size",
-                "description": "Larger than a small hut — you can climb them. Hunters roll an extra d10 and choose lower when dodging their attacks"
+                "description": "Size: larger than a small hut",
+                "definition": "A size category for creatures larger than a small hut — something you can climb. When a Way Bigger creature attacks a hunter, that hunter may roll an extra d10 and choose the lower result when Dodging."
             },
             "@Common": {
-                "title": "Common Power",
-                "category": "spellcasting",
+                "title": "Common",
+                "category": "casting",
                 "section": "power-rarities",
-                "description": "1 target at Close range, effect lasts this turn only. No charge required"
+                "description": "1 target at Close range. No charge required",
+                "definition": "The most basic Power rarity. Targets 1 creature at Close range; effect lasts this turn only. No charge card required to play."
             },
             "@Uncommon": {
-                "title": "Uncommon Power",
-                "category": "spellcasting",
+                "title": "Uncommon",
+                "category": "casting",
                 "section": "power-rarities",
-                "description": "1–3 targets at Close or Near range. May persist until a discard condition is met. No charge required"
+                "description": "1–3 targets at Close or Near range. No charge required",
+                "definition": "A mid-tier Power rarity. Targets 1–3 creatures at Close or Near range. May persist until a discard condition is met. No charge card required to play."
             },
             "@Rare": {
-                "title": "Rare Power",
-                "category": "spellcasting",
+                "title": "Rare",
+                "category": "casting",
                 "section": "power-rarities",
-                "description": "More than 3 targets at Close, Near, or Far range. Requires at least 1 Common or Uncommon card played face-down as a charge"
+                "description": "Sweeping effect at any range. Requires a charge",
+                "definition": "A powerful Power rarity capable of sweeping large areas or many creatures at once. Can be targeted at Close, Near, or Far range. Requires at least one Common or Uncommon card played face-down as a charge before it can be used."
             },
             "@Mythic": {
-                "title": "Mythic Power",
-                "category": "spellcasting",
+                "title": "Mythic",
+                "category": "casting",
                 "section": "power-rarities",
-                "description": "Can singlehandedly end an encounter with fatal effects. Requires at least 1 Common or Uncommon card played face-down as a charge"
+                "description": "Potentially encounter-ending effect. Requires a charge",
+                "definition": "The rarest Power rarity. A Mythic card, once played, can singlehandedly end an encounter by causing fatal effects against its target. Requires at least one Common or Uncommon card played face-down as a charge before it can be used."
             },
             "@Gather": {
-                "title": "Gather Action",
+                "title": "Gather",
                 "category": "combat-mechanics",
                 "section": "actions",
-                "description": "Combat action to gather powers using Focus"
+                "description": "Combat action to draw a Power using Focus",
+                "definition": "Shorthand for the Gather Powers combat action. Roll 1d10 against Focus to draw one Power card from your deck."
             },
             "@Flee": {
-                "title": "Flee Action",
+                "title": "Flee",
                 "category": "combat-mechanics",
                 "section": "actions",
-                "description": "Combat action to escape from battle"
+                "description": "Combat action to escape battle",
+                "definition": "A combat action. Roll 1d10 against Agility. On success, exit the combat and remain safe from danger for the following round. On failure, you remain in the fight."
             },
             "@Negotiate": {
-                "title": "Negotiate Action",
+                "title": "Negotiate",
                 "category": "combat-mechanics",
                 "section": "actions",
-                "description": "Combat action to attempt diplomacy"
+                "description": "Combat action to attempt diplomacy with an intelligent monster",
+                "definition": "A combat action. Roll 1d10 against Focus. On success, combat pauses to present the opportunity to negotiate with a monster capable of understanding you. If talks fail and combat resumes, the monster acts first."
             },
             "@Monster Tables": {
                 "title": "Monster Tables",
                 "category": "running-the-game",
                 "section": "reading-monster-tables",
-                "description": "System for determining monster actions using d10 rolls"
+                "description": "System for resolving monster actions with d10 rolls",
+                "definition": "The system GMs use to determine monster actions each round. Roll 1d10 against the monster's Attack value. A roll equal to or lower means the monster attacks; higher means it winds up for a more dangerous following attack."
             },
             "@Core Mechanics": {
                 "title": "Core Mechanics",
-                "category": "quick-reference",
-                "section": "core-mechanics",
-                "description": "Essential game mechanics at a glance"
+                "category": "getting-started",
+                "section": "the-core-mechanic",
+                "description": "The roll-under d10 system at the heart of every test",
+                "definition": "The fundamental rule of I Must Kill: roll 1d10 equal to or under your relevant stat to succeed. A roll of 1 is always a critical success; a roll of 10 always fails."
             },
             "@Character Stats": {
-                "title": "Character Stats Reference",
-                "category": "quick-reference",
-                "section": "character-stats",
-                "description": "Quick reference for all character statistics"
+                "title": "Character Stats",
+                "category": "character-creation",
+                "section": "stats",
+                "description": "The four core statistics defining a hunter",
+                "definition": "The four core attributes that define every hunter: Body, Agility, Focus, and Fate. Stats range from 2 to 9 and are used as target numbers for all d10 rolls."
             },
             "@Damage Types": {
-                "title": "Damage Types Reference",
-                "category": "quick-reference",
+                "title": "Damage Types",
+                "category": "combat-mechanics",
                 "section": "damage-types",
-                "description": "All damage types and their effectiveness"
+                "description": "The three categories of damage",
+                "definition": "The three categories of harm in I Must Kill: Physical Damage (conventional weapons), Spiritual Damage (divine/soul-affecting), and Hybrid Damage (both). Each type has different effectiveness against different creature categories."
             },
             "@Hidden Creatures": {
                 "title": "Hidden Creatures",
                 "category": "running-the-game",
                 "section": "hidden-creatures",
-                "description": "Creatures that require Insight to perceive properly"
+                "description": "Monsters requiring sufficient Insight to perceive truly",
+                "definition": "Monsters with a minimum Insight rating that hunters must meet to perceive them as they truly are. Hunters with insufficient Insight see only a mundane-seeming rationalization — a werewolf may look like a large bear, a changeling like a deformed man."
             },
             "@Damage": {
                 "title": "Damage",
                 "category": "combat-mechanics",
                 "section": "damage-types",
-                "description": "Harm dealt to creatures, can be Physical, Spiritual, or Hybrid"
+                "description": "Harm dealt to a creature's Hit Points",
+                "definition": "Harm dealt to a creature's Hit Points. Can be Physical, Spiritual, or Hybrid. Most successful attacks deal 1 damage; a natural 1 (critical) deals 2."
             },
             "@Power": {
                 "title": "Power",
                 "category": "casting",
                 "section": "casting-powers",
-                "description": "Magical effects that can be gathered and cast"
+                "description": "A magical card drawn from a hunter's Power deck",
+                "definition": "A magical card drawn from a hunter's Power deck and held in hand until played. Powers range in rarity from Common to Mythic and produce supernatural effects when played in or out of combat."
             },
             "@Rest": {
                 "title": "Rest",
                 "category": "death-and-resting",
                 "section": "nights-rest",
-                "description": "Recovery mechanisms including Night's Rest"
+                "description": "Recovery between hunts",
+                "definition": "A period of recovery between hunts. A Night's Rest (8 hours) fully restores Hit Points, allows drawing 3 Powers of choice, and resets daily Insight rerolls."
             },
             "@Hunt Outline": {
                 "title": "Hunt Outline",
                 "category": "running-the-game",
                 "section": "hunt-outline",
-                "description": "The structured phases of a monster hunt"
+                "description": "The structured phases of a monster hunting session",
+                "definition": "The eight-phase structure that frames a standard monster hunting session: The Hook, Negotiate Pay, Rumor Phase, Research Phase, Prepare, Track the Monster, The Fight, and Denouement."
             },
             "@Hook": {
                 "title": "The Hook",
                 "category": "running-the-game",
                 "section": "hunt-outline",
-                "description": "Introduce the scenario and monster threat to hunters"
+                "description": "First hunt phase — a client presents a monster threat",
+                "definition": "The first phase of a hunt. A desperate client approaches with a monster threat. Livestock are disappearing, people are dying, or something strange lurks. The hunters are offered payment to deal with it."
             },
             "@Negotiate Pay": {
                 "title": "Negotiate Pay",
                 "category": "running-the-game",
                 "section": "hunt-outline",
-                "description": "Test Focus to bargain for higher compensation"
+                "description": "Second hunt phase — Focus roll for better compensation",
+                "definition": "The second phase of a hunt. Roll Focus to bargain for better pay. Success means enough to have spending money later; failure means you're working for subsistence wages."
             },
             "@Rumor Phase": {
                 "title": "Rumor Phase",
                 "category": "running-the-game",
                 "section": "hunt-outline",
-                "description": "Meet contacts who provide information about the monster"
+                "description": "Third hunt phase — gather local information about the monster",
+                "definition": "The third phase of a hunt. Talk to locals to gather 3–4 rumors about the monster. The GM curates a mix of true and misleading information — the hunters must determine which is which."
             },
             "@Research Phase": {
                 "title": "Research Phase",
                 "category": "running-the-game",
                 "section": "hunt-outline",
-                "description": "Use old sources to learn monster's weakness by testing Fate"
+                "description": "Fourth hunt phase — Fate roll to learn a monster weakness",
+                "definition": "The fourth phase of a hunt. Consult old journals, folklore, or a knowledgeable contact. Roll Fate to uncover one of the monster's Special Weaknesses before the fight."
             },
             "@Tracking Monster": {
                 "title": "Tracking the Monster",
                 "category": "running-the-game",
                 "section": "hunt-outline",
-                "description": "Find the monster in its lair or be ambushed"
+                "description": "Sixth hunt phase — find the lair or be ambushed",
+                "definition": "The sixth phase of a hunt. Roll Fate to find the monster in its lair. On failure, the monster finds you first — combat begins with an ambush."
             },
             "@Fight": {
                 "title": "The Fight",
                 "category": "running-the-game",
                 "section": "hunt-outline",
-                "description": "Battle the monster using combat mechanics"
+                "description": "Seventh hunt phase — combat",
+                "definition": "The seventh phase of a hunt. Combat against the monster. Use your preparation, knowledge of weaknesses, and tactics. Win or die."
             },
             "@Denouement": {
                 "title": "Denouement",
                 "category": "running-the-game",
                 "section": "hunt-outline",
-                "description": "Collect bounty, replenish equipment, rest and level up"
+                "description": "Final hunt phase — collect bounty, rest, and advance",
+                "definition": "The final phase of a hunt. Collect your bounty, replenish equipment up to 10, and — if you earned high pay — purchase new gear. Complete a Night's Rest and attempt to Level Up."
             },
             "@Monster Stats": {
                 "title": "Monster Stats",
                 "category": "running-the-game",
                 "section": "monster-stats-explained",
-                "description": "Understanding monster statistics and abilities"
+                "description": "The values defining a monster's combat profile",
+                "definition": "The full set of values that define a monster: Attack (action threshold), Damage, Hit Points Multiplier, Bloodied threshold, required Insight to perceive, Guise, and Special Weaknesses."
             },
             "@Bloodied": {
-                "title": "Bloodied Threshold",
+                "title": "Bloodied",
                 "category": "running-the-game",
                 "section": "monster-stats-explained",
-                "description": "HP threshold when monsters attempt to flee or negotiate"
+                "description": "HP threshold at which monsters may flee or negotiate",
+                "definition": "The Hit Point threshold at which a monster may attempt to flee, surrender, or negotiate rather than fight to the death. Set during monster creation as a specific HP value."
             },
             "@Guise": {
-                "title": "Monster Guise",
+                "title": "Guise",
                 "category": "running-the-game",
                 "section": "monster-stats-explained",
-                "description": "How monsters appear to those with insufficient Insight"
+                "description": "How a monster appears to hunters without sufficient Insight",
+                "definition": "The mundane appearance a monster presents to hunters whose Insight is insufficient to perceive its true form. A werewolf might appear as a large bear; a demon as a disfigured man."
             },
             "@Special Weaknesses": {
                 "title": "Special Weaknesses",
                 "category": "running-the-game",
                 "section": "monster-stats-explained",
-                "description": "Unique vulnerabilities discovered during research phase"
+                "description": "Unique vulnerabilities discovered during research",
+                "definition": "Unique vulnerabilities specific to a given monster, such as silver, fire, or blessed water. Discovered during the Research Phase. Exploiting a Special Weakness typically grants Advantage on attacks or causes extra damage."
             },
             "@Monster": {
                 "title": "Monster",
                 "category": "running-the-game",
                 "section": "monsters",
-                "description": "Supernatural creatures that hunters must track and defeat"
+                "description": "A supernatural creature that hunters are contracted to defeat",
+                "definition": "A supernatural creature that hunters are contracted to track and defeat. Monsters have their own stats, special abilities, and Hidden forms that require Insight to perceive. Every hunt is built around a specific monster."
             },
             "@Downsides Of Insight": {
                 "title": "Downsides of Insight",
                 "category": "running-the-game",
                 "section": "downsides-of-insight",
-                "description": "Risks of having higher Insight than fellow hunters"
+                "description": "The risks of higher Insight than fellow hunters",
+                "definition": "The double-edged nature of supernatural perception. When only one hunter has the Insight to see a creature as it truly is, that hunter can attack it effectively — but also becomes the sole target of the creature's focused aggression."
             },
             "@Special Abilities": {
                 "title": "Special Abilities",
                 "category": "running-the-game",
                 "section": "special-abilities",
-                "description": "Unique monster powers that can negate defenses or deal extra damage"
+                "description": "Unique monster powers triggered on specific die results",
+                "definition": "Unique monster powers activated on specific die results (typically a natural 1). Examples include attacks that cannot be Dodged or Braced against, area effects, or devastating one-shot abilities like Dragon's Breath."
             },
             "@Dragons Breath": {
                 "title": "Dragon's Breath",
                 "category": "running-the-game",
                 "section": "special-abilities",
-                "description": "Special ability that deals damage equal to monster's hit points"
+                "description": "Special Ability dealing damage equal to the monster's current HP",
+                "definition": "A devastating Special Ability. When triggered, the monster deals damage equal to its current Hit Points to the target — potentially a one-hit kill. Used for climactic, dragon-like monster encounters."
             },
             "@Breath Weapon": {
                 "title": "Breath Weapon",
                 "category": "running-the-game",
                 "section": "special-abilities",
-                "description": "Special monster ability triggered on critical rolls"
+                "description": "A monster Special Ability triggered on a critical die roll",
+                "definition": "A type of Special Ability triggered on a critical roll (natural 1). Represents any devastating exhalation-based attack — fire, acid, frost, or similar. Often cannot be defended against normally."
             }
         },
         "categories": {
