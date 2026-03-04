@@ -120,24 +120,26 @@ const para = (children, opts = {}) =>
 const emptyLine = () =>
     new Paragraph({ spacing: { after: 80 }, children: [t("")] })
 
-// Labeled field: bold key followed by body text
+// Labeled field: bold key followed by body text (with @Token parsing on value)
 const labeledPara = (label, text) =>
-    para([t(label + ": ", { bold: true }), t(text)])
+    para([t(label + ": ", { bold: true }), ...parseInlineRuns(text ?? "")])
 
-// Bullet point paragraph
+// Bullet point paragraph (with @Token parsing)
 const bullet = (text, italic = false) =>
     new Paragraph({
         bullet: { level: 0 },
         spacing: { after: 60 },
-        children: [t(String(text ?? ""), { italics: italic })],
+        children: parseInlineRuns(String(text ?? ""), { italics: italic }),
     })
 
-// Named item: "Title — description"
-const namedItem = ({ title, description } = {}) =>
-    para([
-        t((title || "") + (description ? " — " : ""), { bold: true }),
-        t(description || ""),
+// Named item: "Title — description" (name or title; description gets @Token parsing)
+const namedItem = ({ title, name, description } = {}) => {
+    const label = (title || name || "")
+    return para([
+        t(label + (description ? " — " : ""), { bold: true }),
+        ...parseInlineRuns(description || ""),
     ])
+}
 
 // Sub-heading within a section
 const subHead = (text) =>
