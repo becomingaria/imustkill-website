@@ -66,6 +66,36 @@ const CATEGORY_TITLES = {
     "running-the-game": "Running the Game",
 }
 
+// ── Inline text parser — turns @Word into a bold run ─────────────────────────
+/**
+ * Split a string on @token tokens and return an array of TextRun objects.
+ * Anything starting with @ (letters/digits/hyphens) becomes bold.
+ */
+function parseInlineRuns(text, baseOpts = {}) {
+    const str = String(text ?? "")
+    const parts = str.split(/(@[A-Za-z0-9][A-Za-z0-9 _-]*)/)
+    return parts
+        .filter((p) => p.length > 0)
+        .map((p) => {
+            if (p.startsWith("@")) {
+                // Strip the leading @ and render bold
+                return new TextRun({
+                    text: p.slice(1),
+                    font: BODY_FONT,
+                    size: SZ_BODY,
+                    bold: true,
+                    ...baseOpts,
+                })
+            }
+            return new TextRun({
+                text: p,
+                font: BODY_FONT,
+                size: SZ_BODY,
+                ...baseOpts,
+            })
+        })
+}
+
 // ── Primitive helpers ─────────────────────────────────────────────────────────
 const t = (text, opts = {}) =>
     new TextRun({
@@ -132,7 +162,47 @@ function renderContent(c) {
     const out = []
 
     // Description
-    if (c.description) out.push(para([t(c.description)]))
+    if (c.description) out.push(para(parseInlineRuns(c.description)))
+
+    // body — general prose paragraph
+    if (c.body) out.push(para(parseInlineRuns(c.body)))
+
+    // Core rule callout (boxed / indented)
+    if (c.coreRule) {
+        out.push(
+            new Paragraph({
+                spacing: { before: 100, after: 60 },
+                indent: { left: convertInchesToTwip(0.25), right: convertInchesToTwip(0.25) },
+                border: {
+                    left: { style: "single", size: 12, space: 8, color: "8B0000" },
+                },
+                children: [t(c.coreRule, { bold: true, italics: true })],
+            }),
+        )
+    }
+    if (c.coreRuleNote) {
+        out.push(
+            new Paragraph({
+                spacing: { after: 60 },
+                indent: { left: convertInchesToTwip(0.25) },
+                children: [t(c.coreRuleNote, { italics: true, color: COL_MUTED })],
+            }),
+        )
+    }
+    if (c.d10Note) {
+        out.push(
+            new Paragraph({
+                spacing: { after: 80 },
+                indent: { left: convertInchesToTwip(0.25) },
+                children: [t(c.d10Note, { italics: true, color: COL_MUTED })],
+            }),
+        )
+    }
+
+    // quickStart hint
+    if (c.quickStart) {
+        out.push(para([t("Quick Start: ", { bold: true }), t(c.quickStart, { italics: true })]))
+    }
 
     // Labeled fields
     for (const { key, label } of LABELED_FIELDS) {
@@ -167,27 +237,76 @@ function renderContent(c) {
         c.examples.forEach((e) => out.push(bullet(String(e), true)))
     }
 
+    // stats array — name + desc (used in getting-started)
+    if (c.stats?.length) {
+        c.stats.forEach((s) => {
+            out.push(
+                para([
+                    t((s.name || "") + ": ", { bold: true }),
+                    ...parseInlineRuns(s.desc || s.description || ""),
+                ]),
+            )
+        })
+    }
+
+    // turnOrder — ordered steps before actions
+    if (c.turnOrder?.length) {
+        out.push(subHead("Turn Order"))
+        c.turnOrder.forEach((step, i) =>
+            out.push(para([t(`${i + 1}. `, { bold: true }), ...parseInlineRuns(step)])),
+        )
+    }
+
     // List fields: actions, types, equipment, conditions
+    // actions may have { action, stat, effect } or { title, description }
     for (const field of LIST_FIELDS) {
         if (c[field]?.length) {
             out.push(subHead(field.charAt(0).toUpperCase() + field.slice(1)))
             c[field].forEach((item) => {
-                if (typeof item === "string") out.push(bullet(item))
-                else out.push(namedItem(item))
+                if (typeof item === "string") {
+                    out.push(bullet(item))
+                } else if (item.action != null) {
+                    // Combat action row: Action — Stat — Effect
+                    const label = [item.action, item.stat].filter(Boolean).join(" (") + (item.stat ? ")" : "")
+                    out.push(
+                        para([
+                            t(label + ": ", { bold: true }),
+                            ...parseInlineRuns(item.effect || ""),
+                        ]),
+                    )
+                } else {
+                    out.push(namedItem(item))
+                }
             })
         }
     }
 
-    // Phases (numbered)
+    // Phases (numbered) — supports both { name, desc } and { title, description }
     if (c.phases?.length) {
         out.push(subHead("Phases"))
         c.phases.forEach((phase, i) => {
-            const text =
-                typeof phase === "string"
-                    ? phase
-                    : (phase.title ? phase.title + " — " : "") +
-                      (phase.description || "")
-            out.push(para([t(`${i + 1}. `, { bold: true }), t(text)]))
+            let text
+            if (typeof phase === "string") {
+                text = phase
+            } else {
+                const title = phase.name || phase.title || ""
+                const desc = phase.desc || phase.description || ""
+                text = title + (desc ? " — " + desc : "")
+            }
+            out.push(para([t(`${i + 1}. `, { bold: true }), ...parseInlineRuns(text)]))
+        })
+    }
+
+    // items — { label, value } quick-reference rows
+    if (c.items?.length) {
+        out.push(subHead("Quick Reference"))
+        c.items.forEach((item) => {
+            out.push(
+                para([
+                    t((item.label || "") + ": ", { bold: true }),
+                    ...parseInlineRuns(item.value || ""),
+                ]),
+            )
         })
     }
 
@@ -200,7 +319,7 @@ function renderContent(c) {
                         t((item.stat || item.name || "") + ": ", {
                             bold: true,
                         }),
-                        t(item.description || ""),
+                        ...parseInlineRuns(item.description || ""),
                     ]),
                 )
             }
