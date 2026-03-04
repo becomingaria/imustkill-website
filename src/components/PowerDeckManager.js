@@ -1258,11 +1258,15 @@ const PowerDeckManager = () => {
                                                 pl: card.chargedWith
                                                     ? "18px"
                                                     : 0,
+                                                transform: card.reversed
+                                                    ? "rotate(180deg)"
+                                                    : "none",
                                                 transition:
-                                                    "transform 0.25s, filter 0.25s",
+                                                    "transform 0.4s ease, filter 0.25s",
                                                 "&:hover": {
-                                                    transform:
-                                                        "translateY(-10px) scale(1.12)",
+                                                    transform: card.reversed
+                                                        ? "rotate(180deg) translateY(10px) scale(1.12)"
+                                                        : "translateY(-10px) scale(1.12)",
                                                     zIndex: 10,
                                                 },
                                             }}
@@ -1381,12 +1385,8 @@ const PowerDeckManager = () => {
                                                                     ? "0 6px 20px rgba(126,87,194,0.45)"
                                                                     : "0 6px 20px rgba(139,0,0,0.4)",
                                                             overflow: "hidden",
-                                                            transform:
-                                                                card.reversed
-                                                                    ? "rotate(180deg)"
-                                                                    : "none",
                                                             transition:
-                                                                "transform 0.4s ease, border-color 0.3s, box-shadow 0.3s",
+                                                                "border-color 0.3s, box-shadow 0.3s",
                                                         }}
                                                     >
                                                         {/* Card Art */}
