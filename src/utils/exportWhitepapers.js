@@ -73,12 +73,14 @@ const CATEGORY_TITLES = {
  */
 function parseInlineRuns(text, baseOpts = {}) {
     const str = String(text ?? "")
-    const parts = str.split(/(@[A-Za-z0-9][A-Za-z0-9 _-]*)/)
+    // Match @TokenName with an optional single trailing space so that
+    // "@PhysicalDamage " → bold "PhysicalDamage " while stopping at boundaries.
+    const parts = str.split(/(@[A-Za-z0-9_-]+ ?)/)
     return parts
         .filter((p) => p.length > 0)
         .map((p) => {
             if (p.startsWith("@")) {
-                // Strip the leading @ and render bold
+                // Strip the leading @ and render bold (trailing space preserved)
                 return new TextRun({
                     text: p.slice(1),
                     font: BODY_FONT,
@@ -172,9 +174,17 @@ function renderContent(c) {
         out.push(
             new Paragraph({
                 spacing: { before: 100, after: 60 },
-                indent: { left: convertInchesToTwip(0.25), right: convertInchesToTwip(0.25) },
+                indent: {
+                    left: convertInchesToTwip(0.25),
+                    right: convertInchesToTwip(0.25),
+                },
                 border: {
-                    left: { style: "single", size: 12, space: 8, color: "8B0000" },
+                    left: {
+                        style: "single",
+                        size: 12,
+                        space: 8,
+                        color: "8B0000",
+                    },
                 },
                 children: [t(c.coreRule, { bold: true, italics: true })],
             }),
@@ -185,7 +195,9 @@ function renderContent(c) {
             new Paragraph({
                 spacing: { after: 60 },
                 indent: { left: convertInchesToTwip(0.25) },
-                children: [t(c.coreRuleNote, { italics: true, color: COL_MUTED })],
+                children: [
+                    t(c.coreRuleNote, { italics: true, color: COL_MUTED }),
+                ],
             }),
         )
     }
@@ -201,7 +213,12 @@ function renderContent(c) {
 
     // quickStart hint
     if (c.quickStart) {
-        out.push(para([t("Quick Start: ", { bold: true }), t(c.quickStart, { italics: true })]))
+        out.push(
+            para([
+                t("Quick Start: ", { bold: true }),
+                t(c.quickStart, { italics: true }),
+            ]),
+        )
     }
 
     // Labeled fields
@@ -253,7 +270,12 @@ function renderContent(c) {
     if (c.turnOrder?.length) {
         out.push(subHead("Turn Order"))
         c.turnOrder.forEach((step, i) =>
-            out.push(para([t(`${i + 1}. `, { bold: true }), ...parseInlineRuns(step)])),
+            out.push(
+                para([
+                    t(`${i + 1}. `, { bold: true }),
+                    ...parseInlineRuns(step),
+                ]),
+            ),
         )
     }
 
@@ -267,7 +289,9 @@ function renderContent(c) {
                     out.push(bullet(item))
                 } else if (item.action != null) {
                     // Combat action row: Action — Stat — Effect
-                    const label = [item.action, item.stat].filter(Boolean).join(" (") + (item.stat ? ")" : "")
+                    const label =
+                        [item.action, item.stat].filter(Boolean).join(" (") +
+                        (item.stat ? ")" : "")
                     out.push(
                         para([
                             t(label + ": ", { bold: true }),
@@ -293,7 +317,12 @@ function renderContent(c) {
                 const desc = phase.desc || phase.description || ""
                 text = title + (desc ? " — " + desc : "")
             }
-            out.push(para([t(`${i + 1}. `, { bold: true }), ...parseInlineRuns(text)]))
+            out.push(
+                para([
+                    t(`${i + 1}. `, { bold: true }),
+                    ...parseInlineRuns(text),
+                ]),
+            )
         })
     }
 
