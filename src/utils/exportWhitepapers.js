@@ -449,7 +449,11 @@ function makeFooter() {
  *   The grouped rules object from GET /rules (or AdminRulesPanel state).
  * @param {string} version  e.g. "1.1"
  */
-export async function exportWhitepapers(grouped, version = CURRENT_VERSION, database = null) {
+export async function exportWhitepapers(
+    grouped,
+    version = CURRENT_VERSION,
+    database = null,
+) {
     const dateStr = new Date().toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
