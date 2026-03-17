@@ -106,8 +106,10 @@ function App() {
                         element={<DigitalCharacterSheet />}
                     />
                     <Route path='deck-builder' element={<DeckBuilder />} />
+                    <Route path='deck/:deckName' element={<DeckBuilder />} />
                     <Route path='style-guide' element={<StyleGuide />} />
                     <Route path='admin' element={<Admin />} />
+                    <Route path='admin/:deckName' element={<Admin />} />
                     <Route path='/' element={<HomePage />} />
                 </Route>
             </Routes>

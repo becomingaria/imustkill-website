@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from "react"
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 import {
     Box,
     Typography,
@@ -45,10 +46,13 @@ import {
     Menu as MenuIcon,
     ArrowUpward,
     ArrowDownward,
+    ChevronLeft,
+    ChevronRight,
     Visibility,
     VisibilityOff,
 } from "@mui/icons-material"
 import { getCardArtUrl, getDeckBackUrl } from "../utils/cardArtwork"
+import { motion, useAnimation } from "framer-motion"
 import { D10Icon } from "../components/icons"
 import {
     getNavConfig,
@@ -617,7 +621,18 @@ const MONSTER_DEFAULTS = {
     Insight: "",
 }
 
-function CardFormModal({ open, onClose, onSave, initialCard, deck }) {
+const MotionPaper = motion(Paper)
+
+function CardFormModal({
+    open,
+    onClose,
+    onSave,
+    initialCard,
+    deck,
+    navigateCard,
+    cards = [],
+    cardIndex = 0,
+}) {
     const isEdit = !!initialCard
     const cardType = deck?.cardType || "power"
     const [form, setForm] = useState(
@@ -627,6 +642,9 @@ function CardFormModal({ open, onClose, onSave, initialCard, deck }) {
     const [imagePreview, setImagePreview] = useState("")
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState("")
+    const [isFlipping, setIsFlipping] = useState(false)
+    const isFlippingRef = useRef(false)
+    const controls = useAnimation()
     const fileRef = useRef()
 
     useEffect(() => {
@@ -658,6 +676,54 @@ function CardFormModal({ open, onClose, onSave, initialCard, deck }) {
             }
         }
     }, [open, initialCard, isEdit, deck, cardType])
+
+    // Navigate between cards in the modal using arrow keys
+    const handleNavigate = useCallback(
+        async (dir) => {
+            if (isFlippingRef.current) return
+            setIsFlipping(true)
+            isFlippingRef.current = true
+
+            const target = dir === "next" ? 90 : -90
+            await controls.start({
+                rotateY: target,
+                transition: { duration: 0.22, ease: "easeInOut" },
+            })
+
+            navigateCard?.(dir)
+            // Wait for the parent to update the card
+            await new Promise((r) => setTimeout(r, 0))
+
+            // reset to the opposite side before animating back to front
+            await controls.set({ rotateY: -target })
+            await controls.start({
+                rotateY: 0,
+                transition: { duration: 0.22, ease: "easeInOut" },
+            })
+
+            setIsFlipping(false)
+            isFlippingRef.current = false
+        },
+        [controls, navigateCard],
+    )
+
+    // Navigate between cards in the modal using arrow keys
+    useEffect(() => {
+        if (!open || !navigateCard) return
+
+        const onKeyDown = (e) => {
+            if (e.key === "ArrowLeft") {
+                e.preventDefault()
+                handleNavigate("prev")
+            } else if (e.key === "ArrowRight") {
+                e.preventDefault()
+                handleNavigate("next")
+            }
+        }
+
+        window.addEventListener("keydown", onKeyDown)
+        return () => window.removeEventListener("keydown", onKeyDown)
+    }, [open, navigateCard, handleNavigate])
 
     const handleImageChange = (e) => {
         const file = e.target.files[0]
@@ -726,6 +792,20 @@ function CardFormModal({ open, onClose, onSave, initialCard, deck }) {
         onChange: (e) => setForm((p) => ({ ...p, [key]: e.target.value })),
     })
 
+    const prevCard = useMemo(() => {
+        if (!cards || cards.length === 0) return null
+        const idx = cardIndex % cards.length
+        const prevIdx = (idx - 1 + cards.length) % cards.length
+        return cards[prevIdx]
+    }, [cards, cardIndex])
+
+    const nextCard = useMemo(() => {
+        if (!cards || cards.length === 0) return null
+        const idx = cardIndex % cards.length
+        const nextIdx = (idx + 1) % cards.length
+        return cards[nextIdx]
+    }, [cards, cardIndex])
+
     return (
         <Modal
             open={open}
@@ -737,7 +817,7 @@ function CardFormModal({ open, onClose, onSave, initialCard, deck }) {
                 p: 1,
             }}
         >
-            <Paper
+            <MotionPaper
                 sx={{
                     width: { xs: "98%", sm: 640 },
                     maxHeight: "92vh",
@@ -745,338 +825,495 @@ function CardFormModal({ open, onClose, onSave, initialCard, deck }) {
                     flexDirection: "column",
                     borderRadius: "16px",
                     outline: "none",
+                    perspective: 1200,
+                    transformStyle: "preserve-3d",
+                    backfaceVisibility: "hidden",
+                    position: "relative",
+                    overflow: "hidden",
                 }}
             >
-                {/* Header */}
-                <Box
-                    sx={{
-                        p: 2.5,
-                        bgcolor: "#1a0a0a",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        flexShrink: 0,
-                    }}
-                >
-                    <Typography
+                {/* Left/Right nav buttons */}
+                {navigateCard && (
+                    <IconButton
+                        onClick={() => handleNavigate("prev")}
+                        disabled={isFlipping}
                         sx={{
-                            fontFamily: '"Cinzel", serif',
-                            fontWeight: "bold",
+                            position: "absolute",
+                            top: "50%",
+                            left: 8,
+                            transform: "translateY(-50%)",
+                            bgcolor: "rgba(0,0,0,0.4)",
+                            color: "#fff",
+                            zIndex: 2,
+                            "&:hover": { bgcolor: "rgba(0,0,0,0.55)" },
                         }}
                     >
-                        {isEdit
-                            ? `Edit: ${initialCard?.name}`
-                            : `New ${cardType === "power" ? "Power" : "Monster"} Card`}
-                    </Typography>
-                    <IconButton onClick={onClose} sx={{ color: "#fff" }}>
-                        <Close />
+                        <ChevronLeft />
                     </IconButton>
-                </Box>
+                )}
+                {navigateCard && (
+                    <IconButton
+                        onClick={() => handleNavigate("next")}
+                        disabled={isFlipping}
+                        sx={{
+                            position: "absolute",
+                            top: "50%",
+                            right: 8,
+                            transform: "translateY(-50%)",
+                            bgcolor: "rgba(0,0,0,0.4)",
+                            color: "#fff",
+                            zIndex: 2,
+                            "&:hover": { bgcolor: "rgba(0,0,0,0.55)" },
+                        }}
+                    >
+                        <ChevronRight />
+                    </IconButton>
+                )}
 
-                {/* Body */}
-                <Box
-                    sx={{
-                        p: 3,
-                        overflow: "auto",
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
+                <motion.div
+                    animate={controls}
+                    initial={{ rotateY: 0 }}
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                        position: "relative",
+                        transformStyle: "preserve-3d",
                     }}
                 >
-                    {error && (
-                        <Alert severity='error' onClose={() => setError("")}>
-                            {error}
-                        </Alert>
-                    )}
-
-                    {/* Image Upload */}
+                    {/* Side/back faces showing adjacent cards */}
                     <Box
                         sx={{
+                            position: "absolute",
+                            inset: 0,
+                            transform: "rotateY(-90deg) translateZ(320px)",
+                            backfaceVisibility: "hidden",
+                            pointerEvents: "none",
+                            overflow: "hidden",
+                        }}
+                    >
+                        <img
+                            src={getDeckBackUrl(deck?.deck)}
+                            alt='Previous card back'
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                filter: "brightness(0.7)",
+                            }}
+                        />
+                        {prevCard && (
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    bottom: 16,
+                                    left: 16,
+                                    right: 16,
+                                    p: 1,
+                                    borderRadius: 1,
+                                    bgcolor: "rgba(0,0,0,0.55)",
+                                }}
+                            >
+                                <Typography
+                                    variant='body2'
+                                    sx={{ color: "#fff", fontWeight: "bold" }}
+                                >
+                                    Previous: {prevCard.name}
+                                </Typography>
+                            </Box>
+                        )}
+                    </Box>
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            inset: 0,
+                            transform: "rotateY(90deg) translateZ(320px)",
+                            backfaceVisibility: "hidden",
+                            pointerEvents: "none",
+                            overflow: "hidden",
+                        }}
+                    >
+                        <img
+                            src={getDeckBackUrl(deck?.deck)}
+                            alt='Next card back'
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                filter: "brightness(0.7)",
+                            }}
+                        />
+                        {nextCard && (
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    bottom: 16,
+                                    left: 16,
+                                    right: 16,
+                                    p: 1,
+                                    borderRadius: 1,
+                                    bgcolor: "rgba(0,0,0,0.55)",
+                                }}
+                            >
+                                <Typography
+                                    variant='body2'
+                                    sx={{ color: "#fff", fontWeight: "bold" }}
+                                >
+                                    Next: {nextCard.name}
+                                </Typography>
+                            </Box>
+                        )}
+                    </Box>
+
+                    {/* Header */}
+                    <Box
+                        sx={{
+                            p: 2.5,
+                            bgcolor: "#1a0a0a",
+                            color: "#fff",
                             display: "flex",
-                            gap: 2,
-                            alignItems: "flex-start",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            flexShrink: 0,
                         }}
                     >
                         <Box
-                            onClick={() => fileRef.current?.click()}
                             sx={{
-                                width: 100,
-                                height: 150,
-                                borderRadius: "10px",
-                                border: "2px dashed",
-                                borderColor: "divider",
-                                cursor: "pointer",
-                                overflow: "hidden",
                                 display: "flex",
-                                flexDirection: "column",
                                 alignItems: "center",
-                                justifyContent: "center",
-                                bgcolor: "action.hover",
-                                flexShrink: 0,
-                                "&:hover": {
-                                    borderColor: "#8B0000",
-                                    bgcolor: "rgba(139,0,0,0.04)",
-                                },
-                                backgroundImage: imagePreview
-                                    ? `url(${imagePreview})`
-                                    : "none",
-                                backgroundSize: "cover",
-                                backgroundPosition: "center",
+                                gap: 1,
                             }}
                         >
-                            {!imagePreview && (
-                                <>
-                                    <CloudUpload
-                                        sx={{ fontSize: 28, opacity: 0.4 }}
-                                    />
-                                    <Typography
-                                        sx={{
-                                            fontSize: "0.65rem",
-                                            opacity: 0.5,
-                                            mt: 0.5,
-                                        }}
-                                    >
-                                        Upload Art
-                                    </Typography>
-                                </>
-                            )}
+                            <Typography
+                                sx={{
+                                    fontFamily: '"Cinzel", serif',
+                                    fontWeight: "bold",
+                                }}
+                            >
+                                {isEdit
+                                    ? `Edit: ${initialCard?.name}`
+                                    : `New ${cardType === "power" ? "Power" : "Monster"} Card`}
+                            </Typography>
                         </Box>
-                        <Box sx={{ flex: 1 }}>
-                            <input
-                                ref={fileRef}
-                                type='file'
-                                accept='image/*'
-                                style={{ display: "none" }}
-                                onChange={handleImageChange}
-                            />
-                            <TextField
-                                {...f("name")}
-                                label='Card Name'
-                                fullWidth
-                                required
-                                sx={{ mb: 1.5 }}
-                            />
-                            {cardType === "power" && (
-                                <FormControl fullWidth size='small'>
-                                    <InputLabel>Rarity</InputLabel>
-                                    <Select
-                                        value={form.rarity || "common"}
-                                        label='Rarity'
-                                        onChange={(e) =>
-                                            setForm((p) => ({
-                                                ...p,
-                                                rarity: e.target.value,
-                                            }))
-                                        }
-                                    >
-                                        {POWER_RARITIES.map((r) => (
-                                            <MenuItem key={r} value={r}>
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 1,
-                                                    }}
-                                                >
-                                                    <Box
-                                                        sx={{
-                                                            width: 10,
-                                                            height: 10,
-                                                            borderRadius: "50%",
-                                                            bgcolor:
-                                                                RARITY_COLORS[
-                                                                    r
-                                                                ],
-                                                        }}
-                                                    />
-                                                    {r.charAt(0).toUpperCase() +
-                                                        r.slice(1)}
-                                                </Box>
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            )}
-                        </Box>
+                        <IconButton onClick={onClose} sx={{ color: "#fff" }}>
+                            <Close />
+                        </IconButton>
                     </Box>
 
-                    {/* Power Card Fields */}
-                    {cardType === "power" && (
-                        <>
-                            <TextField
-                                {...f("description")}
-                                label='Description'
-                                fullWidth
-                                multiline
-                                rows={3}
-                            />
-                        </>
-                    )}
-
-                    {/* Monster Card Fields */}
-                    {cardType === "monster" && (
-                        <>
-                            <TextField
-                                {...f("Description")}
-                                label='Description / Flavour'
-                                fullWidth
-                                multiline
-                                rows={2}
-                            />
-                            <TextField
-                                {...f("Guise")}
-                                label='Guise (NPC appearance)'
-                                fullWidth
-                            />
-                            <Divider>
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.7rem",
-                                        opacity: 0.5,
-                                        fontFamily: '"Cinzel", serif',
-                                    }}
-                                >
-                                    COMBAT
-                                </Typography>
-                            </Divider>
-                            <Grid container spacing={1.5}>
-                                <Grid item xs={6}>
-                                    <TextField
-                                        {...f("Attack")}
-                                        label='Attack'
-                                        fullWidth
-                                        size='small'
-                                    />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField
-                                        {...f("Damage")}
-                                        label='Damage'
-                                        fullWidth
-                                        size='small'
-                                    />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField
-                                        {...f("Hit Points Multiplier")}
-                                        label='HP Multiplier'
-                                        fullWidth
-                                        size='small'
-                                    />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField
-                                        {...f("Bloodied")}
-                                        label='Bloodied'
-                                        fullWidth
-                                        size='small'
-                                    />
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <TextField
-                                        {...f("Crit")}
-                                        label='Crit Effect'
-                                        fullWidth
-                                        size='small'
-                                    />
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <TextField
-                                        {...f("Buffs")}
-                                        label='Buffs / Special Abilities'
-                                        fullWidth
-                                        size='small'
-                                    />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField
-                                        {...f("Immunities")}
-                                        label='Immunities'
-                                        fullWidth
-                                        size='small'
-                                    />
-                                </Grid>
-                                <Grid item xs={6}>
-                                    <TextField
-                                        {...f("Special Weaknesses")}
-                                        label='Weaknesses (comma-sep)'
-                                        fullWidth
-                                        size='small'
-                                    />
-                                </Grid>
-                            </Grid>
-                            <Divider>
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.7rem",
-                                        opacity: 0.5,
-                                        fontFamily: '"Cinzel", serif',
-                                    }}
-                                >
-                                    STATS
-                                </Typography>
-                            </Divider>
-                            <Grid container spacing={1.5}>
-                                {[
-                                    "Body",
-                                    "Agility",
-                                    "Focus",
-                                    "Fate",
-                                    "Insight",
-                                ].map((stat) => (
-                                    <Grid item xs={4} sm={2.4} key={stat}>
-                                        <TextField
-                                            {...f(stat)}
-                                            label={stat}
-                                            fullWidth
-                                            size='small'
-                                            type='number'
-                                            inputProps={{ min: 0, max: 20 }}
-                                        />
-                                    </Grid>
-                                ))}
-                            </Grid>
-                        </>
-                    )}
-                </Box>
-
-                {/* Footer */}
-                <Box
-                    sx={{
-                        p: 2,
-                        borderTop: "1px solid",
-                        borderColor: "divider",
-                        display: "flex",
-                        gap: 1,
-                        justifyContent: "flex-end",
-                        flexShrink: 0,
-                    }}
-                >
-                    <Button onClick={onClose} disabled={saving}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant='contained'
-                        onClick={handleSave}
-                        disabled={saving}
-                        startIcon={
-                            saving ? <CircularProgress size={14} /> : <Save />
-                        }
+                    {/* Body */}
+                    <Box
                         sx={{
-                            bgcolor: "#8B0000",
-                            "&:hover": { bgcolor: "#a00" },
-                            fontFamily: '"Cinzel", serif',
-                            textTransform: "none",
+                            p: 3,
+                            overflow: "auto",
+                            flex: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
                         }}
                     >
-                        {saving
-                            ? "Saving…"
-                            : `Save ${cardType === "power" ? "Power" : "Monster"}`}
-                    </Button>
-                </Box>
-            </Paper>
+                        {error && (
+                            <Alert
+                                severity='error'
+                                onClose={() => setError("")}
+                            >
+                                {error}
+                            </Alert>
+                        )}
+
+                        {/* Image Upload */}
+                        <Box
+                            sx={{
+                                display: "flex",
+                                gap: 2,
+                                alignItems: "flex-start",
+                            }}
+                        >
+                            <Box
+                                onClick={() => fileRef.current?.click()}
+                                sx={{
+                                    width: 100,
+                                    height: 150,
+                                    borderRadius: "10px",
+                                    border: "2px dashed",
+                                    borderColor: "divider",
+                                    cursor: "pointer",
+                                    overflow: "hidden",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    bgcolor: "action.hover",
+                                    flexShrink: 0,
+                                    "&:hover": {
+                                        borderColor: "#8B0000",
+                                        bgcolor: "rgba(139,0,0,0.04)",
+                                    },
+                                    backgroundImage: imagePreview
+                                        ? `url(${imagePreview})`
+                                        : "none",
+                                    backgroundSize: "cover",
+                                    backgroundPosition: "center",
+                                }}
+                            >
+                                {!imagePreview && (
+                                    <>
+                                        <CloudUpload
+                                            sx={{ fontSize: 28, opacity: 0.4 }}
+                                        />
+                                        <Typography
+                                            sx={{
+                                                fontSize: "0.65rem",
+                                                opacity: 0.5,
+                                                mt: 0.5,
+                                            }}
+                                        >
+                                            Upload Art
+                                        </Typography>
+                                    </>
+                                )}
+                            </Box>
+                            <Box sx={{ flex: 1 }}>
+                                <input
+                                    ref={fileRef}
+                                    type='file'
+                                    accept='image/*'
+                                    style={{ display: "none" }}
+                                    onChange={handleImageChange}
+                                />
+                                <TextField
+                                    {...f("name")}
+                                    label='Card Name'
+                                    fullWidth
+                                    required
+                                    sx={{ mb: 1.5 }}
+                                />
+                                {cardType === "power" && (
+                                    <FormControl fullWidth size='small'>
+                                        <InputLabel>Rarity</InputLabel>
+                                        <Select
+                                            value={form.rarity || "common"}
+                                            label='Rarity'
+                                            onChange={(e) =>
+                                                setForm((p) => ({
+                                                    ...p,
+                                                    rarity: e.target.value,
+                                                }))
+                                            }
+                                        >
+                                            {POWER_RARITIES.map((r) => (
+                                                <MenuItem key={r} value={r}>
+                                                    <Box
+                                                        sx={{
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: 1,
+                                                        }}
+                                                    >
+                                                        <Box
+                                                            sx={{
+                                                                width: 10,
+                                                                height: 10,
+                                                                borderRadius:
+                                                                    "50%",
+                                                                bgcolor:
+                                                                    RARITY_COLORS[
+                                                                        r
+                                                                    ],
+                                                            }}
+                                                        />
+                                                        {r
+                                                            .charAt(0)
+                                                            .toUpperCase() +
+                                                            r.slice(1)}
+                                                    </Box>
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                )}
+                            </Box>
+                        </Box>
+
+                        {/* Power Card Fields */}
+                        {cardType === "power" && (
+                            <>
+                                <TextField
+                                    {...f("description")}
+                                    label='Description'
+                                    fullWidth
+                                    multiline
+                                    rows={3}
+                                />
+                            </>
+                        )}
+
+                        {/* Monster Card Fields */}
+                        {cardType === "monster" && (
+                            <>
+                                <TextField
+                                    {...f("Description")}
+                                    label='Description / Flavour'
+                                    fullWidth
+                                    multiline
+                                    rows={2}
+                                />
+                                <TextField
+                                    {...f("Guise")}
+                                    label='Guise (NPC appearance)'
+                                    fullWidth
+                                />
+                                <Divider>
+                                    <Typography
+                                        sx={{
+                                            fontSize: "0.7rem",
+                                            opacity: 0.5,
+                                            fontFamily: '"Cinzel", serif',
+                                        }}
+                                    >
+                                        COMBAT
+                                    </Typography>
+                                </Divider>
+                                <Grid container spacing={1.5}>
+                                    <Grid item xs={6}>
+                                        <TextField
+                                            {...f("Attack")}
+                                            label='Attack'
+                                            fullWidth
+                                            size='small'
+                                        />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <TextField
+                                            {...f("Damage")}
+                                            label='Damage'
+                                            fullWidth
+                                            size='small'
+                                        />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <TextField
+                                            {...f("Hit Points Multiplier")}
+                                            label='HP Multiplier'
+                                            fullWidth
+                                            size='small'
+                                        />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <TextField
+                                            {...f("Bloodied")}
+                                            label='Bloodied'
+                                            fullWidth
+                                            size='small'
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <TextField
+                                            {...f("Crit")}
+                                            label='Crit Effect'
+                                            fullWidth
+                                            size='small'
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <TextField
+                                            {...f("Buffs")}
+                                            label='Buffs / Special Abilities'
+                                            fullWidth
+                                            size='small'
+                                        />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <TextField
+                                            {...f("Immunities")}
+                                            label='Immunities'
+                                            fullWidth
+                                            size='small'
+                                        />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <TextField
+                                            {...f("Special Weaknesses")}
+                                            label='Weaknesses (comma-sep)'
+                                            fullWidth
+                                            size='small'
+                                        />
+                                    </Grid>
+                                </Grid>
+                                <Divider>
+                                    <Typography
+                                        sx={{
+                                            fontSize: "0.7rem",
+                                            opacity: 0.5,
+                                            fontFamily: '"Cinzel", serif',
+                                        }}
+                                    >
+                                        STATS
+                                    </Typography>
+                                </Divider>
+                                <Grid container spacing={1.5}>
+                                    {[
+                                        "Body",
+                                        "Agility",
+                                        "Focus",
+                                        "Fate",
+                                        "Insight",
+                                    ].map((stat) => (
+                                        <Grid item xs={4} sm={2.4} key={stat}>
+                                            <TextField
+                                                {...f(stat)}
+                                                label={stat}
+                                                fullWidth
+                                                size='small'
+                                                type='number'
+                                                inputProps={{ min: 0, max: 20 }}
+                                            />
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </>
+                        )}
+                    </Box>
+
+                    {/* Footer */}
+                    <Box
+                        sx={{
+                            p: 2,
+                            borderTop: "1px solid",
+                            borderColor: "divider",
+                            display: "flex",
+                            gap: 1,
+                            justifyContent: "flex-end",
+                            flexShrink: 0,
+                        }}
+                    >
+                        <Button onClick={onClose} disabled={saving}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant='contained'
+                            onClick={handleSave}
+                            disabled={saving}
+                            startIcon={
+                                saving ? (
+                                    <CircularProgress size={14} />
+                                ) : (
+                                    <Save />
+                                )
+                            }
+                            sx={{
+                                bgcolor: "#8B0000",
+                                "&:hover": { bgcolor: "#a00" },
+                                fontFamily: '"Cinzel", serif',
+                                textTransform: "none",
+                            }}
+                        >
+                            {saving
+                                ? "Saving…"
+                                : `Save ${cardType === "power" ? "Power" : "Monster"}`}
+                        </Button>
+                    </Box>
+                </motion.div>
+            </MotionPaper>
         </Modal>
     )
 }
@@ -1178,6 +1415,7 @@ function CsvImportModal({ open, onClose, onImport, deck }) {
     const [importing, setImporting] = useState(false)
     const [importResult, setImportResult] = useState(null)
     const [fileName, setFileName] = useState("")
+    const [pasteCsv, setPasteCsv] = useState("")
     const fileRef = useRef()
 
     useEffect(() => {
@@ -1199,27 +1437,32 @@ function CsvImportModal({ open, onClose, onImport, deck }) {
         setImportResult(null)
         const reader = new FileReader()
         reader.onload = (ev) => {
-            try {
-                const { headers, rows } = parseCsv(ev.target.result)
-                // Warn about unrecognised columns but don't block
-                const unknown = headers.filter(
-                    (h) =>
-                        !expectedCols.includes(h) &&
-                        h !== "deck" &&
-                        h !== "type",
-                )
-                if (!headers.includes("name"))
-                    throw new Error('CSV must have a "name" column.')
-                if (unknown.length)
-                    setParseError(
-                        `Note: unknown columns will be ignored: ${unknown.join(", ")}`,
-                    )
-                setParsedRows(rows)
-            } catch (err) {
-                setParseError(err.message)
-            }
+            parseCsvText(ev.target.result)
         }
         reader.readAsText(file)
+    }
+
+    const parseCsvText = (text) => {
+        setParseError("")
+        setParsedRows([])
+        setImportResult(null)
+        try {
+            const { headers, rows } = parseCsv(text)
+            // Warn about unrecognised columns but don't block
+            const unknown = headers.filter(
+                (h) =>
+                    !expectedCols.includes(h) && h !== "deck" && h !== "type",
+            )
+            if (!headers.includes("name"))
+                throw new Error('CSV must have a "name" column.')
+            if (unknown.length)
+                setParseError(
+                    `Note: unknown columns will be ignored: ${unknown.join(", ")}`,
+                )
+            setParsedRows(rows)
+        } catch (err) {
+            setParseError(err.message)
+        }
     }
 
     const handleImport = async () => {
@@ -1238,6 +1481,7 @@ function CsvImportModal({ open, onClose, onImport, deck }) {
             setImportResult(result)
             setParsedRows([])
             setFileName("")
+            setPasteCsv("")
         } catch (err) {
             setParseError(err.message)
         } finally {
@@ -1405,6 +1649,37 @@ function CsvImportModal({ open, onClose, onImport, deck }) {
                                 </Typography>
                             </>
                         )}
+                    </Box>
+
+                    {/* Paste CSV text */}
+                    <Box>
+                        <Typography
+                            sx={{
+                                fontSize: "0.75rem",
+                                opacity: 0.6,
+                                mb: 1,
+                            }}
+                        >
+                            Or paste CSV text below and click “Parse”.
+                        </Typography>
+                        <TextField
+                            multiline
+                            minRows={4}
+                            maxRows={10}
+                            fullWidth
+                            placeholder='name,rarity,description\nFireball,Rare,Launch a fireball...'
+                            value={pasteCsv}
+                            onChange={(e) => setPasteCsv(e.target.value)}
+                        />
+                        <Button
+                            size='small'
+                            variant='contained'
+                            color='primary'
+                            sx={{ mt: 1 }}
+                            onClick={() => parseCsvText(pasteCsv)}
+                        >
+                            Parse pasted CSV
+                        </Button>
                     </Box>
 
                     {parseError && (
@@ -2707,11 +2982,15 @@ function AdminNavPanel() {
 function AdminDashboard({ email, onLogout }) {
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+    const navigate = useNavigate()
+    const { deckName: urlDeckName } = useParams()
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [activeView, setActiveView] = useState("cards")
     const [decks, setDecks] = useState([])
     const [selectedDeck, setSelectedDeck] = useState(null)
     const [cards, setCards] = useState([])
+    const [cardSearch, setCardSearch] = useState("")
+    const [cardSort, setCardSort] = useState("name")
     const [artCacheBust, setArtCacheBust] = useState(null)
     const [loading, setLoading] = useState({
         decks: true,
@@ -2722,7 +3001,11 @@ function AdminDashboard({ email, onLogout }) {
 
     // Modal state
     const [deckModal, setDeckModal] = useState({ open: false, deck: null })
-    const [cardModal, setCardModal] = useState({ open: false, card: null })
+    const [cardModal, setCardModal] = useState({
+        open: false,
+        card: null,
+        index: null,
+    })
     const [csvImportOpen, setCsvImportOpen] = useState(false)
     const [deleteModal, setDeleteModal] = useState({
         open: false,
@@ -2755,7 +3038,7 @@ function AdminDashboard({ email, onLogout }) {
             const deckCards = (data.cards || []).filter(
                 (c) => c.name !== "__meta__",
             )
-            setCards(deckCards.sort((a, b) => a.name.localeCompare(b.name)))
+            setCards(deckCards)
         } catch (e) {
             setError("Failed to load cards: " + e.message)
         } finally {
@@ -2769,6 +3052,16 @@ function AdminDashboard({ email, onLogout }) {
     useEffect(() => {
         if (selectedDeck) loadCards(selectedDeck)
     }, [selectedDeck, loadCards])
+
+    // Auto-select deck from URL param once decks are loaded
+    useEffect(() => {
+        if (urlDeckName && decks.length > 0 && !selectedDeck) {
+            const match = decks.find(
+                (d) => d.deck === decodeURIComponent(urlDeckName),
+            )
+            if (match) setSelectedDeck(match)
+        }
+    }, [urlDeckName, decks, selectedDeck])
 
     // ── Deck CRUD ─────────────────────────────────────────────────────────────
     const saveDeck = async (data) => {
@@ -2796,6 +3089,7 @@ function AdminDashboard({ email, onLogout }) {
             if (selectedDeck?.deck === deleteModal.target.deck) {
                 setSelectedDeck(null)
                 setCards([])
+                navigate("/admin")
             }
             await loadDecks()
         } catch (e) {
@@ -2848,6 +3142,45 @@ function AdminDashboard({ email, onLogout }) {
     const powerDecks = decks.filter((d) => d.cardType === "power")
     const monsterDecks = decks.filter((d) => d.cardType === "monster")
 
+    const displayedCards = useMemo(() => {
+        const q = cardSearch.trim().toLowerCase()
+        const filtered = cards.filter((c) => {
+            if (!q) return true
+            const name = String(c.name || "").toLowerCase()
+            const rarity = String(c.rarity || "").toLowerCase()
+            const desc = String(c.description || "").toLowerCase()
+            return name.includes(q) || rarity.includes(q) || desc.includes(q)
+        })
+
+        const order = { common: 1, uncommon: 2, rare: 3, mythic: 4 }
+
+        if (cardSort === "rarityAsc") {
+            return [...filtered].sort((a, b) => {
+                const aRarity = String(a.rarity || "").toLowerCase()
+                const bRarity = String(b.rarity || "").toLowerCase()
+                const aVal = order[aRarity] ?? 999
+                const bVal = order[bRarity] ?? 999
+                if (aVal !== bVal) return aVal - bVal
+                return String(a.name || "").localeCompare(String(b.name || ""))
+            })
+        }
+
+        if (cardSort === "rarityDesc") {
+            return [...filtered].sort((a, b) => {
+                const aRarity = String(a.rarity || "").toLowerCase()
+                const bRarity = String(b.rarity || "").toLowerCase()
+                const aVal = order[aRarity] ?? 999
+                const bVal = order[bRarity] ?? 999
+                if (aVal !== bVal) return bVal - aVal
+                return String(a.name || "").localeCompare(String(b.name || ""))
+            })
+        }
+
+        return [...filtered].sort((a, b) =>
+            String(a.name || "").localeCompare(String(b.name || "")),
+        )
+    }, [cards, cardSearch, cardSort])
+
     // ── Reusable sidebar content (used in both desktop sidebar and mobile Drawer) ──
     const renderSidebarBody = (onDeckSelect = () => {}) =>
         loading.decks ? (
@@ -2863,6 +3196,7 @@ function AdminDashboard({ email, onLogout }) {
                             v === "rules" ? "cards" : "rules",
                         )
                         setSelectedDeck(null)
+                        navigate("/admin")
                         onDeckSelect()
                     }}
                     sx={{
@@ -2971,6 +3305,9 @@ function AdminDashboard({ email, onLogout }) {
                             selected={selectedDeck?.deck === deck.deck}
                             onClick={() => {
                                 setSelectedDeck(deck)
+                                navigate(
+                                    "/admin/" + encodeURIComponent(deck.deck),
+                                )
                                 onDeckSelect()
                             }}
                             onEdit={() => setDeckModal({ open: true, deck })}
@@ -3040,6 +3377,9 @@ function AdminDashboard({ email, onLogout }) {
                             selected={selectedDeck?.deck === deck.deck}
                             onClick={() => {
                                 setSelectedDeck(deck)
+                                navigate(
+                                    "/admin/" + encodeURIComponent(deck.deck),
+                                )
                                 onDeckSelect()
                             }}
                             onEdit={() => setDeckModal({ open: true, deck })}
@@ -3515,6 +3855,53 @@ function AdminDashboard({ email, onLogout }) {
                                             >
                                                 Delete Deck
                                             </Button>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 2,
+                                                    flexWrap: "wrap",
+                                                }}
+                                            >
+                                                <TextField
+                                                    size='small'
+                                                    value={cardSearch}
+                                                    onChange={(e) =>
+                                                        setCardSearch(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder='Search cards…'
+                                                    sx={{ minWidth: 220 }}
+                                                />
+                                                <FormControl
+                                                    size='small'
+                                                    sx={{ minWidth: 180 }}
+                                                >
+                                                    <InputLabel>
+                                                        Sort by
+                                                    </InputLabel>
+                                                    <Select
+                                                        value={cardSort}
+                                                        label='Sort by'
+                                                        onChange={(e) =>
+                                                            setCardSort(
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                    >
+                                                        <MenuItem value='name'>
+                                                            Name (A–Z)
+                                                        </MenuItem>
+                                                        <MenuItem value='rarityAsc'>
+                                                            Rarity (Low → High)
+                                                        </MenuItem>
+                                                        <MenuItem value='rarityDesc'>
+                                                            Rarity (High → Low)
+                                                        </MenuItem>
+                                                    </Select>
+                                                </FormControl>
+                                            </Box>
                                             <Button
                                                 variant='contained'
                                                 size='small'
@@ -3554,7 +3941,7 @@ function AdminDashboard({ email, onLogout }) {
                                 >
                                     <CircularProgress />
                                 </Box>
-                            ) : cards.length === 0 ? (
+                            ) : displayedCards.length === 0 ? (
                                 <Box
                                     sx={{
                                         display: "flex",
@@ -3582,8 +3969,7 @@ function AdminDashboard({ email, onLogout }) {
                                             fontFamily: '"Cinzel", serif',
                                         }}
                                     >
-                                        No cards yet — click to add the first
-                                        one
+                                        No cards match your filter
                                     </Typography>
                                 </Box>
                             ) : (
@@ -3595,19 +3981,28 @@ function AdminDashboard({ email, onLogout }) {
                                         alignItems: "flex-start",
                                     }}
                                 >
-                                    {cards.map((card) => (
+                                    {displayedCards.map((card) => (
                                         <AdminCard
                                             key={`${card.deck}/${card.name}`}
                                             card={card}
                                             deckId={selectedDeck.deck}
                                             deckType={selectedDeck.cardType}
                                             artCacheBust={artCacheBust}
-                                            onEdit={() =>
+                                            onEdit={() => {
+                                                const idx =
+                                                    displayedCards.findIndex(
+                                                        (c) =>
+                                                            c.deck ===
+                                                                card.deck &&
+                                                            c.name ===
+                                                                card.name,
+                                                    )
                                                 setCardModal({
                                                     open: true,
                                                     card,
+                                                    index: idx >= 0 ? idx : 0,
                                                 })
-                                            }
+                                            }}
                                             onDelete={() =>
                                                 setDeleteModal({
                                                     open: true,
@@ -3633,10 +4028,29 @@ function AdminDashboard({ email, onLogout }) {
             />
             <CardFormModal
                 open={cardModal.open}
-                onClose={() => setCardModal({ open: false, card: null })}
+                onClose={() =>
+                    setCardModal({ open: false, card: null, index: null })
+                }
                 onSave={saveCard}
                 initialCard={cardModal.card}
                 deck={selectedDeck}
+                cards={displayedCards}
+                cardIndex={cardModal.index ?? 0}
+                navigateCard={(dir) => {
+                    if (!displayedCards.length) return
+                    const len = displayedCards.length
+                    const current = cardModal.index ?? 0
+                    const nextIndex =
+                        dir === "next"
+                            ? (current + 1) % len
+                            : (current - 1 + len) % len
+                    const nextCard = displayedCards[nextIndex]
+                    setCardModal({
+                        open: true,
+                        card: nextCard,
+                        index: nextIndex,
+                    })
+                }}
             />
             <CsvImportModal
                 open={csvImportOpen}
@@ -3753,6 +4167,7 @@ function AdminCard({ card, deckId, deckType, onEdit, onDelete, artCacheBust }) {
             <Paper
                 className='card-paper'
                 elevation={3}
+                onClick={onEdit}
                 sx={{
                     width: 130,
                     height: 195,
@@ -3766,6 +4181,7 @@ function AdminCard({ card, deckId, deckType, onEdit, onDelete, artCacheBust }) {
                     flexDirection: "column",
                     transition: "transform 0.2s, box-shadow 0.2s",
                     position: "relative",
+                    cursor: "pointer",
                 }}
             >
                 {/* Art */}
@@ -3808,7 +4224,10 @@ function AdminCard({ card, deckId, deckType, onEdit, onDelete, artCacheBust }) {
                         <Tooltip title='Edit'>
                             <IconButton
                                 size='small'
-                                onClick={onEdit}
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    onEdit()
+                                }}
                                 sx={{
                                     bgcolor: "rgba(255,255,255,0.15)",
                                     color: "#fff",
@@ -3821,7 +4240,10 @@ function AdminCard({ card, deckId, deckType, onEdit, onDelete, artCacheBust }) {
                         <Tooltip title='Delete'>
                             <IconButton
                                 size='small'
-                                onClick={onDelete}
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    onDelete()
+                                }}
                                 sx={{
                                     bgcolor: "rgba(255,255,255,0.15)",
                                     color: "#fff",
