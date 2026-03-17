@@ -15,9 +15,12 @@
 
 const BASE = (process.env.REACT_APP_RULES_API_URL || "").replace(/\/+$/, "")
 
-// Returns true if the API is configured
+// Cached flag — if the API ever returns an error, stop making further requests.
+let apiAlive = true
+
+// Returns true if the API is configured and still responding.
 export function rulesApiEnabled() {
-    return Boolean(BASE)
+    return Boolean(BASE) && apiAlive
 }
 
 // ── Internal fetch ────────────────────────────────────────────────────────────
@@ -31,7 +34,13 @@ async function rulesFetch(path, method = "GET", body, idToken) {
         body: body !== undefined ? JSON.stringify(body) : undefined,
     })
     const json = await res.json()
-    if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
+    if (!res.ok) {
+        // If the API is down/missing routes, stop trying.
+        apiAlive = false
+        throw new Error(json.error || `HTTP ${res.status}`)
+    }
+    // Success — keep API alive.
+    apiAlive = true
     return json
 }
 
