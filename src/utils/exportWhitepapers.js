@@ -649,7 +649,7 @@ export async function exportWhitepapers(
                 pageBreakBefore: !firstChapter,
                 spacing: { before: firstChapter ? 0 : 80, after: 160 },
                 children: [
-                    th((CATEGORY_TITLES[catKey] || catKey).toUpperCase(), {
+                    th(getCategoryTitle(catKey, db).toUpperCase(), {
                         size: SZ_CHAPTER,
                         bold: true,
                         color: COL_DARK,
