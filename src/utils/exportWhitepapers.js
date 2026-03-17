@@ -89,7 +89,8 @@ const getCategoryOrder = (grouped, database) => {
 const getCategoryTitle = (categoryKey, database) => {
     const titleFromDb = database?.categories?.[categoryKey]?.title
     if (titleFromDb) return titleFromDb
-    if (DEFAULT_CATEGORY_TITLES[categoryKey]) return DEFAULT_CATEGORY_TITLES[categoryKey]
+    if (DEFAULT_CATEGORY_TITLES[categoryKey])
+        return DEFAULT_CATEGORY_TITLES[categoryKey]
     return categoryKey
         .split("-")
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -268,6 +269,40 @@ function renderContent(c) {
     if (c.benefits?.length) {
         out.push(subHead("Benefits"))
         c.benefits.forEach((b) => out.push(bullet(String(b))))
+    }
+
+    // Charge (for powers)
+    if (c.charge) {
+        out.push(labeledPara("Charge", c.charge))
+    }
+
+    // Power rarities (for powers)
+    if (Array.isArray(c.rarities) && c.rarities.length) {
+        out.push(subHead("Rarities"))
+        c.rarities.forEach((rarity) => {
+            const title = rarity.name || rarity.title || ""
+            const desc = rarity.description || ""
+            // Main rarity line
+            out.push(
+                para([
+                    t(title + (desc ? " — " : ""), { bold: true }),
+                    ...parseInlineRuns(desc),
+                ]),
+            )
+
+            const metaParts = []
+            if (rarity.targets) metaParts.push(`Targets: ${rarity.targets}`)
+            if (rarity.range) metaParts.push(`Range: ${rarity.range}`)
+            if (rarity.duration) metaParts.push(`Duration: ${rarity.duration}`)
+            if (rarity.charge_required != null)
+                metaParts.push(
+                    `Charge required: ${rarity.charge_required ? "Yes" : "No"}`,
+                )
+
+            if (metaParts.length) {
+                out.push(para(metaParts.join(" • ")))
+            }
+        })
     }
 
     // Rules
@@ -584,18 +619,19 @@ export async function exportWhitepapers(
         }),
 
         // TOC list
-        ...categoryOrder.map((k, i) =>
-            new Paragraph({
-                spacing: { after: 80 },
-                indent: { left: convertInchesToTwip(0.5) },
-                children: [
-                    th(`${i + 1}.  `, {
-                        size: SZ_BODY + 2,
-                        color: "8B0000",
-                    }),
-                    t(getCategoryTitle(k, db), { size: SZ_BODY + 2 }),
-                ],
-            }),
+        ...categoryOrder.map(
+            (k, i) =>
+                new Paragraph({
+                    spacing: { after: 80 },
+                    indent: { left: convertInchesToTwip(0.5) },
+                    children: [
+                        th(`${i + 1}.  `, {
+                            size: SZ_BODY + 2,
+                            color: "8B0000",
+                        }),
+                        t(getCategoryTitle(k, db), { size: SZ_BODY + 2 }),
+                    ],
+                }),
         ),
     ]
 
