@@ -52,6 +52,7 @@ const CATEGORY_ORDER = [
     "progression",
     "equipment",
     "combat-mechanics",
+    "spellcasting",
     "death-and-resting",
     "running-the-game",
 ]
@@ -62,6 +63,7 @@ const CATEGORY_TITLES = {
     progression: "Progression",
     equipment: "Equipment",
     "combat-mechanics": "Combat Mechanics",
+    spellcasting: "Powers",
     "death-and-resting": "Death & Resting",
     "running-the-game": "Running the Game",
 }
