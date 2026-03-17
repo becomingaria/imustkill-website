@@ -334,7 +334,7 @@
             },
             "@Power": {
                 "title": "Power",
-                "category": "casting",
+                "category": "spellcasting",
                 "section": "casting-powers",
                 "description": "A magical card drawn from a hunter's Power deck",
                 "definition": "A magical card drawn from a hunter's Power deck and held in hand until played. Powers range in rarity from Common to Mythic and produce supernatural effects when played in or out of combat."
