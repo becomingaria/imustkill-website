@@ -149,16 +149,34 @@ const EnhancedKeywordLinker = ({
             return text
         }
 
-        // First handle reference IDs (like @Body, @Focus, or multi-word @Grit Teeth)
-        const processedText = text.replace(/@([A-Za-z0-9][A-Za-z0-9\s-]*)/g, (match, refId) => {
-            const trimmedRefId = refId.trim()
-            const fullRefId = `@${trimmedRefId}`
-            const mapping = enhancedKeywordMappings.get(fullRefId.toLowerCase())
-            if (mapping) {
-                return `<REFERENCE_LINK>${fullRefId}</REFERENCE_LINK>`
-            }
-            return match
-        })
+        // First handle reference IDs (like @Body, @Focus, @Insight, or multi-word @Grit Teeth)
+        // We attempt to match the longest valid reference first, then fall back to shorter matches when the text continues.
+        const processedText = text.replace(
+            /@([A-Za-z0-9][A-Za-z0-9\s-]*)/g,
+            (match, refId) => {
+                const trimmedRefId = refId.trim()
+
+                // Try to find the longest matching reference (e.g. @Physical Damage) but still allow
+                // references to be followed by additional text (e.g. "@Insight rerolls").
+                let candidate = trimmedRefId
+                while (candidate) {
+                    const fullRefId = `@${candidate}`
+                    const mapping = enhancedKeywordMappings.get(
+                        fullRefId.toLowerCase(),
+                    )
+                    if (mapping) {
+                        // Preserve any following text from the original match.
+                        const remainder = trimmedRefId.slice(candidate.length)
+                        return `<REFERENCE_LINK>${fullRefId}</REFERENCE_LINK>${remainder}`
+                    }
+                    const lastSpace = candidate.lastIndexOf(" ")
+                    if (lastSpace === -1) break
+                    candidate = candidate.slice(0, lastSpace)
+                }
+
+                return match
+            },
+        )
 
         // Handle ***bold italic***, **bold**, and *italic* markdown (replace with special tags)
         let mdProcessed = processedText
