@@ -46,7 +46,8 @@ const COL_DARK = "1a0a0a"
 const COL_MUTED = "555555"
 
 // ── Category configuration ────────────────────────────────────────────────────
-const CATEGORY_ORDER = [
+// These defaults are used if the rules database cannot be loaded.
+const DEFAULT_CATEGORY_ORDER = [
     "getting-started",
     "character-creation",
     "progression",
@@ -57,7 +58,7 @@ const CATEGORY_ORDER = [
     "running-the-game",
 ]
 
-const CATEGORY_TITLES = {
+const DEFAULT_CATEGORY_TITLES = {
     "getting-started": "Getting Started",
     "character-creation": "Character Creation",
     progression: "Progression",
@@ -66,6 +67,33 @@ const CATEGORY_TITLES = {
     spellcasting: "Powers",
     "death-and-resting": "Death & Resting",
     "running-the-game": "Running the Game",
+}
+
+// Derive category order from grouped rules and optional DB metadata.
+const getCategoryOrder = (grouped, database) => {
+    const order = []
+    if (database?.categories) {
+        order.push(...Object.keys(database.categories))
+    }
+    if (order.length === 0) {
+        order.push(...DEFAULT_CATEGORY_ORDER)
+    }
+
+    const extra = Object.keys(grouped)
+        .filter((k) => !order.includes(k))
+        .sort()
+
+    return [...order, ...extra].filter((k) => grouped[k]?.length)
+}
+
+const getCategoryTitle = (categoryKey, database) => {
+    const titleFromDb = database?.categories?.[categoryKey]?.title
+    if (titleFromDb) return titleFromDb
+    if (DEFAULT_CATEGORY_TITLES[categoryKey]) return DEFAULT_CATEGORY_TITLES[categoryKey]
+    return categoryKey
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ")
 }
 
 // ── Inline text parser — turns @Word into a bold run ─────────────────────────
@@ -456,6 +484,20 @@ export async function exportWhitepapers(
     version = CURRENT_VERSION,
     database = null,
 ) {
+    // Ensure we have rules database metadata for ordering and titles.
+    let db = database
+    if (!db) {
+        try {
+            const dbRes = await fetch("/rules-database.json")
+            const json = await dbRes.json()
+            db = json?.rulesDatabase || null
+        } catch {
+            db = null
+        }
+    }
+
+    const categoryOrder = getCategoryOrder(grouped, db)
+
     const dateStr = new Date().toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
@@ -542,19 +584,18 @@ export async function exportWhitepapers(
         }),
 
         // TOC list
-        ...CATEGORY_ORDER.filter((k) => grouped[k]?.length).map(
-            (k, i) =>
-                new Paragraph({
-                    spacing: { after: 80 },
-                    indent: { left: convertInchesToTwip(0.5) },
-                    children: [
-                        th(`${i + 1}.  `, {
-                            size: SZ_BODY + 2,
-                            color: "8B0000",
-                        }),
-                        t(CATEGORY_TITLES[k] || k, { size: SZ_BODY + 2 }),
-                    ],
-                }),
+        ...categoryOrder.map((k, i) =>
+            new Paragraph({
+                spacing: { after: 80 },
+                indent: { left: convertInchesToTwip(0.5) },
+                children: [
+                    th(`${i + 1}.  `, {
+                        size: SZ_BODY + 2,
+                        color: "8B0000",
+                    }),
+                    t(getCategoryTitle(k, db), { size: SZ_BODY + 2 }),
+                ],
+            }),
         ),
     ]
 
@@ -562,7 +603,7 @@ export async function exportWhitepapers(
     const contentChildren = []
     let firstChapter = true
 
-    for (const catKey of CATEGORY_ORDER) {
+    for (const catKey of categoryOrder) {
         const sections = grouped[catKey]
         if (!sections?.length) continue
 
@@ -631,15 +672,9 @@ export async function exportWhitepapers(
 
     // ── Key Words appendix ───────────────────────────────────────────────────
     // Load referenceIds from rules-database.json if not provided
-    let refIds = database?.referenceIds || null
-    if (!refIds) {
-        try {
-            const dbRes = await fetch("/rules-database.json")
-            const db = await dbRes.json()
-            refIds = db?.rulesDatabase?.referenceIds || null
-        } catch (_) {
-            // silently skip glossary if fetch fails
-        }
+    let refIds = db?.referenceIds || null
+    if (!refIds && db) {
+        refIds = db?.referenceIds || null
     }
 
     if (refIds) {
