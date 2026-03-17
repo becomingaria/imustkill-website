@@ -119,21 +119,30 @@ const EnhancedKeywordLinker = ({
                         routePath = "/death-and-resting"
                     } else if (refData.category === "running-the-game") {
                         routePath = "/running-the-game"
-                    } else if (refData.category === "spellcasting") {
+                    } else if (
+                        refData.category === "spellcasting" ||
+                        refData.category === "casting"
+                    ) {
                         routePath = "/powers"
                     } else if (refData.category === "quick-reference") {
                         routePath = "/quick-reference"
                     }
 
-                    // Add section anchor if available (but skip the anchor for the Power overview page)
+                    // Add section anchor if available. Some legacy casting refs need remapping.
+                    let section = refData.section
+                    if (refData.category === "casting") {
+                        if (refData.section === "gathering-powers") {
+                            section = "using-powers"
+                        } else if (refData.section === "casting-powers") {
+                            section = "using-powers"
+                        }
+                    }
+
                     if (
-                        !(
-                            refData.category === "spellcasting" &&
-                            refData.section === "casting-powers"
-                        ) &&
-                        refData.section
+                        !(refData.category === "spellcasting" && section === "casting-powers") &&
+                        section
                     ) {
-                        routePath += `#${refData.section}`
+                        routePath += `#${section}`
                     }
 
                     mappings.set(refId.toLowerCase(), {
