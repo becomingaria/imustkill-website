@@ -125,8 +125,14 @@ const EnhancedKeywordLinker = ({
                         routePath = "/quick-reference"
                     }
 
-                    // Add section anchor if available
-                    if (refData.section) {
+                    // Add section anchor if available (but skip the anchor for the Power overview page)
+                    if (
+                        !(
+                            refData.category === "spellcasting" &&
+                            refData.section === "casting-powers"
+                        ) &&
+                        refData.section
+                    ) {
                         routePath += `#${refData.section}`
                     }
 
