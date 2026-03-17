@@ -149,9 +149,10 @@ const EnhancedKeywordLinker = ({
             return text
         }
 
-        // First handle reference IDs (like @Body, @Focus, etc.)
-        const processedText = text.replace(/@(\w+)/g, (match, refId) => {
-            const fullRefId = `@${refId}`
+        // First handle reference IDs (like @Body, @Focus, or multi-word @Grit Teeth)
+        const processedText = text.replace(/@([A-Za-z0-9][A-Za-z0-9\s-]*)/g, (match, refId) => {
+            const trimmedRefId = refId.trim()
+            const fullRefId = `@${trimmedRefId}`
             const mapping = enhancedKeywordMappings.get(fullRefId.toLowerCase())
             if (mapping) {
                 return `<REFERENCE_LINK>${fullRefId}</REFERENCE_LINK>`
