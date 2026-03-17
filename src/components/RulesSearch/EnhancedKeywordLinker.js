@@ -119,6 +119,8 @@ const EnhancedKeywordLinker = ({
                         routePath = "/death-and-resting"
                     } else if (refData.category === "running-the-game") {
                         routePath = "/running-the-game"
+                    } else if (refData.category === "spellcasting") {
+                        routePath = "/powers"
                     } else if (refData.category === "quick-reference") {
                         routePath = "/quick-reference"
                     }
