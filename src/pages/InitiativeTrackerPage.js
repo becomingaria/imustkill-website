@@ -3158,7 +3158,7 @@ const InitiativeTrackerPage = () => {
                 </Snackbar>
             </Container>
 
-            <HomeButton />
+            <HomeButton to='/gm-tools' label='Return to GM Tools' />
         </>
     )
 }

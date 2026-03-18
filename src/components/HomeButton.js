@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { Button, Container } from "@mui/material"
 
-const HomeButton = () => {
+const HomeButton = ({ to = "/", label = "Go to Home" }) => {
     const [isVisible, setIsVisible] = useState(false)
 
     useEffect(() => {
@@ -56,7 +56,7 @@ const HomeButton = () => {
             >
                 <Button
                     component={Link}
-                    to='/'
+                    to={to}
                     variant='outlined'
                     sx={{
                         width: "100%",
@@ -93,7 +93,7 @@ const HomeButton = () => {
                         textTransform: "none",
                     }}
                 >
-                    Go to Home
+                    {label}
                 </Button>
             </Container>
         </div>
