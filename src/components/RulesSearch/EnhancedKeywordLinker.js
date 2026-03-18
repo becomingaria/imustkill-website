@@ -139,7 +139,10 @@ const EnhancedKeywordLinker = ({
                     }
 
                     if (
-                        !(refData.category === "spellcasting" && section === "casting-powers") &&
+                        !(
+                            refData.category === "spellcasting" &&
+                            section === "casting-powers"
+                        ) &&
                         section
                     ) {
                         routePath += `#${section}`

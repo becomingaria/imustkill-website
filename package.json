@@ -16,7 +16,7 @@
         "docx": "^9.5.1",
         "file-saver": "^2.0.5",
         "fontkit": "^2.0.4",
-        "framer-motion": "^12.19.1",
+        "framer-motion": "^12.37.0",
         "html-docx-js": "^0.3.1",
         "html-to-image": "^1.11.13",
         "html2canvas": "^1.4.1",

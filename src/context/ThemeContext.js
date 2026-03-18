@@ -22,7 +22,13 @@ export const ThemeProvider = ({ children }) => {
     // Check local storage for saved preference, default to dark mode if no preference is saved
     const savedTheme = localStorage.getItem("theme")
     const [isDarkTheme, setIsDarkTheme] = useState(
-        savedTheme ? savedTheme === "dark" : true // Default to dark mode (true)
+        savedTheme ? savedTheme === "dark" : true, // Default to dark mode (true)
+    )
+
+    // Check local storage for saved menu mode preference, default to fancy menu
+    const savedMenuMode = localStorage.getItem("menuMode")
+    const [useListMenu, setUseListMenu] = useState(
+        savedMenuMode ? savedMenuMode === "list" : false,
     )
 
     // Update local storage when theme changes
@@ -35,7 +41,7 @@ export const ThemeProvider = ({ children }) => {
         // Apply a data attribute for easier CSS targeting
         document.documentElement.setAttribute(
             "data-theme",
-            isDarkTheme ? "dark" : "light"
+            isDarkTheme ? "dark" : "light",
         )
 
         // Announce theme change to screen readers for accessibility
@@ -58,11 +64,25 @@ export const ThemeProvider = ({ children }) => {
         }, 1000)
     }, [isDarkTheme])
 
+    // Persist the menu mode preference
+    useEffect(() => {
+        localStorage.setItem("menuMode", useListMenu ? "list" : "fancy")
+    }, [useListMenu])
+
     const toggleTheme = () => {
         setIsDarkTheme((prevTheme) => !prevTheme)
     }
 
-    const contextValue = { isDarkTheme, toggleTheme }
+    const toggleMenuMode = () => {
+        setUseListMenu((prev) => !prev)
+    }
+
+    const contextValue = {
+        isDarkTheme,
+        toggleTheme,
+        useListMenu,
+        toggleMenuMode,
+    }
 
     return (
         <ThemeContext.Provider value={contextValue}>

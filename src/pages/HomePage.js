@@ -1,9 +1,18 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useContext } from "react"
 import { Link } from "react-router-dom"
-import { Container, Box, Typography, Button } from "@mui/material"
+import {
+    Container,
+    Box,
+    Typography,
+    Button,
+    useMediaQuery,
+    useTheme,
+} from "@mui/material"
 import FlashyMenu from "../components/FlashyMenu"
+import CircleMenu from "../components/CircleMenu"
 import EnhancedRulesSearch from "../components/RulesSearch/EnhancedRulesSearch.js"
 import { getNavConfig } from "../utils/rulesClient"
+import { ThemeContext } from "../context/ThemeContext"
 
 // Helper function for consistent button styling - glassmorphic style
 const getButtonStyles = () => ({
@@ -40,6 +49,9 @@ const getButtonStyles = () => ({
 })
 
 const HomePage = () => {
+    const theme = useTheme()
+    const isDesktop = useMediaQuery(theme.breakpoints.up("md"))
+    const { useListMenu } = useContext(ThemeContext)
     const [navItems, setNavItems] = useState([])
 
     // Load nav config: DB first, then fall back to static JSON
@@ -154,26 +166,37 @@ const HomePage = () => {
                     gap: 2, // Space out the buttons more
                 }}
             >
-                <FlashyMenu
-                    sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 2,
-                    }}
-                >
-                    {navItems.map((item) => (
-                        <Button
-                            key={item.id}
-                            component={Link}
-                            to={item.path}
-                            variant='outlined'
-                            sx={getButtonStyles()}
-                        >
-                            {item.label}
-                        </Button>
-                    ))}
-                </FlashyMenu>
+                {isDesktop && !useListMenu ? (
+                    <Box sx={{ overflow: "visible", py: 4 }}>
+                        <CircleMenu
+                            items={navItems.map((item) => ({
+                                label: item.label,
+                                href: item.path,
+                            }))}
+                        />
+                    </Box>
+                ) : (
+                    <FlashyMenu
+                        sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 2,
+                        }}
+                    >
+                        {navItems.map((item) => (
+                            <Button
+                                key={item.id}
+                                component={Link}
+                                to={item.path}
+                                variant='outlined'
+                                sx={getButtonStyles()}
+                            >
+                                {item.label}
+                            </Button>
+                        ))}
+                    </FlashyMenu>
+                )}
             </Box>
 
             <Box

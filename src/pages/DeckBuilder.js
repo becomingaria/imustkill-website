@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams, useLocation } from "react-router-dom"
 import {
     Container,
     Box,
@@ -43,8 +43,48 @@ import { getCardImageProps, getPlaceholderUrl } from "../utils/cardArtwork.js"
 const MIN_DECK_SIZE = 20
 const MAX_DECK_SIZE = 60
 
+const rarityColorMap = {
+    common: { bgcolor: "#9e9e9e", color: "#fff" },
+    uncommon: { bgcolor: "#2196f3", color: "#fff" },
+    rare: { bgcolor: "#4caf50", color: "#fff" },
+    mythic: { bgcolor: "#ab47bc", color: "#fff" },
+    legendary: { bgcolor: "#ffb300", color: "#000" },
+}
+
+const getRarityChipSx = (rarity, { variant } = {}) => {
+    const key = (rarity || "common").toString().toLowerCase()
+    const base = rarityColorMap[key] || rarityColorMap.common
+    if (variant === "outlined") {
+        return {
+            borderColor: base.bgcolor,
+            color: base.bgcolor,
+        }
+    }
+    return base
+}
+
+const formatDeckTitle = (name) => {
+    if (!name) return ""
+
+    // Convert things like "fragmented-time" or "fragmented_time" to "Fragmented Time"
+    return name
+        .toString()
+        .trim()
+        .replace(/[-_]+/g, " ")
+        .split(/\s+/)
+        .map((word) =>
+            word.length > 0
+                ? word[0].toUpperCase() + word.slice(1).toLowerCase()
+                : "",
+        )
+        .join(" ")
+}
+
 const DeckBuilder = () => {
     const navigate = useNavigate()
+    const location = useLocation()
+    const { deckName: routeDeckName } = useParams()
+
     // Available cards from database
     const [allPowers, setAllPowers] = useState([])
     const [availableDecks, setAvailableDecks] = useState([])
@@ -58,7 +98,7 @@ const DeckBuilder = () => {
 
     // Player's deck
     const [playerDeck, setPlayerDeck] = useState([])
-    const [deckName, setDeckName] = useState("My Deck")
+    const [deckName, setDeckName] = useState(routeDeckName || "My Deck")
 
     // My Deck search and filter state
     const [deckSearchQuery, setDeckSearchQuery] = useState("")
@@ -111,9 +151,14 @@ const DeckBuilder = () => {
         loadPowers()
     }, [])
 
+    // Build storage key based on deck name (or default)
+    const storageKey = `imk_deck_builder_${encodeURIComponent(
+        deckName || "default",
+    )}`
+
     // Load deck from sessionStorage
     useEffect(() => {
-        const savedDeck = sessionStorage.getItem("imk_deck_builder")
+        const savedDeck = sessionStorage.getItem(storageKey)
         if (savedDeck) {
             try {
                 const parsed = JSON.parse(savedDeck)
@@ -123,15 +168,27 @@ const DeckBuilder = () => {
                 console.error("Error loading saved deck:", error)
             }
         }
-    }, [])
+    }, [storageKey])
 
     // Save deck to sessionStorage
     useEffect(() => {
         sessionStorage.setItem(
-            "imk_deck_builder",
+            storageKey,
             JSON.stringify({ playerDeck, deckName }),
         )
-    }, [playerDeck, deckName])
+    }, [playerDeck, deckName, storageKey])
+
+    // Keep the URL in sync when deck name changes.
+    useEffect(() => {
+        const isDeckRoute = location.pathname.startsWith("/deck/")
+        const desiredPath = `/deck/${encodeURIComponent(deckName)}`
+        if (deckName && location.pathname !== desiredPath) {
+            // If we're on the builder root or a different deck, update URL.
+            if (location.pathname === "/deck-builder" || isDeckRoute) {
+                navigate(desiredPath, { replace: true })
+            }
+        }
+    }, [deckName, location.pathname, navigate])
 
     const showAlert = (message, severity = "success") => {
         setAlert({ open: true, message, severity })
@@ -170,13 +227,21 @@ const DeckBuilder = () => {
     const handleDeckFilterChange = (deck) => {
         if (deck === "All") {
             setSelectedDecks(["All"])
-        } else {
-            const newSelection = selectedDecks.includes("All")
-                ? [deck]
-                : selectedDecks.includes(deck)
-                  ? selectedDecks.filter((d) => d !== deck)
-                  : [...selectedDecks, deck]
-            setSelectedDecks(newSelection.length === 0 ? ["All"] : newSelection)
+            return
+        }
+
+        const newSelection = selectedDecks.includes("All")
+            ? [deck]
+            : selectedDecks.includes(deck)
+              ? selectedDecks.filter((d) => d !== deck)
+              : [...selectedDecks, deck]
+        const finalSelection =
+            newSelection.length === 0 ? ["All"] : newSelection
+        setSelectedDecks(finalSelection)
+
+        // If user selects a single deck, keep the URL in sync by treating it as the active deck name.
+        if (finalSelection.length === 1 && finalSelection[0] !== "All") {
+            setDeckName(finalSelection[0])
         }
     }
 
@@ -212,7 +277,9 @@ const DeckBuilder = () => {
             id: `${Date.now()}-${Math.random()}`,
         }))
         setPlayerDeck((prev) => [...prev, ...newCards])
-        showAlert(`Added ${cardsToAddSlice.length} cards from ${deckName}`)
+        showAlert(
+            `Added ${cardsToAddSlice.length} cards from ${formatDeckTitle(deckName)}`,
+        )
     }
 
     const removeCardFromDeck = (id) => {
@@ -860,7 +927,7 @@ const DeckBuilder = () => {
                                                     }
                                                 />
                                             }
-                                            label={deck}
+                                            label={formatDeckTitle(deck)}
                                         />
                                     ))}
                                 </FormGroup>
@@ -973,8 +1040,10 @@ const DeckBuilder = () => {
                                                             fontWeight: "bold",
                                                         }}
                                                     >
-                                                        {deckName} (
-                                                        {cards.length} cards)
+                                                        {formatDeckTitle(
+                                                            deckName,
+                                                        )}{" "}
+                                                        ({cards.length} cards)
                                                     </Typography>
                                                     <Button
                                                         size='small'
@@ -1159,6 +1228,9 @@ const DeckBuilder = () => {
                                                                         fontSize:
                                                                             "0.6rem",
                                                                         mb: 0.5,
+                                                                        ...getRarityChipSx(
+                                                                            card.rarity,
+                                                                        ),
                                                                     }}
                                                                 />
                                                                 <Typography
@@ -1640,7 +1712,9 @@ const DeckBuilder = () => {
                                                     }
                                                     label={
                                                         <Typography variant='caption'>
-                                                            {deck}
+                                                            {formatDeckTitle(
+                                                                deck,
+                                                            )}
                                                         </Typography>
                                                     }
                                                 />
@@ -1924,6 +1998,24 @@ const DeckBuilder = () => {
                                                                         : "rgba(250,250,250,0.95)",
                                                             }}
                                                         >
+                                                            <Chip
+                                                                size='small'
+                                                                label={
+                                                                    fullCard.rarity ||
+                                                                    card.rarity ||
+                                                                    "Common"
+                                                                }
+                                                                sx={{
+                                                                    height: 16,
+                                                                    fontSize:
+                                                                        "0.55rem",
+                                                                    mb: 0.25,
+                                                                    ...getRarityChipSx(
+                                                                        fullCard.rarity ||
+                                                                            card.rarity,
+                                                                    ),
+                                                                }}
+                                                            />
                                                             <Typography
                                                                 variant='caption'
                                                                 sx={{
@@ -2114,10 +2206,12 @@ const DeckBuilder = () => {
                                         label={selectedCard.rarity || "Common"}
                                         size='small'
                                         variant='outlined'
-                                        sx={{
-                                            borderColor: "#fff",
-                                            color: "#fff",
-                                        }}
+                                        sx={getRarityChipSx(
+                                            selectedCard.rarity,
+                                            {
+                                                variant: "outlined",
+                                            },
+                                        )}
                                     />
                                     <Chip
                                         label={selectedCard.deck || "Unknown"}

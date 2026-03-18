@@ -1,0 +1,8 @@
+name,rarity,deck,description
+Ember Touch,Common,Pyromancer,Ignite one target at Close range. They take 1 damage at the start of their next turn.
+Smoke Veil,Common,Pyromancer,Shroud yourself in thick smoke. You become Obscured until the start of your next turn.
+Scorched Ground,Uncommon,Pyromancer,Burn the ground at Near range. Creatures that move through the area take 1 damage and must roll Agility or become Frightened.
+Wildfire,Uncommon,Pyromancer,Spread flame across up to 3 Near targets. Each takes 1 damage. The fire persists and each affected creature takes 1 damage at the start of their next turn until they spend an action to extinguish it.
+Inferno,Rare,Pyromancer,A roaring column of fire erupts at Near range striking all creatures in the area for 2 damage. Requires a charge.
+Fireball,Rare,Pyromancer,A sphere of flame detonates at Far range dealing 2 damage to all creatures within Near distance of the explosion point. Requires a charge.
+Conflagration,Mythic,Pyromancer,An unstoppable firestorm engulfs the entire encounter area. All enemies take 2 damage and must roll Fate or be reduced to 0 HP immediately. Allies are unharmed. Requires a charge.

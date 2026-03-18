@@ -36,14 +36,14 @@
                 "category": "combat-mechanics",
                 "section": "advantage-disadvantage",
                 "description": "Roll 2d10, choose lower result",
-                "definition": "When you have Advantage, roll 2d10 and take the lower result. Represents favorable circumstances, specialized equipment, or tactical superiority. Advantage and Disadvantage cancel each other out."
+                "definition": "When you have Advantage, roll 2d10 and take the lower result. Represents favorable circumstances, specialized equipment, or tactical superiority. If multiple effects would add or subtract extra d10s (for example, multiple sources of Advantage or Disadvantage), the roll is treated as a flat 1d10 roll. Advantage and Disadvantage cancel each other out."
             },
             "@Disadvantage": {
                 "title": "Disadvantage",
                 "category": "combat-mechanics",
                 "section": "advantage-disadvantage",
                 "description": "Roll 2d10, choose higher result",
-                "definition": "When you have Disadvantage, roll 2d10 and take the higher result. Represents illness, hindrance, or unfavorable conditions. Advantage and Disadvantage cancel each other out."
+                "definition": "When you have Disadvantage, roll 2d10 and take the higher result. Represents illness, hindrance, or unfavorable conditions. If multiple effects would add or subtract extra d10s (for example, multiple sources of Advantage or Disadvantage), the roll is treated as a flat 1d10 roll. Advantage and Disadvantage cancel each other out."
             },
             "@Attack": {
                 "title": "Attack",
@@ -588,7 +588,7 @@
                 },
                 {
                     "term": "Advantage",
-                    "description": "Roll 2d10 and choose the lower result. Used when circumstances favor you. See @Advantage for details.",
+                    "description": "Roll 2d10 and choose the lower result. Used when circumstances favor you. Multiple sources of advantage/disadvantage cancel to a flat roll. See @Advantage for details.",
                     "keywords": [
                         "advantage",
                         "2d10",
@@ -598,7 +598,7 @@
                 },
                 {
                     "term": "Disadvantage",
-                    "description": "Roll 2d10 and choose the higher result. Used when circumstances hinder you. See @Disadvantage for details.",
+                    "description": "Roll 2d10 and choose the higher result. Used when circumstances hinder you. Multiple sources of advantage/disadvantage cancel to a flat roll. See @Disadvantage for details.",
                     "keywords": [
                         "disadvantage",
                         "2d10",
