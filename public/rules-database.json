@@ -290,12 +290,26 @@
                 "description": "Combat action to attempt diplomacy with an intelligent monster",
                 "definition": "A combat action. Roll 1d10 against Focus. On success, combat pauses to present the opportunity to negotiate with a monster capable of understanding you. If talks fail and combat resumes, the monster acts first."
             },
+            "@Use Item": {
+                "title": "Use Item",
+                "category": "combat-mechanics",
+                "section": "use-item",
+                "description": "Additional combat action to use equipment from the Hunter's Arsenal",
+                "definition": "An additional combat action. Using an item does not replace your standard action — you may use one item from the Hunter's Arsenal on your turn in addition to attacking, dodging, or any other action."
+            },
             "@Monster Tables": {
                 "title": "Monster Tables",
                 "category": "running-the-game",
                 "section": "reading-monster-tables",
                 "description": "System for resolving monster actions with d10 rolls",
                 "definition": "The system GMs use to determine monster actions each round. Roll 1d10 against the monster's Attack value. A roll equal to or lower means the monster attacks; higher means it winds up for a more dangerous following attack."
+            },
+            "@Monster Turns": {
+                "title": "Monster Turns",
+                "category": "combat-mechanics",
+                "section": "monster-turn",
+                "description": "How monsters interact with ongoing effects at the start of their turn",
+                "definition": "At the start of its turn, a monster subject to an ongoing effect (trap, hazard, or condition) makes a test to resist it. On a success, the effect is shaken off and the monster may still act normally. On a failure, the monster remains subject to the condition."
             },
             "@Core Mechanics": {
                 "title": "Core Mechanics",
@@ -351,7 +365,7 @@
                 "category": "running-the-game",
                 "section": "hunt-outline",
                 "description": "The structured phases of a monster hunting session",
-                "definition": "The eight-phase structure that frames a standard monster hunting session: The Hook, Negotiate Pay, Rumor Phase, Research Phase, Prepare, Track the Monster, The Fight, and Denouement."
+                "definition": "The eight-phase structure that frames a standard monster hunting session: The Hook, Negotiate Pay, Rumor Phase, Research Phase, Days of Preparation, Track the Monster, The Fight, and Denouement."
             },
             "@Hook": {
                 "title": "The Hook",
@@ -381,6 +395,62 @@
                 "description": "Fourth hunt phase — Fate roll to learn a monster weakness",
                 "definition": "The fourth phase of a hunt. Consult old journals, folklore, or a knowledgeable contact. Roll Fate to uncover one of the monster's Special Weaknesses before the fight."
             },
+            "@Days of Preparation": {
+                "title": "Days of Preparation",
+                "category": "running-the-game",
+                "section": "days-of-preparation",
+                "description": "Hunt phase where hunters gather resources to unlock boons",
+                "definition": "The fifth phase of a hunt. Over a GM-determined number of days, hunters interact with NPCs, locations, and the environment. Each interaction is a skill challenge that, on success, rewards a typed Preparation Resource (Alchemy, Witchery, or Smithery). Three resources of a type unlock a boon."
+            },
+            "@Preparation Resources": {
+                "title": "Preparation Resources",
+                "category": "running-the-game",
+                "section": "preparation-overview",
+                "description": "Typed tokens earned during the Days of Preparation",
+                "definition": "Resources earned by hunters during the Days of Preparation. Each is typed as Alchemy, Witchery, or Smithery based on the interaction. Resources persist between hunts. Three of a single type can be spent to unlock a boon. Hunters may share resources with fellow hunters."
+            },
+            "@Alchemy": {
+                "title": "Alchemy",
+                "category": "running-the-game",
+                "section": "resource-types",
+                "description": "A preparation resource type tied to elixirs and heightened reflexes",
+                "definition": "One of three Preparation Resource types. Earned from herbalists, apothecaries, alchemical labs, and rare flora. Three Alchemy resources unlock Adapt the Hunter — an elixir granting an additional d10 on all rolls for 24 hours."
+            },
+            "@Witchery": {
+                "title": "Witchery",
+                "category": "running-the-game",
+                "section": "resource-types",
+                "description": "A preparation resource type tied to curses and supernatural hexes",
+                "definition": "One of three Preparation Resource types. Earned from mystics, haunted sites, seers, and cursed objects. Three Witchery resources unlock Curse the Hunted — the monster takes 1 additional damage per hit in this hunter's presence (permanent)."
+            },
+            "@Smithery": {
+                "title": "Smithery",
+                "category": "running-the-game",
+                "section": "resource-types",
+                "description": "A preparation resource type tied to weapon forging and adaptation",
+                "definition": "One of three Preparation Resource types. Earned from blacksmiths, armorers, mines, and forges. Three Smithery resources unlock Forge the Weapon — one chosen weapon deals 3 damage per hit to the adapted monster (permanent)."
+            },
+            "@Adapt the Hunter": {
+                "title": "Adapt the Hunter",
+                "category": "running-the-game",
+                "section": "boon-alchemy",
+                "description": "Alchemy boon granting an extra d10 on all rolls",
+                "definition": "The Alchemy boon. Costs 3 Alchemy resources. The hunter rolls an additional d10 on all rolls, including rolls with Advantage or Disadvantage. Lasts 24 hours. Can be stacked once (risk: Body roll or gain Diseased). A third stack is fatal."
+            },
+            "@Curse the Hunted": {
+                "title": "Curse the Hunted",
+                "category": "running-the-game",
+                "section": "boon-witchery",
+                "description": "Witchery boon causing the monster to take extra damage",
+                "definition": "The Witchery boon. Costs 3 Witchery resources. The monster takes 1 additional damage per hit in this hunter's presence. The first boon is permanent. Can be stacked once (risk: Fate roll or HP reduced to 1). A third stack is fatal."
+            },
+            "@Forge the Weapon": {
+                "title": "Forge the Weapon",
+                "category": "running-the-game",
+                "section": "boon-smithery",
+                "description": "Smithery boon adapting a weapon to deal 3 damage per hit",
+                "definition": "The Smithery boon. Costs 3 Smithery resources. The hunter chooses one weapon — it now deals 3 damage per hit to the monster it was adapted to kill. The first boon is permanent. Can be stacked once (risk: Focus or Agility roll or the weapon breaks). A third stack is fatal."
+            },
             "@Tracking Monster": {
                 "title": "Tracking the Monster",
                 "category": "running-the-game",
@@ -399,8 +469,8 @@
                 "title": "Denouement",
                 "category": "running-the-game",
                 "section": "hunt-outline",
-                "description": "Final hunt phase — collect bounty, rest, and advance",
-                "definition": "The final phase of a hunt. Collect your bounty, replenish equipment up to 10, and — if you earned high pay — purchase new gear. Complete a Night's Rest and attempt to Level Up."
+                "description": "Final hunt phase — collect bounty, resupply, and advance",
+                "definition": "The final phase of a hunt. Collect your bounty. If low pay, resupply up to 5 low-tier items. If high pay, each hunter may also acquire 1 high-tier item (including Trick Weapons). Complete a Night's Rest and attempt to Level Up."
             },
             "@Monster Stats": {
                 "title": "Monster Stats",
@@ -464,6 +534,69 @@
                 "section": "special-abilities",
                 "description": "A monster Special Ability triggered on a critical die roll",
                 "definition": "A type of Special Ability triggered on a critical roll (natural 1). Represents any devastating exhalation-based attack — fire, acid, frost, or similar. Often cannot be defended against normally."
+            },
+            "@Hunter's Arsenal": {
+                "title": "Hunter's Arsenal",
+                "category": "equipment",
+                "section": "equipment-rules",
+                "description": "The equipment system for hunters",
+                "definition": "The equipment system governing what hunters carry into a hunt. Hunters carry up to 5 items across four subcategories: Weapon, Protection, Control, and Denial. At character creation, choose 1 low-tier weapon and 4 low-tier items. After a hunt, resupply depends on pay tier."
+            },
+            "@Equipment": {
+                "title": "Equipment",
+                "category": "equipment",
+                "section": "equipment-rules",
+                "description": "Gear and items carried by hunters",
+                "definition": "The items a hunter carries into a hunt. Equipment is organized into four subcategories (Weapon, Protection, Control, Denial) and two tiers (Low Pay, High Pay). A hunter may carry up to 5 items at a time."
+            },
+            "@Trick Weapons": {
+                "title": "Trick Weapons",
+                "category": "equipment",
+                "section": "weapon-subcategory",
+                "description": "High-tier weapons with hidden mechanisms or enchantments",
+                "definition": "High-tier weapons with a hidden mechanism or enchantment that grants a special bonus effect. Trick Weapons deal 1 damage like any weapon, but each has a unique trick — such as extra attacks, special damage types, or tactical advantages. Acquired only after hunts with high pay."
+            },
+            "@Weapon": {
+                "title": "Weapon",
+                "category": "equipment",
+                "section": "weapon-subcategory",
+                "description": "Equipment subcategory — arms designed to kill monsters",
+                "definition": "One of four equipment subcategories. Weapons deal 1 damage on a successful attack (2 on a critical). Each specifies a damage type (Physical, Spiritual, or Hybrid) and a range (Close, Near, or Far). High-tier weapons are called Trick Weapons."
+            },
+            "@Protection": {
+                "title": "Protection",
+                "category": "equipment",
+                "section": "protection-subcategory",
+                "description": "Equipment subcategory — armor, shields, and wards required to Brace",
+                "definition": "One of four equipment subcategories. Protection items guard the hunter against specific damage types and are required to use the Brace combat action. Each item specifies which damage types it resists: Physical, Spiritual, or Hybrid."
+            },
+            "@Control": {
+                "title": "Control",
+                "category": "equipment",
+                "section": "control-subcategory",
+                "description": "Equipment subcategory — items that bind, stall, or manipulate monsters",
+                "definition": "One of four equipment subcategories. Control items restrict a monster's movement, actions, or positioning — traps, nets, chains, and binding implements. Many are consumable with limited uses per hunt."
+            },
+            "@Denial": {
+                "title": "Denial",
+                "category": "equipment",
+                "section": "denial-subcategory",
+                "description": "Equipment subcategory — items that strip monster advantages",
+                "definition": "One of four equipment subcategories. Denial items suppress, counter, or remove monster advantages — neutralizing Special Abilities, buffs, and immunities. Many are consumable with limited uses per hunt."
+            },
+            "@Low Pay": {
+                "title": "Low Pay",
+                "category": "equipment",
+                "section": "low-pay-tier",
+                "description": "Standard equipment tier available at creation and after any hunt",
+                "definition": "The standard equipment tier. Low Pay items are available at character creation and during resupply after any hunt. Hunters may resupply up to 5 low-tier items during the Denouement."
+            },
+            "@High Pay": {
+                "title": "High Pay",
+                "category": "equipment",
+                "section": "high-pay-tier",
+                "description": "Rare equipment tier acquired only after hunts with high pay",
+                "definition": "The rare equipment tier. High Pay items include Trick Weapons and powerful protective, control, and denial gear. Each hunter may acquire 1 high-tier item during the Denouement of a hunt where they earned high pay."
             }
         },
         "categories": {
@@ -545,14 +678,32 @@
                     "monsters",
                     "hunt",
                     "rumors",
-                    "research"
+                    "research",
+                    "preparation",
+                    "resources",
+                    "alchemy",
+                    "witchery",
+                    "smithery",
+                    "boons"
                 ]
             },
             "equipment": {
                 "title": "Equipment",
-                "description": "Equipment and gear database",
+                "description": "Hunter's Arsenal — weapons, protection, control, and denial items",
                 "file": "equipment.json",
-                "keywords": ["equipment", "gear", "tools", "weapons", "armor"]
+                "keywords": [
+                    "equipment",
+                    "gear",
+                    "weapons",
+                    "armor",
+                    "trick weapons",
+                    "protection",
+                    "control",
+                    "denial",
+                    "hunter's arsenal",
+                    "low pay",
+                    "high pay"
+                ]
             },
             "getting-started": {
                 "title": "Getting Started",

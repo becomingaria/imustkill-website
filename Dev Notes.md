@@ -10,3 +10,31 @@ Use booklet to outline decks and booster packs
 Add a shop page for d10s, "close/near sticks" for miniatures, cards, tokens, and miniatures, character sheets, books, expansions, modules. (find a good shop plugin site, maybe "Shop"???)
 
 Add monsters with powers that affect the Powers deck, like "When comabt starts all players discard their hands and redraw"
+
+Black Incense "forgotten graves" description is dumb
+Boarding axe description 2nd look
+Bolas size limmit
+
+Crossbow description 2nd look.
+
+Flash charge (describe cone size)
+
+Flintlock Pistol can make 1 shot per fight, and deals 2 damage on a hit.
+Hunters musket adjusted accordingly
+Hunting Knife description 2nd look
+Iron Bell description 2nd look
+Silver dust description 2nd look, be explicit the dust is tossed in the air around you as a use
+Halberds and Spears are still Close range, not near. Near means across a room.
+
+Remove the "TRICK" sections, they are redundant.
+Witchstone Anchor, specify any special movement based abilities.
+Cruel Claw description 2nd look.
+
+Pyre Lance range is Close not near.
+
+Sanctified Glaive 2nd look at description
+
+Whip-Cleaver 2nd look at description
+
+Add a sword gun to the high pay weapons
+Add a cane that shoots black powder out of the handle on a hit to high pay

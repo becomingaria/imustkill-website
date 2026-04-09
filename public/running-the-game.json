@@ -24,8 +24,8 @@
                         "description": "An old journal, a tale from long ago, an old friend. You reach out to learn information about the @Monster, and test @Fate to learn one of its weakness."
                     },
                     {
-                        "name": "Prepare",
-                        "description": "Use the information you've learned to procure what you need for the hunt (if reasonably available)."
+                        "name": "Days of Preparation",
+                        "description": "Over a number of days (determined by the GM), hunters interact with NPCs, locations, and the surrounding environment to earn @Preparation Resources. Each interaction presents a skill challenge; on success the hunter earns a typed resource (@Alchemy, @Witchery, or @Smithery). Three resources of a single type unlock a powerful boon for the coming hunt."
                     },
                     {
                         "name": "Tracking the Monster",
@@ -37,7 +37,7 @@
                     },
                     {
                         "name": "Denouement",
-                        "description": "Collect the bounty. Replenish equipment up to 10, and if high pay, everyone can purchase new equipment. @Nights Rest and @Leveling Up."
+                        "description": "Collect the bounty. If low pay, resupply up to 5 low-tier items from the Hunter's Arsenal. If high pay, each hunter may also acquire 1 high-tier item (including @Trick Weapons). @Nights Rest and @Leveling Up."
                     }
                 ],
                 "keywords": [
@@ -46,9 +46,337 @@
                     "@Negotiate Pay",
                     "@Rumor Phase",
                     "@Research Phase",
+                    "@Days of Preparation",
+                    "@Preparation Resources",
                     "@Tracking Monster",
                     "@Fight",
                     "@Denouement"
+                ]
+            },
+            {
+                "id": "days-of-preparation",
+                "title": "Days of Preparation",
+                "%Source": ["@Days of Preparation"],
+                "description": "Before the hunt begins, hunters have a number of days (set by the GM) to prepare. Each day, the GM presents opportunities — NPCs, locations, and events — that hunters can interact with to earn @Preparation Resources. Resources carry between hunts and are spent to unlock powerful boons from three crafting trees: @Alchemy, @Witchery, and @Smithery.",
+                "subsections": [
+                    {
+                        "id": "preparation-overview",
+                        "title": "How Preparation Works",
+                        "%Source": ["@Days of Preparation"],
+                        "rules": [
+                            "The GM decides how many days of preparation the hunters have before the hunt begins.",
+                            "Each day, the GM determines what interactions are available — townspeople, shopkeepers, herbalists, blacksmiths, ruins, forests, or anything the scenario calls for.",
+                            "Each interaction presents a skill challenge. The GM chooses the relevant stat (@Body, @Agility, @Focus, or @Fate) based on the nature of the interaction.",
+                            "On a successful roll, the hunter earns one @Preparation Resource of the type associated with that interaction: @Alchemy, @Witchery, or @Smithery.",
+                            "On a failed roll, the hunter gains nothing from that interaction.",
+                            "@Preparation Resources persist between hunts. Hunters track their own resources independently but may choose to share resources with fellow hunters."
+                        ],
+                        "keywords": [
+                            "@Days of Preparation",
+                            "@Preparation Resources",
+                            "@Body",
+                            "@Agility",
+                            "@Focus",
+                            "@Fate"
+                        ]
+                    },
+                    {
+                        "id": "resource-types",
+                        "title": "Resource Types",
+                        "%Source": ["@Alchemy", "@Witchery", "@Smithery"],
+                        "description": "Each @Preparation Resource belongs to one of three types, corresponding to the three crafting trees. The type is determined by the nature of the interaction — the GM assigns the type when designing the scenario.",
+                        "rules": [
+                            "@Alchemy — Earned from herbalists, apothecaries, alchemical labs, rare flora, and similar interactions.",
+                            "@Witchery — Earned from mystics, haunted sites, seers, cursed objects, and similar interactions.",
+                            "@Smithery — Earned from blacksmiths, armorers, mines, forges, and similar interactions."
+                        ],
+                        "keywords": [
+                            "@Alchemy",
+                            "@Witchery",
+                            "@Smithery",
+                            "@Preparation Resources"
+                        ]
+                    },
+                    {
+                        "id": "boons",
+                        "title": "Boons",
+                        "%Source": [
+                            "@Adapt the Hunter",
+                            "@Curse the Hunted",
+                            "@Forge the Weapon"
+                        ],
+                        "description": "When a hunter collects 3 resources of a single type, they may spend them to unlock a boon. Each tree offers a different advantage for the coming hunt.",
+                        "subsections": [
+                            {
+                                "id": "boon-alchemy",
+                                "title": "Alchemy — Adapt the Hunter",
+                                "%Source": ["@Adapt the Hunter", "@Alchemy"],
+                                "description": "The hunter brews a powerful elixir that heightens their reflexes and senses.",
+                                "rules": [
+                                    "Cost: 3 @Alchemy resources.",
+                                    "Effect: The hunter rolls an additional d10 on all rolls — including rolls with @Advantage or @Disadvantage.",
+                                    "Duration: The first @Adapt the Hunter boon lasts 24 hours. It is not permanent."
+                                ],
+                                "keywords": [
+                                    "@Adapt the Hunter",
+                                    "@Alchemy",
+                                    "@Advantage",
+                                    "@Disadvantage"
+                                ]
+                            },
+                            {
+                                "id": "boon-witchery",
+                                "title": "Witchery — Curse the Hunted",
+                                "%Source": ["@Curse the Hunted", "@Witchery"],
+                                "description": "The hunter places a supernatural curse upon the target monster.",
+                                "rules": [
+                                    "Cost: 3 @Witchery resources.",
+                                    "Effect: The @Monster takes 1 additional @Damage per hit when it takes damage, while in the presence of this hunter.",
+                                    "Duration: The first @Curse the Hunted boon is permanent for this monster."
+                                ],
+                                "keywords": [
+                                    "@Curse the Hunted",
+                                    "@Witchery",
+                                    "@Monster",
+                                    "@Damage"
+                                ]
+                            },
+                            {
+                                "id": "boon-smithery",
+                                "title": "Smithery — Forge the Weapon",
+                                "%Source": ["@Forge the Weapon", "@Smithery"],
+                                "description": "The hunter adapts a single weapon to be devastatingly effective against the target monster.",
+                                "rules": [
+                                    "Cost: 3 @Smithery resources.",
+                                    "Effect: The hunter chooses one weapon. That weapon now deals 3 @Damage per hit to the @Monster it was adapted to kill.",
+                                    "Duration: The first @Forge the Weapon boon is permanent for this weapon against this monster."
+                                ],
+                                "keywords": [
+                                    "@Forge the Weapon",
+                                    "@Smithery",
+                                    "@Monster",
+                                    "@Damage"
+                                ]
+                            }
+                        ],
+                        "keywords": [
+                            "@Adapt the Hunter",
+                            "@Curse the Hunted",
+                            "@Forge the Weapon",
+                            "@Alchemy",
+                            "@Witchery",
+                            "@Smithery"
+                        ]
+                    },
+                    {
+                        "id": "stacking-boons",
+                        "title": "Stacking Boons",
+                        "description": "A hunter may attempt to stack a second boon of the same type by spending 3 more resources (6 total in one tree). This doubles the effect but carries serious risk. A third stack is fatal.",
+                        "subsections": [
+                            {
+                                "id": "second-boon-effects",
+                                "title": "Second Boon Effects",
+                                "rules": [
+                                    "A second @Adapt the Hunter grants a second additional d10 on all rolls (two extra total). Lasts 24 hours.",
+                                    "A second @Curse the Hunted causes the @Monster to take 2 additional @Damage per hit in this hunter's presence. Lasts 24 hours.",
+                                    "A second @Forge the Weapon further empowers the adapted weapon, now dealing 6 @Damage per hit to the adapted @Monster. Lasts 24 hours."
+                                ],
+                                "keywords": [
+                                    "@Adapt the Hunter",
+                                    "@Curse the Hunted",
+                                    "@Forge the Weapon"
+                                ]
+                            },
+                            {
+                                "id": "second-boon-risk",
+                                "title": "Second Boon Risk",
+                                "description": "Stacking a second boon is dangerous. The hunter must pass a risk roll or suffer a severe consequence.",
+                                "rules": [
+                                    "@Alchemy risk: Roll 1d10 against @Body. On failure, the hunter's blood is poisoned — they gain the @Diseased condition.",
+                                    "@Witchery risk: Roll 1d10 against @Fate. On failure, the hunter's fate is cursed — their @Hit Points are reduced to 1.",
+                                    "@Smithery risk: Roll 1d10 against @Focus or @Agility (hunter's choice). On failure, the weapon breaks — it becomes useless and must be replaced hastily."
+                                ],
+                                "keywords": [
+                                    "@Diseased",
+                                    "@Body",
+                                    "@Fate",
+                                    "@Focus",
+                                    "@Agility",
+                                    "@Hit Points"
+                                ]
+                            },
+                            {
+                                "id": "second-boon-duration",
+                                "title": "Second Boon Duration",
+                                "rules": [
+                                    "All second-stack boons last 24 hours, regardless of the tree.",
+                                    "The first boon's permanence (for @Witchery and @Smithery) is unaffected — only the second layer expires."
+                                ],
+                                "keywords": ["@Witchery", "@Smithery"]
+                            },
+                            {
+                                "id": "third-boon-death",
+                                "title": "Third Boon — Death",
+                                "description": "Attempting to stack a third boon of the same type is always fatal. There is no roll.",
+                                "rules": [
+                                    "@Alchemy: The toxins in the hunter's blood reach lethal concentration. The hunter dies.",
+                                    "@Witchery: The weight of cursed fate stops the hunter's heart. The hunter dies.",
+                                    "@Smithery: The overcharged weapon detonates in the hunter's hands. The hunter dies."
+                                ],
+                                "keywords": [
+                                    "@Death",
+                                    "@Alchemy",
+                                    "@Witchery",
+                                    "@Smithery"
+                                ]
+                            }
+                        ],
+                        "keywords": [
+                            "@Adapt the Hunter",
+                            "@Curse the Hunted",
+                            "@Forge the Weapon",
+                            "@Death"
+                        ]
+                    }
+                ],
+                "keywords": [
+                    "@Days of Preparation",
+                    "@Preparation Resources",
+                    "@Alchemy",
+                    "@Witchery",
+                    "@Smithery",
+                    "@Adapt the Hunter",
+                    "@Curse the Hunted",
+                    "@Forge the Weapon"
+                ]
+            },
+            {
+                "id": "hunters-arsenal",
+                "title": "Hunter's Arsenal",
+                "%Source": ["@Hunter's Arsenal", "@Equipment"],
+                "description": "Hunters carry specialized equipment for the hunt. All equipment falls into one of four subcategories — @Weapon, @Protection, @Control, or @Denial — and is divided between two tiers: @Low Pay and @High Pay. A hunter may carry up to 5 items at a time.",
+                "subsections": [
+                    {
+                        "id": "equipment-rules",
+                        "title": "Equipment Rules",
+                        "rules": [
+                            "A hunter may carry up to 5 items at a time.",
+                            "At character creation, choose 1 low-tier weapon and 4 additional low-tier items of your choice.",
+                            "After a hunt with low pay: resupply up to 5 low-tier items.",
+                            "After a hunt with high pay: each hunter may acquire 1 high-tier item (including @Trick Weapons), in addition to resupplying low-tier items."
+                        ],
+                        "keywords": [
+                            "@Hunter's Arsenal",
+                            "@Equipment",
+                            "@Trick Weapons"
+                        ]
+                    },
+                    {
+                        "id": "equipment-subcategories",
+                        "title": "Equipment Subcategories",
+                        "subsections": [
+                            {
+                                "id": "weapon-subcategory",
+                                "title": "Weapons",
+                                "description": "Arms designed to kill monsters. All weapons deal 1 damage on a successful attack (2 on a @Critical Hit). High-tier weapons are called @Trick Weapons — each has a hidden mechanism or enchantment that grants a bonus effect.",
+                                "rules": [
+                                    "All weapons deal 1 @Damage (2 on a critical).",
+                                    "Weapons specify a @Damage type (@Physical Damage, @Spiritual Damage, or @Hybrid Damage) and a range (@Close, @Near, or @Far).",
+                                    "@Trick Weapons are high-tier weapons with a special bonus effect described on the item."
+                                ],
+                                "keywords": [
+                                    "@Weapon",
+                                    "@Trick Weapons",
+                                    "@Physical Damage",
+                                    "@Spiritual Damage",
+                                    "@Hybrid Damage"
+                                ]
+                            },
+                            {
+                                "id": "protection-subcategory",
+                                "title": "Protection",
+                                "description": "Armor, shields, wards, and relics that guard the hunter. Protection items specify which damage types they resist and are required to @Brace.",
+                                "rules": [
+                                    "A hunter must have a Protection item to use the @Brace combat action.",
+                                    "Protection items specify which damage type(s) they guard against: @Physical Damage, @Spiritual Damage, or @Hybrid Damage.",
+                                    "High-tier Protection items may guard against all damage types or grant additional defensive effects."
+                                ],
+                                "keywords": [
+                                    "@Protection",
+                                    "@Brace",
+                                    "@Physical Damage",
+                                    "@Spiritual Damage",
+                                    "@Hybrid Damage"
+                                ]
+                            },
+                            {
+                                "id": "control-subcategory",
+                                "title": "Control",
+                                "description": "Implements that bind, stall, move, or manipulate monsters — forcing them into unfavorable positions.",
+                                "rules": [
+                                    "Control items restrict a monster's movement, actions, or positioning.",
+                                    "Many Control items are consumable with limited uses per hunt.",
+                                    "Some Control items require a stat test to deploy successfully."
+                                ],
+                                "keywords": ["@Control"]
+                            },
+                            {
+                                "id": "denial-subcategory",
+                                "title": "Denial",
+                                "description": "Items that strip monsters of their advantages — preventing abilities, forcing @Wind Up, or shutting down attacks.",
+                                "rules": [
+                                    "Denial items suppress, counter, or remove monster advantages.",
+                                    "Many Denial items are consumable with limited uses per hunt.",
+                                    "Denial items can neutralize @Special Abilities, buffs, and immunities."
+                                ],
+                                "keywords": [
+                                    "@Denial",
+                                    "@Special Abilities",
+                                    "@Wind Up"
+                                ]
+                            }
+                        ],
+                        "keywords": [
+                            "@Weapon",
+                            "@Protection",
+                            "@Control",
+                            "@Denial"
+                        ]
+                    },
+                    {
+                        "id": "equipment-tiers",
+                        "title": "Equipment Tiers",
+                        "subsections": [
+                            {
+                                "id": "low-pay-tier",
+                                "title": "Low Pay Tier",
+                                "description": "Standard hunter equipment available at character creation and during resupply after any hunt.",
+                                "keywords": ["@Low Pay"]
+                            },
+                            {
+                                "id": "high-pay-tier",
+                                "title": "High Pay Tier",
+                                "description": "Rare and powerful equipment — including @Trick Weapons. Acquired only after hunts with high pay. Each hunter may acquire 1 high-tier item during the @Denouement.",
+                                "keywords": [
+                                    "@High Pay",
+                                    "@Trick Weapons",
+                                    "@Denouement"
+                                ]
+                            }
+                        ],
+                        "keywords": ["@Low Pay", "@High Pay", "@Trick Weapons"]
+                    }
+                ],
+                "keywords": [
+                    "@Hunter's Arsenal",
+                    "@Equipment",
+                    "@Weapon",
+                    "@Trick Weapons",
+                    "@Protection",
+                    "@Control",
+                    "@Denial",
+                    "@Low Pay",
+                    "@High Pay"
                 ]
             },
             {
@@ -63,7 +391,11 @@
                             "Monsters have a rating of @Insight required before a hunter can see them as they are. These creatures are metaphysical threats that challenge perception of the physical realm.",
                             "All monsters that lie beyond a human's @Insight appear as beasts rationalized by the context the human has. They might perceive a werewolf as a large bear, or a changeling as a deformed man."
                         ],
-                        "keywords": ["@Hidden Creatures", "@Insight", "@Monster"]
+                        "keywords": [
+                            "@Hidden Creatures",
+                            "@Insight",
+                            "@Monster"
+                        ]
                     },
                     {
                         "id": "downsides-of-insight",

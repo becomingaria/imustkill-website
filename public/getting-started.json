@@ -98,8 +98,8 @@
                         "desc": "Roll Fate to learn a monster weakness. Success reveals something useful: 'It fears fire' or 'Silver burns it.'"
                     },
                     {
-                        "name": "Prepare",
-                        "desc": "Buy supplies based on what you learned. Torches? Silver blades? Healing herbs?"
+                        "name": "Days of Preparation",
+                        "desc": "Spend time in town interacting with NPCs and locations. Succeed at skill challenges to earn Preparation Resources (Alchemy, Witchery, or Smithery). Collect 3 of a type to unlock a boon for the hunt."
                     },
                     {
                         "name": "Track the Monster",
@@ -111,7 +111,7 @@
                     },
                     {
                         "name": "Collect Your Bounty",
-                        "desc": "Claim your pay, rest up, and level up. Tomorrow brings another hunt."
+                        "desc": "Claim your pay. Low pay lets you resupply up to 5 low-tier items. High pay also grants 1 high-tier item — including Trick Weapons. Rest up and level up. Tomorrow brings another hunt."
                     }
                 ]
             },

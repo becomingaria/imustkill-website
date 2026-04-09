@@ -1,164 +1,333 @@
 {
+    "equipmentSystem": {
+        "title": "Hunter's Arsenal",
+        "description": "Hunters carry specialized equipment for the hunt. A hunter may carry up to 5 items at a time. At character creation, choose 1 low-tier weapon and 4 additional low-tier items. After a hunt with high pay, each hunter may acquire 1 high-tier item. After a hunt with low pay, hunters may resupply up to 5 low-tier items.",
+        "rules": {
+            "maxItems": 5,
+            "startingEquipment": "1 low-tier weapon + 4 low-tier items of your choice",
+            "highPayReward": "Each hunter may acquire 1 high-tier item (including Trick Weapons)",
+            "lowPayResupply": "Resupply up to 5 low-tier items"
+        },
+        "tiers": [
+            {
+                "name": "Low Pay",
+                "description": "Standard hunter equipment. Available at character creation and during resupply after any hunt."
+            },
+            {
+                "name": "High Pay",
+                "description": "Rare and powerful equipment, including Trick Weapons. Acquired only after hunts with high pay."
+            }
+        ],
+        "subcategories": [
+            {
+                "name": "Weapon",
+                "description": "Arms designed to kill monsters. All weapons deal 1 damage on a successful attack (2 on a critical). High-tier weapons are called Trick Weapons — each has a hidden mechanism or enchantment."
+            },
+            {
+                "name": "Protection",
+                "description": "Armor, shields, wards, and relics that guard the hunter. Protection items specify which damage types they resist. Required to @Brace."
+            },
+            {
+                "name": "Control",
+                "description": "Implements that bind, stall, move, or manipulate monsters — forcing them into unfavorable positions."
+            },
+            {
+                "name": "Denial",
+                "description": "Items that strip monsters of their advantages — preventing abilities, forcing @Wind Up, or shutting down attacks."
+            }
+        ]
+    },
     "equipment": [
         {
-            "name": "50 Feet of Rope",
-            "description": "Essential for climbing, securing items, and creating makeshift tools."
+            "name": "Hunter's Sabre",
+            "subcategory": "Weapon",
+            "tier": "Low Pay",
+            "damageType": "Physical",
+            "range": "Close",
+            "description": "A curved blade favoured by hunters who like their prey within arm’s reach. Deals 1 Physical damage at Close range."
         },
         {
-            "name": "Torch",
-            "description": "A portable light source, often used for exploration or signaling."
+            "name": "Boarding Axe",
+            "subcategory": "Weapon",
+            "tier": "Low Pay",
+            "damageType": "Physical",
+            "range": "Close",
+            "description": "Salvaged from a derelict galleon, its edge has tasted things worse than wood. Deals 1 Physical damage at Close range."
         },
         {
-            "name": "Flint and Steel",
-            "description": "Enables the creation of fire for warmth, light, or survival purposes."
+            "name": "Spear",
+            "subcategory": "Weapon",
+            "tier": "Low Pay",
+            "damageType": "Physical",
+            "range": "Near",
+            "description": "Long-hafted and reliable — the weapon of choice for those who prefer distance between themselves and death. Deals 1 Physical damage at Near range."
         },
         {
-            "name": "Grappling Hook",
-            "description": "Used to scale walls or navigate challenging terrain."
+            "name": "Crossbow",
+            "subcategory": "Weapon",
+            "tier": "Low Pay",
+            "damageType": "Physical",
+            "range": "Far",
+            "description": "Cranked, loaded, and loosed — a mechanical answer to things that refuse to die quietly. Deals 1 Physical damage at Far range."
         },
         {
-            "name": "Piton",
-            "description": "Metal spike driven into rock for secure anchor points during climbing."
+            "name": "Flintlock Pistol",
+            "subcategory": "Weapon",
+            "tier": "Low Pay",
+            "damageType": "Physical",
+            "range": "Near",
+            "description": "One shot. Make it count. Deals 1 Physical damage at Near range."
         },
         {
-            "name": "Hammer",
-            "description": "A versatile tool for construction, breaking objects, or securing equipment."
+            "name": "Hunting Knife",
+            "subcategory": "Weapon",
+            "tier": "Low Pay",
+            "damageType": "Physical",
+            "range": "Close",
+            "description": "Every hunter carries a blade. This one has carved more than game. Deals 1 Physical damage at Close range."
         },
         {
-            "name": "Lantern",
-            "description": "Provides steady light for extended periods, useful in dark environments."
+            "name": "Mace",
+            "subcategory": "Weapon",
+            "tier": "Low Pay",
+            "damageType": "Physical",
+            "range": "Close",
+            "description": "Blunt, heavy, and indifferent to armor. If it bleeds, it can be bludgeoned. Deals 1 Physical damage at Close range."
         },
         {
-            "name": "Whale Oil",
-            "description": "Fuel for lanterns, roughly one hour's worth, also handy for creating controlled fires. This oil is pungent."
+            "name": "Hunter's Musket",
+            "subcategory": "Weapon",
+            "tier": "Low Pay",
+            "damageType": "Physical",
+            "range": "Far",
+            "description": "Long-barreled and thunderous. One shot that echoes across the valley. Deals 1 Physical damage at Far range."
         },
         {
-            "name": "Candles",
-            "description": "Compact light sources for short-term illumination."
+            "name": "Halberd",
+            "subcategory": "Weapon",
+            "tier": "Low Pay",
+            "damageType": "Physical",
+            "range": "Near",
+            "description": "Half axe, half spear, entirely unforgiving. Reach keeps the beasts at bay. Deals 1 Physical damage at Near range."
         },
         {
-            "name": "Chalk",
-            "description": "Marking surfaces or leaving signals in various environments."
+            "name": "Whip-Cleaver",
+            "subcategory": "Weapon",
+            "tier": "High Pay",
+            "damageType": "Physical",
+            "range": "Close",
+            "trick": "On a successful hit, you may immediately make one additional attack against the same target.",
+            "description": "A segmented blade that cracks outward like a lash before snapping rigid for the kill. On a successful hit, make one additional attack against the same target."
         },
         {
-            "name": "Small Bell",
-            "description": "Acts as an alarm or a signaling device."
+            "name": "Sanctified Glaive",
+            "subcategory": "Weapon",
+            "tier": "High Pay",
+            "damageType": "Hybrid",
+            "range": "Near",
+            "trick": "This weapon deals Hybrid damage.",
+            "description": "Blessed by hands that no longer tremble. Its edge burns things that have no blood to spill. Deals @Hybrid Damage at Near range."
         },
         {
-            "name": "String",
-            "description": "Multipurpose for crafting, securing items, or creating simple traps."
+            "name": "Twinblade Repeater",
+            "subcategory": "Weapon",
+            "tier": "High Pay",
+            "damageType": "Physical",
+            "range": "Far",
+            "trick": "After this weapon hits, the next hunter to attack the same target has Advantage.",
+            "description": "A heavy repeating crossbow that pins monsters in place with barbed bolts. After a hit, the next hunter to attack the same target has @Advantage."
         },
         {
-            "name": "Soap",
-            "description": "Minimizes personal odor to avoid detection in stealthy situations."
+            "name": "Moonsilver Rapier",
+            "subcategory": "Weapon",
+            "tier": "High Pay",
+            "damageType": "Spiritual",
+            "range": "Close",
+            "trick": "This weapon deals Spiritual damage. On a successful hit, you may attempt to Dodge (test Agility) as a free action.",
+            "description": "Forged under a dead moon from ore that hums with grief. Its wielder moves like a phantom. Deals @Spiritual Damage; on a hit, you may attempt to @Dodge as a free action."
         },
         {
-            "name": "Spyglass",
-            "description": "Enhances vision for scouting and observing distant objects."
+            "name": "Cruel Claw",
+            "subcategory": "Weapon",
+            "tier": "High Pay",
+            "damageType": "Physical",
+            "range": "Close",
+            "trick": "On a critical hit (natural 1), deal 3 damage instead of 2.",
+            "description": "A gauntlet fitted with curved blades that slot between the knuckles. It kills the way wolves do. On a critical hit, deal 3 damage instead of 2."
         },
         {
-            "name": "Whistle",
-            "description": "Used for communication, signaling, or attracting attention."
+            "name": "Pyre Lance",
+            "subcategory": "Weapon",
+            "tier": "High Pay",
+            "damageType": "Hybrid",
+            "range": "Near",
+            "trick": "This weapon deals Hybrid damage. On a hit, the target’s next successful attack deals 1 less damage (minimum 0).",
+            "description": "A lance wreathed in consecrated flame that cauterizes the wound as it strikes. Deals @Hybrid Damage at Near range; on a hit, the target’s next attack deals 1 less damage (minimum 0)."
+        },
+        {
+            "name": "Leather Cuirass",
+            "subcategory": "Protection",
+            "tier": "Low Pay",
+            "protects": "Physical",
+            "description": "Boiled and hardened until it could stop a claw. Won’t help against what lurks in the dark. Allows @Brace against @Physical Damage."
+        },
+        {
+            "name": "Iron Buckler",
+            "subcategory": "Protection",
+            "tier": "Low Pay",
+            "protects": "Physical",
+            "description": "Small enough to strap to the forearm, sturdy enough to crack teeth. Allows @Brace against @Physical Damage."
+        },
+        {
+            "name": "Talisman of Warding",
+            "subcategory": "Protection",
+            "tier": "Low Pay",
+            "protects": "Spiritual",
+            "description": "A crude pendant etched with symbols older than language. It grows warm when evil draws near. Allows @Brace against @Spiritual Damage."
+        },
+        {
+            "name": "Hunter's Greatcoat",
+            "subcategory": "Protection",
+            "tier": "Low Pay",
+            "protects": "Physical",
+            "description": "Layered leather and oilcloth stitched with horsehair. It won’t stop a blade, but it’ll slow one down. Allows @Brace against @Physical Damage."
+        },
+        {
+            "name": "Ashen Plate",
+            "subcategory": "Protection",
+            "tier": "High Pay",
+            "protects": "Hybrid",
+            "description": "Forged in the kiln-fires of a burned cathedral. The ash is fused into the metal itself. Allows @Brace against @Physical Damage, @Spiritual Damage, and @Hybrid Damage."
+        },
+        {
+            "name": "Veilglass Aegis",
+            "subcategory": "Protection",
+            "tier": "High Pay",
+            "protects": "Hybrid",
+            "trick": "When you successfully Brace with this shield, the attacker’s next attack has Disadvantage.",
+            "description": "A translucent shield that refracts light in impossible directions. Allows @Brace against all damage types. When you successfully @Brace, the attacker’s next attack has @Disadvantage."
         },
         {
             "name": "Bear Trap",
-            "description": "A strong, spring-loaded trap designed to catch and immobilize large animals."
+            "subcategory": "Control",
+            "tier": "Low Pay",
+            "uses": 1,
+            "description": "Iron jaws hidden beneath leaves. Place before or during combat. A monster that moves through it is immobilized until it passes a @Body test."
         },
         {
-            "name": "Snare Trap",
-            "description": "A simple yet effective trap for catching small to medium-sized creatures."
+            "name": "Bolas",
+            "subcategory": "Control",
+            "tier": "Low Pay",
+            "uses": 1,
+            "range": "Near",
+            "description": "Weighted cords that tangle limbs and wings. Test @Agility to throw at Near range. On a hit, the target cannot @Flee or move until it passes a @Body test."
         },
         {
-            "name": "Caltrop",
-            "description": "Sharp object scattered on the ground to impede or injure pursuers."
+            "name": "Grappling Chain",
+            "subcategory": "Control",
+            "tier": "Low Pay",
+            "uses": 3,
+            "range": "Near",
+            "description": "Thirty links of forged iron ending in a barbed hook. Test @Body to hurl at Near range. On a hit, pull the target to @Close range."
         },
         {
-            "name": "Mirror",
-            "description": "Can be used for signaling, checking blind spots, or redirecting light."
+            "name": "Snare Wire",
+            "subcategory": "Control",
+            "tier": "Low Pay",
+            "uses": 2,
+            "description": "Thin steel wire strung low across a path. Set before or during combat. A creature that triggers it must test @Agility or fall prone, losing its next action."
         },
         {
-            "name": "Block and Tackle",
-            "description": "A mechanical advantage system for lifting or moving heavy objects."
+            "name": "Cavalry Net",
+            "subcategory": "Control",
+            "tier": "Low Pay",
+            "uses": 1,
+            "range": "Near",
+            "description": "Woven from wire and weighted at the edges. Test @Body to throw at Near range. A target struck cannot attack until it passes a @Body test to tear free."
         },
         {
-            "name": "Crowbar",
-            "description": "A sturdy tool for prying open doors, crates, or other sealed objects."
+            "name": "Caltrops",
+            "subcategory": "Control",
+            "tier": "Low Pay",
+            "uses": 1,
+            "description": "Scattered iron spikes that punish anything reckless enough to charge through. When deployed, caltrops cover a 10 square foot area. A monster that moves through the area must test @Agility or take 1 damage and lose its movement."
         },
         {
-            "name": "Perfume",
-            "description": "Masks or alters personal scent, useful for deception or avoiding detection."
+            "name": "Binding Censer",
+            "subcategory": "Control",
+            "tier": "High Pay",
+            "uses": 3,
+            "range": "Near",
+            "trick": "Bound monsters have Disadvantage on tests to break free.",
+            "description": "Incense billows from its iron mouth and coils around the unclean like living rope. A monster at Near range must test @Focus or be bound in smoke, unable to move. Bound monsters have @Disadvantage on tests to break free."
         },
         {
-            "name": "30 Feet of Light Chain",
-            "description": "Versatile for various tasks, including securing objects or creating makeshift restraints."
+            "name": "Witchstone Anchor",
+            "subcategory": "Control",
+            "tier": "High Pay",
+            "uses": 1,
+            "description": "A heavy rune-carved stone that screams when activated. Place it on the ground. Until the end of combat, no creature within @Close range of the anchor may use @Flee or any movement abilities."
         },
         {
-            "name": "10 Feet of Heavy Chain",
-            "description": "Stronger and more durable, suitable for more robust tasks."
+            "name": "Black Incense",
+            "subcategory": "Denial",
+            "tier": "Low Pay",
+            "uses": 2,
+            "description": "The smoke smells of burnt hair and forgotten graves. Monsters that breathe it must test @Focus or lose their @Special Abilities until the end of the round."
         },
         {
-            "name": "Iron Nails",
-            "description": "Common fasteners for construction or creating makeshift structures."
+            "name": "Flash Charge",
+            "subcategory": "Denial",
+            "tier": "Low Pay",
+            "uses": 2,
+            "range": "Close",
+            "description": "A sparking implement that erupts in blinding white light in a cone. Monsters in the cone must test @Agility or be blinded, treating all attacks as @Wind Up until the end of the round."
         },
         {
-            "name": "Iron Hook",
-            "description": "A versatile tool for grappling, securing items, or creating improvised devices."
+            "name": "Silver Dust",
+            "subcategory": "Denial",
+            "tier": "Low Pay",
+            "uses": 3,
+            "range": "Close",
+            "description": "Ground from blessed coins and scattered like seed. Monsters at @Close range that contact the dust must test @Fate or be unable to use supernatural abilities until the end of the round."
         },
         {
-            "name": "Lockpicks",
-            "description": "Essential for opening locked doors or containers."
+            "name": "Iron Bell",
+            "subcategory": "Denial",
+            "tier": "Low Pay",
+            "uses": 3,
+            "description": "Its tone cuts through enchantment like a knife through fog. Ring the bell — all monsters at @Near range must test @Focus or have their current buffs suppressed until the end of the round."
         },
         {
-            "name": "Manacles",
-            "description": "Restraints for capturing or detaining individuals."
-        },
-        {
-            "name": "Metal File",
-            "description": "Useful for shaping metal objects or improvising tools."
-        },
-        {
-            "name": "Noose",
-            "description": "A looped cord for trapping or capturing animals."
-        },
-        {
-            "name": "Scissors",
-            "description": "Handy for cutting various materials in a quiet and controlled manner."
-        },
-        {
-            "name": "Scroll",
-            "description": "A blank document for containing information, powers, or instructions."
-        },
-        {
-            "name": "Quill",
-            "description": "A feathered pen for writing or drawing."
-        },
-        {
-            "name": "Pen",
-            "description": "A more common writing instrument compared to a quill."
-        },
-        {
-            "name": "Ink",
-            "description": "Fluid for writing or drawing with pens or quills."
-        },
-        {
-            "name": "Small Bag of Sand",
-            "description": "Used for creating distractions, dousing fires, checking for traps, or drying ink."
-        },
-        {
-            "name": "Boar-sized Net",
-            "description": "Captures or restrains creatures, useful for hunting or trapping."
-        },
-        {
-            "name": "Acid Vial",
-            "description": "A corrosive substance that can damage objects or creatures. Test Body or Agility to throw this vial, dealing 1 damage. Creatures hit by acid must make a successful Focus test or waste their next turn wincing."
-        },
-        {
-            "name": "Lute",
-            "description": "A musical instrument for entertainment or distraction."
+            "name": "Torch",
+            "subcategory": "Denial",
+            "tier": "Low Pay",
+            "uses": 3,
+            "description": "Fire is the oldest ward. Thrust the torch at a monster at @Close range — test @Body. On success, the monster cannot @Flee until the end of the round. Many creatures fear flame."
         },
         {
             "name": "Bomb",
-            "description": "An explosive device for various tactical or destructive purposes. Test Body or Agility to throw this bomb, all creatures within 20’ of the center of it must test Agility. On failure they take 1 damage, on a success they take none."
+            "subcategory": "Denial",
+            "tier": "Low Pay",
+            "uses": 1,
+            "range": "Near",
+            "description": "Black powder and nails packed into a clay shell. Test @Body or @Agility to throw at Near range. All creatures within @Close range must test @Agility or take 1 damage."
+        },
+        {
+            "name": "Nullstone Bomb",
+            "subcategory": "Denial",
+            "tier": "High Pay",
+            "uses": 1,
+            "range": "Near",
+            "trick": "Affects all creatures in the area. No test to resist.",
+            "description": "A sphere of compressed void-matter that shatters reality in a small radius. Throw at Near range. All creatures within @Close range lose all buffs, immunities, and @Special Abilities until the end of the next round. No test to resist."
+        },
+        {
+            "name": "Soulsnare Lantern",
+            "subcategory": "Denial",
+            "tier": "High Pay",
+            "uses": 2,
+            "description": "Its light is wrong — too white, too cold. Open the shutter to illuminate a single monster. That monster must test @Fate or be forced to @Wind Up on its next turn, regardless of its attack roll."
         }
     ]
 }

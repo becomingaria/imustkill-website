@@ -1,0 +1,7 @@
+{
+    "apiUrl": "https://6tnku32a8f.execute-api.us-east-1.amazonaws.com",
+    "cognitoClientId": "7vta9ialb8gj3esiipmnq5hvue",
+    "cognitoUsername": "becomingaria@gmail.com",
+    "awsProfile": "personal",
+    "awsRegion": "us-east-1"
+}

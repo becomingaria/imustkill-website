@@ -443,6 +443,137 @@ function renderContent(c) {
     return out
 }
 
+// ── Equipment chapter renderer ────────────────────────────────────────────────
+// Renders the full Equipment chapter from live API items + static metadata.
+// Called instead of the generic section loop when equipmentData is provided.
+function renderEquipmentChapter({ system, items }) {
+    const out = []
+    const sys = system || {}
+
+    // System overview description
+    if (sys.description) out.push(para(parseInlineRuns(sys.description)))
+
+    // Core rules
+    const r = sys.rules || {}
+    const ruleLines = [
+        r.maxItems != null && `Carry limit: ${r.maxItems} items`,
+        r.startingEquipment && `Starting equipment: ${r.startingEquipment}`,
+        r.highPayReward && `High pay reward: ${r.highPayReward}`,
+        r.lowPayResupply && `Low pay resupply: ${r.lowPayResupply}`,
+    ].filter(Boolean)
+    if (ruleLines.length) {
+        out.push(subHead("Rules"))
+        ruleLines.forEach((line) => out.push(bullet(line)))
+    }
+
+    // Tiers
+    if (sys.tiers?.length) {
+        out.push(subHead("Tiers"))
+        sys.tiers.forEach((tier) => {
+            out.push(
+                para([
+                    t((tier.name || "") + " — ", { bold: true }),
+                    ...parseInlineRuns(tier.description || ""),
+                ]),
+            )
+        })
+    }
+
+    out.push(emptyLine())
+
+    // Build subcategory meta lookup
+    const subcatMeta = {}
+    ;(sys.subcategories || []).forEach((s) => {
+        subcatMeta[s.name] = s
+    })
+
+    // Group items by subcategory
+    const bySubcat = {}
+    ;(items || []).forEach((item) => {
+        if (!bySubcat[item.subcategory]) bySubcat[item.subcategory] = []
+        bySubcat[item.subcategory].push(item)
+    })
+
+    const subcatOrder = ["Weapon", "Protection", "Control", "Denial"]
+    const presentSubcats = subcatOrder.filter((s) => bySubcat[s]?.length)
+
+    presentSubcats.forEach((subcat) => {
+        // Subcategory heading
+        out.push(
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 200, after: 80 },
+                children: [th(subcat, { size: SZ_SECTION, color: COL_DARK })],
+            }),
+        )
+
+        // Subcategory description
+        const meta = subcatMeta[subcat]
+        if (meta?.description) {
+            out.push(para(parseInlineRuns(meta.description)))
+        }
+
+        // Items — Low Pay first, then alpha
+        const subcatItems = [...bySubcat[subcat]].sort((a, b) => {
+            const tierDiff =
+                (a.tier === "High Pay" ? 1 : 0) -
+                (b.tier === "High Pay" ? 1 : 0)
+            if (tierDiff !== 0) return tierDiff
+            return a.name.localeCompare(b.name)
+        })
+
+        subcatItems.forEach((item) => {
+            const metaParts = []
+            if (item.damageType) metaParts.push(item.damageType)
+            if (item.range) metaParts.push(item.range)
+            if (item.protects) metaParts.push(`Protects: ${item.protects}`)
+            if (item.uses != null && item.uses !== "")
+                metaParts.push(`${item.uses} uses`)
+            const metaStr = metaParts.join(" • ")
+
+            // Name line: Name (Tier) — meta
+            out.push(
+                para([
+                    t(item.name, { bold: true }),
+                    t(` (${item.tier})`, { color: COL_MUTED }),
+                    ...(metaStr
+                        ? [t(" — " + metaStr, { color: COL_MUTED })]
+                        : []),
+                ]),
+            )
+
+            // Description (indented)
+            if (item.description) {
+                out.push(
+                    new Paragraph({
+                        spacing: { after: 40, before: 0 },
+                        indent: { left: convertInchesToTwip(0.2) },
+                        children: parseInlineRuns(item.description),
+                    }),
+                )
+            }
+
+            // Trick (indented, italic)
+            if (item.trick) {
+                out.push(
+                    new Paragraph({
+                        spacing: { after: 80, before: 0 },
+                        indent: { left: convertInchesToTwip(0.2) },
+                        children: [
+                            t("Trick: ", { bold: true, italics: true }),
+                            t(item.trick, { italics: true }),
+                        ],
+                    }),
+                )
+            }
+        })
+
+        out.push(emptyLine())
+    })
+
+    return out
+}
+
 // ── Build the header for content pages ───────────────────────────────────────
 function makeHeader(version) {
     return new Header({
@@ -518,6 +649,7 @@ export async function exportWhitepapers(
     grouped,
     version = CURRENT_VERSION,
     database = null,
+    equipmentData = null,
 ) {
     // Ensure we have rules database metadata for ordering and titles.
     let db = database
@@ -532,6 +664,24 @@ export async function exportWhitepapers(
     }
 
     const categoryOrder = getCategoryOrder(grouped, db)
+
+    // Ensure "equipment" appears in the order when live data is provided,
+    // even though grouped["equipment"] is empty (it lives in a separate table).
+    if (equipmentData && !categoryOrder.includes("equipment")) {
+        // Try to insert after "progression" (its natural position)
+        const anchor = categoryOrder.indexOf("progression")
+        if (anchor >= 0) {
+            categoryOrder.splice(anchor + 1, 0, "equipment")
+        } else {
+            // Fallback: insert before "combat-mechanics" or at end
+            const combatIdx = categoryOrder.indexOf("combat-mechanics")
+            if (combatIdx >= 0) {
+                categoryOrder.splice(combatIdx, 0, "equipment")
+            } else {
+                categoryOrder.push("equipment")
+            }
+        }
+    }
 
     const dateStr = new Date().toLocaleDateString("en-US", {
         year: "numeric",
@@ -641,7 +791,8 @@ export async function exportWhitepapers(
 
     for (const catKey of categoryOrder) {
         const sections = grouped[catKey]
-        if (!sections?.length) continue
+        const isEquipment = catKey === "equipment" && equipmentData
+        if (!sections?.length && !isEquipment) continue
 
         // Chapter heading — page break before every chapter except first
         contentChildren.push(
@@ -674,6 +825,12 @@ export async function exportWhitepapers(
         )
 
         firstChapter = false
+
+        // Equipment chapter — rendered from live API data + static metadata
+        if (isEquipment) {
+            contentChildren.push(...renderEquipmentChapter(equipmentData))
+            continue
+        }
 
         // Sort sections by order
         const sorted = [...sections].sort(

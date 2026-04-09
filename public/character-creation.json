@@ -143,6 +143,19 @@
                     "money",
                     "general terms"
                 ]
+            },
+            {
+                "id": "starting-equipment",
+                "title": "Starting Equipment",
+                "%Source": ["@Hunter's Arsenal", "@Equipment"],
+                "description": "At character creation, choose 1 low-tier weapon and 4 additional low-tier items from the Hunter's Arsenal. You may carry up to 5 items at a time. See the Equipment page for the full list of available gear.",
+                "keywords": [
+                    "equipment",
+                    "starting gear",
+                    "hunter's arsenal",
+                    "weapons",
+                    "items"
+                ]
             }
         ]
     }

@@ -10,7 +10,13 @@ import {
     CardContent,
     CardActions,
 } from "@mui/material"
-import { MoreHoriz, MenuBook, Assignment, Style } from "@mui/icons-material"
+import {
+    MenuBook,
+    Assignment,
+    Style,
+    Shield,
+    Explore,
+} from "@mui/icons-material"
 import HomeButton from "../components/HomeButton.js"
 
 const DigitalTools = () => {
@@ -94,13 +100,20 @@ const DigitalTools = () => {
             path: "/deck-builder",
             available: true,
         },
-        // Placeholder for future tools
         {
-            title: "More Tools Coming Soon",
+            title: "Equipment Browser",
             description:
-                "Additional digital tools will be added here to enhance your gaming experience.",
-            icon: <MoreHoriz sx={{ fontSize: 40 }} />,
-            path: "#",
+                "Browse, search, and filter the Hunter's Arsenal — weapons, protection, control items, and denial tools.",
+            icon: <Shield sx={{ fontSize: 40 }} />,
+            path: "/equipment-browser",
+            available: true,
+        },
+        {
+            title: "More Coming Soon",
+            description:
+                "New tools and features are in development. Check back for live game tracking, miniature support, and more.",
+            icon: <Explore sx={{ fontSize: 40 }} />,
+            path: null,
             available: false,
         },
     ]
@@ -155,7 +168,7 @@ const DigitalTools = () => {
                     </Typography>
                 </Box>
 
-                <Grid container spacing={3} justifyContent='center'>
+                <Grid container spacing={3} justifyContent='flex-start'>
                     {tools.map((tool, index) => (
                         <Grid item xs={12} sm={6} md={4} key={index}>
                             <Card sx={getCardStyles()}>

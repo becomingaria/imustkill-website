@@ -23,6 +23,28 @@
                 ]
             },
             {
+                "id": "monster-turn",
+                "title": "Monster Turns",
+                "description": "On their turn, monsters can **move**, **attack**, **wind up**, or use **special abilities** — the exact action is determined by the GM using the @Monster Tables. Full monster action rules are in the GM section.",
+                "rules": [
+                    "When a monster is subject to an ongoing effect — such as caltrops, a trap, an environmental hazard, or a condition — it makes a test at the **start** of its turn to resist or escape that effect",
+                    "On a **success**: the monster shakes off or moves past the effect and may still act normally — rolling to attack, winding up, or taking any other action on its turn",
+                    "On a **failure**: the monster remains subject to the condition and its turn ends (or is restricted as the effect describes)"
+                ],
+                "keywords": [
+                    "monster turn",
+                    "monster test",
+                    "start of turn",
+                    "conditions",
+                    "effects",
+                    "resist",
+                    "escape",
+                    "move",
+                    "wind up",
+                    "special abilities"
+                ]
+            },
+            {
                 "id": "actions",
                 "title": "Actions (In Combat)",
                 "%Source": [
@@ -31,7 +53,8 @@
                     "@Brace",
                     "@Gather",
                     "@Flee",
-                    "@Negotiate"
+                    "@Negotiate",
+                    "@Use Item"
                 ],
                 "actions": [
                     {
@@ -100,6 +123,18 @@
                             "monster",
                             "understand",
                             "diplomacy"
+                        ]
+                    },
+                    {
+                        "name": "Use Item",
+                        "id": "use-item",
+                        "description": "Use one piece of equipment from the Hunter's Arsenal. Using an item is an **additional** combat action — you may use an item on your turn in addition to your normal action.",
+                        "keywords": [
+                            "use item",
+                            "equipment",
+                            "hunter's arsenal",
+                            "additional action",
+                            "item"
                         ]
                     }
                 ]

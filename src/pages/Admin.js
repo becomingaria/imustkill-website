@@ -152,6 +152,27 @@ const RARITY_COLORS = {
 
 const POWER_RARITIES = ["common", "uncommon", "rare", "mythic"]
 
+// ── Equipment constants ───────────────────────────────────────────────────────
+const SUBCATEGORY_COLORS = {
+    Weapon: "#8B0000",
+    Protection: "#1565c0",
+    Control: "#2e7d32",
+    Denial: "#6a1b9a",
+}
+const SUBCATEGORY_ORDER = ["Weapon", "Protection", "Control", "Denial"]
+const TIER_OPTIONS = ["Low Pay", "High Pay"]
+const ITEM_DEFAULTS = {
+    name: "",
+    subcategory: "Weapon",
+    tier: "Low Pay",
+    description: "",
+    damageType: "",
+    range: "",
+    protects: "",
+    uses: "",
+    trick: "",
+}
+
 // ── CSV helpers ───────────────────────────────────────────────────────────
 const POWER_CSV_COLS = ["name", "rarity", "description"]
 const MONSTER_CSV_COLS = [
@@ -173,6 +194,18 @@ const MONSTER_CSV_COLS = [
     "Insight",
 ]
 
+const EQUIPMENT_CSV_COLS = [
+    "name",
+    "subcategory",
+    "tier",
+    "description",
+    "damageType",
+    "range",
+    "protects",
+    "uses",
+    "trick",
+]
+
 function csvCell(val) {
     const s =
         val === null || val === undefined
@@ -181,6 +214,22 @@ function csvCell(val) {
     return s.includes(",") || s.includes('"') || s.includes("\n")
         ? `"${s.replace(/"/g, '""')}"`
         : s
+}
+
+function exportEquipmentAsCsv(items) {
+    const cols = EQUIPMENT_CSV_COLS
+    const header = cols.join(",")
+    const rows = items.map((item) =>
+        cols.map((col) => csvCell(item[col])).join(","),
+    )
+    const csv = [header, ...rows].join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "hunters-arsenal-equipment.csv"
+    a.click()
+    URL.revokeObjectURL(url)
 }
 
 function exportCardsAsCsv(cards, cardType, deckDisplayName) {
@@ -1855,6 +1904,739 @@ function CsvImportModal({ open, onClose, onImport, deck }) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// Equipment CSV Import Modal
+// ═══════════════════════════════════════════════════════════
+function EquipmentCsvImportModal({ open, onClose, onImport }) {
+    const [parsedRows, setParsedRows] = useState([])
+    const [parseError, setParseError] = useState("")
+    const [importing, setImporting] = useState(false)
+    const [importResult, setImportResult] = useState(null)
+    const [fileName, setFileName] = useState("")
+    const [pasteCsv, setPasteCsv] = useState("")
+    const fileRef = useRef()
+
+    useEffect(() => {
+        if (open) {
+            setParsedRows([])
+            setParseError("")
+            setImporting(false)
+            setImportResult(null)
+            setFileName("")
+            setPasteCsv("")
+        }
+    }, [open])
+
+    const parseCsvText = (text) => {
+        setParseError("")
+        setParsedRows([])
+        setImportResult(null)
+        try {
+            const { headers, rows } = parseCsv(text)
+            const unknown = headers.filter(
+                (h) => !EQUIPMENT_CSV_COLS.includes(h),
+            )
+            if (!headers.includes("name"))
+                throw new Error('CSV must have a "name" column.')
+            if (!headers.includes("subcategory"))
+                throw new Error('CSV must have a "subcategory" column.')
+            if (unknown.length)
+                setParseError(
+                    `Note: unknown columns will be ignored: ${unknown.join(", ")}`,
+                )
+            setParsedRows(rows)
+        } catch (err) {
+            setParseError(err.message)
+        }
+    }
+
+    const handleFile = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        setFileName(file.name)
+        setParseError("")
+        setParsedRows([])
+        setImportResult(null)
+        const reader = new FileReader()
+        reader.onload = (ev) => parseCsvText(ev.target.result)
+        reader.readAsText(file)
+    }
+
+    const handleImport = async () => {
+        setImporting(true)
+        setImportResult(null)
+        try {
+            const itemsToImport = parsedRows
+                .filter((r) => r.name?.trim() && r.subcategory?.trim())
+                .map((r) => ({
+                    name: r.name.trim(),
+                    subcategory: r.subcategory.trim(),
+                    tier: r.tier?.trim() || "Low Pay",
+                    description: r.description?.trim() || "",
+                    ...(r.damageType?.trim() && {
+                        damageType: r.damageType.trim(),
+                    }),
+                    ...(r.range?.trim() && { range: r.range.trim() }),
+                    ...(r.protects?.trim() && { protects: r.protects.trim() }),
+                    ...(r.uses?.trim() && { uses: parseInt(r.uses, 10) }),
+                    ...(r.trick?.trim() && { trick: r.trick.trim() }),
+                }))
+            const result = await onImport(itemsToImport)
+            setImportResult(result)
+            setParsedRows([])
+            setFileName("")
+            setPasteCsv("")
+        } catch (err) {
+            setParseError(err.message)
+        } finally {
+            setImporting(false)
+        }
+    }
+
+    const validRows = parsedRows.filter(
+        (r) => r.name?.trim() && r.subcategory?.trim(),
+    )
+    const previewCols = ["name", "subcategory", "tier", "description"]
+
+    return (
+        <Modal
+            open={open}
+            onClose={onClose}
+            sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                p: 1,
+            }}
+        >
+            <Paper
+                sx={{
+                    width: { xs: "98%", sm: 700 },
+                    maxHeight: "90vh",
+                    display: "flex",
+                    flexDirection: "column",
+                    borderRadius: "16px",
+                    outline: "none",
+                }}
+            >
+                {/* Header */}
+                <Box
+                    sx={{
+                        p: 2.5,
+                        bgcolor: "#1a0a0a",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flexShrink: 0,
+                    }}
+                >
+                    <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                    >
+                        <FileUpload sx={{ color: "#8B0000" }} />
+                        <Box>
+                            <Typography
+                                sx={{
+                                    fontFamily: '"Cinzel", serif',
+                                    fontWeight: "bold",
+                                }}
+                            >
+                                Import Equipment from CSV
+                            </Typography>
+                            <Typography
+                                sx={{ fontSize: "0.7rem", opacity: 0.5 }}
+                            >
+                                Hunter\'s Arsenal
+                            </Typography>
+                        </Box>
+                    </Box>
+                    <IconButton onClick={onClose} sx={{ color: "#fff" }}>
+                        <Close />
+                    </IconButton>
+                </Box>
+
+                <Box
+                    sx={{
+                        p: 3,
+                        overflow: "auto",
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                    }}
+                >
+                    {/* Format hint */}
+                    <Paper
+                        variant='outlined'
+                        sx={{
+                            p: 1.5,
+                            bgcolor: "rgba(139,0,0,0.04)",
+                            borderColor: "rgba(139,0,0,0.2)",
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                fontSize: "0.72rem",
+                                fontWeight: "bold",
+                                mb: 0.5,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                            }}
+                        >
+                            <TableChart sx={{ fontSize: 14 }} /> Expected
+                            columns
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontSize: "0.68rem",
+                                fontFamily: "monospace",
+                                opacity: 0.7,
+                                wordBreak: "break-all",
+                            }}
+                        >
+                            {EQUIPMENT_CSV_COLS.join(", ")}
+                        </Typography>
+                    </Paper>
+
+                    {/* File picker */}
+                    <Box
+                        onClick={() => fileRef.current?.click()}
+                        sx={{
+                            border: "2px dashed",
+                            borderColor: parsedRows.length
+                                ? "#2e7d32"
+                                : "divider",
+                            borderRadius: "12px",
+                            p: 3,
+                            textAlign: "center",
+                            cursor: "pointer",
+                            bgcolor: parsedRows.length
+                                ? "rgba(46,125,50,0.04)"
+                                : "action.hover",
+                            "&:hover": { borderColor: "#8B0000" },
+                            transition: "border-color 0.2s",
+                        }}
+                    >
+                        <input
+                            ref={fileRef}
+                            type='file'
+                            accept='.csv,text/csv'
+                            style={{ display: "none" }}
+                            onChange={handleFile}
+                        />
+                        {parsedRows.length ? (
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 1,
+                                }}
+                            >
+                                <CheckCircle sx={{ color: "#2e7d32" }} />
+                                <Typography sx={{ fontWeight: "bold" }}>
+                                    {fileName}
+                                </Typography>
+                                <Chip
+                                    label={`${validRows.length} item${validRows.length !== 1 ? "s" : ""}`}
+                                    size='small'
+                                    color='success'
+                                />
+                            </Box>
+                        ) : (
+                            <>
+                                <FileUpload
+                                    sx={{ fontSize: 36, opacity: 0.3, mb: 1 }}
+                                />
+                                <Typography sx={{ opacity: 0.5 }}>
+                                    Click to choose a .csv file
+                                </Typography>
+                            </>
+                        )}
+                    </Box>
+
+                    {/* Paste CSV text */}
+                    <Box>
+                        <Typography
+                            sx={{ fontSize: "0.75rem", opacity: 0.6, mb: 1 }}
+                        >
+                            Or paste CSV text below and click "Parse".
+                        </Typography>
+                        <TextField
+                            multiline
+                            minRows={4}
+                            maxRows={10}
+                            fullWidth
+                            placeholder='name,subcategory,tier,description\nSword of Ruin,Weapon,Low Pay,A devastating blade...'
+                            value={pasteCsv}
+                            onChange={(e) => setPasteCsv(e.target.value)}
+                        />
+                        <Button
+                            size='small'
+                            variant='contained'
+                            color='primary'
+                            sx={{ mt: 1 }}
+                            onClick={() => parseCsvText(pasteCsv)}
+                        >
+                            Parse pasted CSV
+                        </Button>
+                    </Box>
+
+                    {parseError && (
+                        <Alert
+                            severity={parsedRows.length ? "warning" : "error"}
+                            onClose={() => setParseError("")}
+                        >
+                            {parseError}
+                        </Alert>
+                    )}
+
+                    {/* Preview table */}
+                    {parsedRows.length > 0 && !importResult && (
+                        <Box>
+                            <Typography
+                                sx={{
+                                    fontSize: "0.75rem",
+                                    opacity: 0.5,
+                                    mb: 1,
+                                }}
+                            >
+                                Preview (first 5 rows)
+                            </Typography>
+                            <Box
+                                sx={{
+                                    overflow: "auto",
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    borderRadius: "8px",
+                                }}
+                            >
+                                <Table size='small'>
+                                    <TableHead>
+                                        <TableRow
+                                            sx={{
+                                                bgcolor: "rgba(139,0,0,0.06)",
+                                            }}
+                                        >
+                                            {previewCols.map((col) => (
+                                                <TableCell
+                                                    key={col}
+                                                    sx={{
+                                                        fontFamily:
+                                                            '"Cinzel", serif',
+                                                        fontSize: "0.65rem",
+                                                        fontWeight: "bold",
+                                                        whiteSpace: "nowrap",
+                                                    }}
+                                                >
+                                                    {col}
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {parsedRows
+                                            .slice(0, 5)
+                                            .map((row, i) => (
+                                                <TableRow key={i}>
+                                                    {previewCols.map((col) => (
+                                                        <TableCell
+                                                            key={col}
+                                                            sx={{
+                                                                fontSize:
+                                                                    "0.7rem",
+                                                                maxWidth: 160,
+                                                                overflow:
+                                                                    "hidden",
+                                                                textOverflow:
+                                                                    "ellipsis",
+                                                                whiteSpace:
+                                                                    "nowrap",
+                                                            }}
+                                                        >
+                                                            {row[col] || "—"}
+                                                        </TableCell>
+                                                    ))}
+                                                </TableRow>
+                                            ))}
+                                    </TableBody>
+                                </Table>
+                            </Box>
+                        </Box>
+                    )}
+
+                    {importing && <LinearProgress sx={{ borderRadius: 4 }} />}
+
+                    {importResult && (
+                        <Alert severity='success' icon={<CheckCircle />}>
+                            Imported {importResult.imported} item
+                            {importResult.imported !== 1 ? "s" : ""}{" "}
+                            successfully
+                            {importResult.failed > 0
+                                ? ` (${importResult.failed} failed)`
+                                : "."}{" "}
+                            Click Close to view them.
+                        </Alert>
+                    )}
+                </Box>
+
+                {/* Footer */}
+                <Box
+                    sx={{
+                        p: 2,
+                        borderTop: "1px solid",
+                        borderColor: "divider",
+                        display: "flex",
+                        gap: 1,
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexShrink: 0,
+                    }}
+                >
+                    <Typography sx={{ fontSize: "0.72rem", opacity: 0.4 }}>
+                        Existing items with the same name + subcategory will be
+                        overwritten.
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                        <Button onClick={onClose}>
+                            {importResult ? "Close" : "Cancel"}
+                        </Button>
+                        {!importResult && (
+                            <Button
+                                variant='contained'
+                                onClick={handleImport}
+                                disabled={validRows.length === 0 || importing}
+                                startIcon={
+                                    importing ? (
+                                        <CircularProgress size={14} />
+                                    ) : (
+                                        <FileUpload />
+                                    )
+                                }
+                                sx={{
+                                    bgcolor: "#8B0000",
+                                    "&:hover": { bgcolor: "#a00" },
+                                    fontFamily: '"Cinzel", serif',
+                                    textTransform: "none",
+                                }}
+                            >
+                                {importing
+                                    ? "Importing…"
+                                    : `Import ${validRows.length} Item${validRows.length !== 1 ? "s" : ""}`}
+                            </Button>
+                        )}
+                    </Box>
+                </Box>
+            </Paper>
+        </Modal>
+    )
+}
+
+// ═══════════════════════════════════════════════════════════
+// Item Form Modal (Equipment CRUD)
+// ═══════════════════════════════════════════════════════════
+function ItemFormModal({ open, onClose, onSave, initialItem }) {
+    const isEdit = !!initialItem
+    const [form, setForm] = useState(ITEM_DEFAULTS)
+    const [saving, setSaving] = useState(false)
+    const [error, setError] = useState("")
+
+    useEffect(() => {
+        if (open) {
+            setError("")
+            if (isEdit) {
+                setForm({
+                    name: initialItem.name || "",
+                    subcategory: initialItem.subcategory || "Weapon",
+                    tier: initialItem.tier || "Low Pay",
+                    description: initialItem.description || "",
+                    damageType: initialItem.damageType || "",
+                    range: initialItem.range || "",
+                    protects: initialItem.protects || "",
+                    uses:
+                        initialItem.uses != null
+                            ? String(initialItem.uses)
+                            : "",
+                    trick: initialItem.trick || "",
+                })
+            } else {
+                setForm(ITEM_DEFAULTS)
+            }
+        }
+    }, [open, initialItem, isEdit])
+
+    const handleSave = async () => {
+        if (!form.name.trim()) {
+            setError("Name is required.")
+            return
+        }
+        if (!form.description.trim()) {
+            setError("Description is required.")
+            return
+        }
+        setSaving(true)
+        try {
+            const itemData = { ...form }
+            if (form.uses !== "") itemData.uses = parseInt(form.uses, 10)
+            else
+                delete itemData.uses
+                // Remove blank optional fields
+            ;["damageType", "range", "protects", "trick"].forEach((k) => {
+                if (!itemData[k]) delete itemData[k]
+            })
+            await onSave(itemData, isEdit ? initialItem : null)
+            onClose()
+        } catch (e) {
+            setError(e.message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const f = (key) => ({
+        value: form[key] ?? "",
+        onChange: (e) => setForm((p) => ({ ...p, [key]: e.target.value })),
+    })
+
+    const accentColor = SUBCATEGORY_COLORS[form.subcategory] || "#8B0000"
+
+    return (
+        <Modal
+            open={open}
+            onClose={onClose}
+            sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                p: 1,
+            }}
+        >
+            <Paper
+                sx={{
+                    width: { xs: "98%", sm: 560 },
+                    maxHeight: "90vh",
+                    display: "flex",
+                    flexDirection: "column",
+                    borderRadius: "16px",
+                    outline: "none",
+                }}
+            >
+                {/* Header */}
+                <Box
+                    sx={{
+                        p: 2.5,
+                        bgcolor: accentColor,
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                    }}
+                >
+                    <Typography
+                        sx={{
+                            fontFamily: '"Cinzel", serif',
+                            fontWeight: "bold",
+                        }}
+                    >
+                        {isEdit ? `Edit: ${initialItem?.name}` : "New Item"}
+                    </Typography>
+                    <IconButton onClick={onClose} sx={{ color: "#fff" }}>
+                        <Close />
+                    </IconButton>
+                </Box>
+
+                {/* Body */}
+                <Box
+                    sx={{
+                        p: 3,
+                        overflow: "auto",
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                    }}
+                >
+                    {error && (
+                        <Alert severity='error' onClose={() => setError("")}>
+                            {error}
+                        </Alert>
+                    )}
+
+                    <TextField
+                        label='Name'
+                        {...f("name")}
+                        fullWidth
+                        required
+                        autoFocus
+                    />
+
+                    <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                            <FormControl fullWidth>
+                                <InputLabel>Subcategory</InputLabel>
+                                <Select
+                                    value={form.subcategory}
+                                    label='Subcategory'
+                                    onChange={(e) =>
+                                        setForm((p) => ({
+                                            ...p,
+                                            subcategory: e.target.value,
+                                        }))
+                                    }
+                                >
+                                    {SUBCATEGORY_ORDER.map((s) => (
+                                        <MenuItem key={s} value={s}>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 1,
+                                                }}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        width: 10,
+                                                        height: 10,
+                                                        borderRadius: "50%",
+                                                        bgcolor:
+                                                            SUBCATEGORY_COLORS[
+                                                                s
+                                                            ],
+                                                    }}
+                                                />
+                                                {s}
+                                            </Box>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={6}>
+                            <FormControl fullWidth>
+                                <InputLabel>Tier</InputLabel>
+                                <Select
+                                    value={form.tier}
+                                    label='Tier'
+                                    onChange={(e) =>
+                                        setForm((p) => ({
+                                            ...p,
+                                            tier: e.target.value,
+                                        }))
+                                    }
+                                >
+                                    {TIER_OPTIONS.map((t) => (
+                                        <MenuItem key={t} value={t}>
+                                            {t}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                    </Grid>
+
+                    <TextField
+                        label='Description'
+                        {...f("description")}
+                        fullWidth
+                        multiline
+                        rows={3}
+                        required
+                    />
+
+                    {form.subcategory === "Weapon" && (
+                        <Grid container spacing={2}>
+                            <Grid item xs={6}>
+                                <TextField
+                                    label='Damage Type'
+                                    {...f("damageType")}
+                                    fullWidth
+                                    size='small'
+                                    placeholder='Physical / Spiritual / Hybrid'
+                                />
+                            </Grid>
+                            <Grid item xs={6}>
+                                <TextField
+                                    label='Range'
+                                    {...f("range")}
+                                    fullWidth
+                                    size='small'
+                                    placeholder='Close / Near / Far'
+                                />
+                            </Grid>
+                        </Grid>
+                    )}
+                    {form.subcategory === "Protection" && (
+                        <TextField
+                            label='Protects Against'
+                            {...f("protects")}
+                            fullWidth
+                            size='small'
+                            placeholder='Physical, Spiritual, Hybrid'
+                        />
+                    )}
+                    {(form.subcategory === "Control" ||
+                        form.subcategory === "Denial") && (
+                        <TextField
+                            label='Uses (per hunt)'
+                            {...f("uses")}
+                            fullWidth
+                            size='small'
+                            type='number'
+                            inputProps={{ min: 1 }}
+                        />
+                    )}
+
+                    <TextField
+                        label='Trick / Special Effect (optional)'
+                        {...f("trick")}
+                        fullWidth
+                        multiline
+                        rows={2}
+                    />
+                </Box>
+
+                {/* Footer */}
+                <Box
+                    sx={{
+                        p: 2,
+                        borderTop: "1px solid",
+                        borderColor: "divider",
+                        display: "flex",
+                        gap: 1,
+                        justifyContent: "flex-end",
+                    }}
+                >
+                    <Button onClick={onClose} disabled={saving}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant='contained'
+                        onClick={handleSave}
+                        disabled={saving}
+                        startIcon={
+                            saving ? <CircularProgress size={14} /> : <Save />
+                        }
+                        sx={{
+                            bgcolor: accentColor,
+                            "&:hover": { filter: "brightness(1.15)" },
+                            fontFamily: '"Cinzel", serif',
+                            textTransform: "none",
+                        }}
+                    >
+                        {saving
+                            ? "Saving…"
+                            : isEdit
+                              ? "Save Changes"
+                              : "Create Item"}
+                    </Button>
+                </Box>
+            </Paper>
+        </Modal>
+    )
+}
+
+// ═══════════════════════════════════════════════════════════
 // Admin Rules Panel
 // ═══════════════════════════════════════════════════════════
 function AdminRulesPanel() {
@@ -2014,7 +2796,16 @@ function AdminRulesPanel() {
         setExporting(true)
         setExportError("")
         try {
-            await exportWhitepapers(grouped, exportVersion)
+            // Fetch live equipment items + static system metadata in parallel
+            const [eqApi, eqJson] = await Promise.all([
+                adminFetch("/equipment"),
+                fetch("/equipment.json").then((r) => r.json()),
+            ])
+            const equipmentData = {
+                system: eqJson?.equipmentSystem || null,
+                items: eqApi?.equipment || [],
+            }
+            await exportWhitepapers(grouped, exportVersion, null, equipmentData)
             setExportOpen(false)
         } catch (e) {
             setExportError("Export failed: " + e.message)
@@ -2671,6 +3462,478 @@ function AdminRulesPanel() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// Admin Item Tile
+// ═══════════════════════════════════════════════════════════
+function AdminItemTile({ item, onEdit, onDelete }) {
+    const color = SUBCATEGORY_COLORS[item.subcategory] || "#555"
+    return (
+        <Box
+            sx={{
+                width: 130,
+                flexShrink: 0,
+                "&:hover .item-actions": { opacity: 1 },
+                "&:hover .item-paper": {
+                    transform: "translateY(-4px) scale(1.04)",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+                },
+            }}
+        >
+            <Paper
+                className='item-paper'
+                elevation={3}
+                onClick={onEdit}
+                sx={{
+                    width: 130,
+                    height: 195,
+                    borderRadius: "10px",
+                    overflow: "hidden",
+                    border: `2px solid ${color}`,
+                    display: "flex",
+                    flexDirection: "column",
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                    position: "relative",
+                    cursor: "pointer",
+                }}
+            >
+                {/* Placeholder art */}
+                <Box
+                    sx={{
+                        height: "60%",
+                        bgcolor: `${color}22`,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        position: "relative",
+                    }}
+                >
+                    <Typography
+                        sx={{
+                            fontSize: "2rem",
+                            opacity: 0.35,
+                            lineHeight: 1,
+                            userSelect: "none",
+                        }}
+                    >
+                        {item.subcategory === "Weapon"
+                            ? "⚔️"
+                            : item.subcategory === "Protection"
+                              ? "🛡️"
+                              : item.subcategory === "Control"
+                                ? "⛓️"
+                                : "🚫"}
+                    </Typography>
+                    {/* Hover action overlay */}
+                    <Box
+                        className='item-actions'
+                        sx={{
+                            position: "absolute",
+                            inset: 0,
+                            bgcolor: "rgba(0,0,0,0.55)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 1,
+                            opacity: 0,
+                            transition: "opacity 0.2s",
+                        }}
+                    >
+                        <Tooltip title='Edit'>
+                            <IconButton
+                                size='small'
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    onEdit()
+                                }}
+                                sx={{
+                                    bgcolor: "rgba(255,255,255,0.15)",
+                                    color: "#fff",
+                                    "&:hover": { bgcolor: color },
+                                }}
+                            >
+                                <Edit sx={{ fontSize: 14 }} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title='Delete'>
+                            <IconButton
+                                size='small'
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    onDelete()
+                                }}
+                                sx={{
+                                    bgcolor: "rgba(255,255,255,0.15)",
+                                    color: "#fff",
+                                    "&:hover": { bgcolor: "#c62828" },
+                                }}
+                            >
+                                <Delete sx={{ fontSize: 14 }} />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                </Box>
+                {/* Info */}
+                <Box
+                    sx={{
+                        height: "40%",
+                        p: 0.75,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                    }}
+                >
+                    <Typography
+                        sx={{
+                            fontFamily: '"Cinzel", serif',
+                            fontWeight: "bold",
+                            fontSize: "0.58rem",
+                            lineHeight: 1.2,
+                            overflow: "hidden",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                        }}
+                    >
+                        {item.name}
+                    </Typography>
+                    <Chip
+                        label={item.tier}
+                        size='small'
+                        sx={{
+                            height: 12,
+                            fontSize: "0.35rem",
+                            fontWeight: "bold",
+                            bgcolor:
+                                item.tier === "High Pay" ? "#ffa000" : color,
+                            color:
+                                item.tier === "High Pay" ? "#1a0a0a" : "#fff",
+                            alignSelf: "flex-start",
+                        }}
+                    />
+                </Box>
+            </Paper>
+        </Box>
+    )
+}
+
+// ═══════════════════════════════════════════════════════════
+// Admin Equipment Panel
+// ═══════════════════════════════════════════════════════════
+function AdminEquipmentPanel() {
+    const [items, setItems] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState("")
+    const [search, setSearch] = useState("")
+    const [subFilter, setSubFilter] = useState("All")
+    const [itemModal, setItemModal] = useState({ open: false, item: null })
+    const [deleteModal, setDeleteModal] = useState({ open: false, item: null })
+    const [deleting, setDeleting] = useState(false)
+    const [csvImportOpen, setCsvImportOpen] = useState(false)
+
+    const loadItems = useCallback(async () => {
+        setLoading(true)
+        setError("")
+        try {
+            const data = await adminFetch("/equipment")
+            setItems(data.equipment || [])
+        } catch (e) {
+            setError("Failed to load equipment: " + e.message)
+        } finally {
+            setLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        loadItems()
+    }, [loadItems])
+
+    const saveItem = async (itemData, originalItem) => {
+        if (originalItem) {
+            const pkChanged = itemData.subcategory !== originalItem.subcategory
+            const skChanged = itemData.name !== originalItem.name
+            if (pkChanged || skChanged) {
+                await adminFetch(
+                    `/equipment/${encodeURIComponent(originalItem.subcategory)}/${encodeURIComponent(originalItem.name)}`,
+                    "DELETE",
+                )
+                await adminFetch("/equipment", "POST", itemData)
+            } else {
+                await adminFetch(
+                    `/equipment/${encodeURIComponent(originalItem.subcategory)}/${encodeURIComponent(originalItem.name)}`,
+                    "PUT",
+                    itemData,
+                )
+            }
+        } else {
+            await adminFetch("/equipment", "POST", itemData)
+        }
+        await loadItems()
+    }
+
+    const handleDelete = async () => {
+        setDeleting(true)
+        try {
+            const { subcategory, name } = deleteModal.item
+            await adminFetch(
+                `/equipment/${encodeURIComponent(subcategory)}/${encodeURIComponent(name)}`,
+                "DELETE",
+            )
+            setDeleteModal({ open: false, item: null })
+            await loadItems()
+        } catch (e) {
+            setError("Delete failed: " + e.message)
+        } finally {
+            setDeleting(false)
+        }
+    }
+
+    const importEquipment = async (itemsToImport) => {
+        const result = await adminFetch("/equipment/batch", "POST", {
+            equipment: itemsToImport,
+        })
+        await loadItems()
+        return result
+    }
+
+    const q = search.trim().toLowerCase()
+    const filtered = items.filter((item) => {
+        const matchSub = subFilter === "All" || item.subcategory === subFilter
+        const matchQ =
+            !q ||
+            item.name.toLowerCase().includes(q) ||
+            (item.description || "").toLowerCase().includes(q)
+        return matchSub && matchQ
+    })
+
+    // Sorted: subcategory order → Low Pay before High Pay → name A-Z
+    const sorted = [...filtered].sort((a, b) => {
+        const subDiff =
+            SUBCATEGORY_ORDER.indexOf(a.subcategory) -
+            SUBCATEGORY_ORDER.indexOf(b.subcategory)
+        if (subDiff !== 0) return subDiff
+        const tierDiff =
+            (a.tier === "High Pay" ? 1 : 0) - (b.tier === "High Pay" ? 1 : 0)
+        if (tierDiff !== 0) return tierDiff
+        return a.name.localeCompare(b.name)
+    })
+
+    const totalItems = items.length
+    const filterTabs = ["All", ...SUBCATEGORY_ORDER]
+
+    return (
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
+            {/* Header */}
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    mb: 2,
+                    flexWrap: "wrap",
+                    gap: 1,
+                }}
+            >
+                <Box>
+                    <Typography
+                        sx={{
+                            fontFamily: '"Cinzel", serif',
+                            fontWeight: "bold",
+                            fontSize: "1.1rem",
+                        }}
+                    >
+                        Hunter's Arsenal
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.72rem", opacity: 0.5 }}>
+                        {totalItems} item{totalItems !== 1 ? "s" : ""} across{" "}
+                        {SUBCATEGORY_ORDER.length} subcategories
+                    </Typography>
+                </Box>
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    <Button
+                        size='small'
+                        variant='outlined'
+                        onClick={loadItems}
+                        disabled={loading}
+                        sx={{ fontSize: "0.72rem", textTransform: "none" }}
+                    >
+                        Refresh
+                    </Button>
+                    <Button
+                        size='small'
+                        variant='outlined'
+                        startIcon={<FileDownload sx={{ fontSize: 14 }} />}
+                        disabled={items.length === 0}
+                        onClick={() => exportEquipmentAsCsv(items)}
+                        sx={{
+                            fontSize: "0.72rem",
+                            textTransform: "none",
+                            fontFamily: '"Cinzel", serif',
+                        }}
+                    >
+                        Export CSV
+                    </Button>
+                    <Button
+                        size='small'
+                        variant='outlined'
+                        startIcon={<FileUpload sx={{ fontSize: 14 }} />}
+                        onClick={() => setCsvImportOpen(true)}
+                        sx={{
+                            fontSize: "0.72rem",
+                            textTransform: "none",
+                            fontFamily: '"Cinzel", serif',
+                        }}
+                    >
+                        Import CSV
+                    </Button>
+                    <Button
+                        variant='contained'
+                        size='small'
+                        startIcon={<Add />}
+                        onClick={() => setItemModal({ open: true, item: null })}
+                        sx={{
+                            bgcolor: "#8B0000",
+                            "&:hover": { bgcolor: "#a00" },
+                            textTransform: "none",
+                            fontFamily: '"Cinzel", serif',
+                            fontSize: "0.75rem",
+                        }}
+                    >
+                        New Item
+                    </Button>
+                </Box>
+            </Box>
+
+            {error && (
+                <Alert
+                    severity='error'
+                    onClose={() => setError("")}
+                    sx={{ mb: 2 }}
+                >
+                    {error}
+                </Alert>
+            )}
+
+            {/* Search + subcategory filter */}
+            <Box
+                sx={{
+                    display: "flex",
+                    gap: 1,
+                    mb: 2,
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                }}
+            >
+                <TextField
+                    placeholder='Search items…'
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    size='small'
+                    sx={{ flex: 1, minWidth: 180 }}
+                />
+                <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                    {filterTabs.map((tab) => (
+                        <Chip
+                            key={tab}
+                            label={tab}
+                            size='small'
+                            onClick={() => setSubFilter(tab)}
+                            sx={{
+                                cursor: "pointer",
+                                bgcolor:
+                                    subFilter === tab
+                                        ? SUBCATEGORY_COLORS[tab] || "#555"
+                                        : "transparent",
+                                color: subFilter === tab ? "#fff" : "inherit",
+                                border: "1px solid",
+                                borderColor:
+                                    subFilter === tab
+                                        ? SUBCATEGORY_COLORS[tab] || "#555"
+                                        : "divider",
+                                fontWeight:
+                                    subFilter === tab ? "bold" : "normal",
+                            }}
+                        />
+                    ))}
+                </Box>
+            </Box>
+
+            {/* Items grid */}
+            {loading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", p: 6 }}>
+                    <CircularProgress />
+                </Box>
+            ) : sorted.length === 0 ? (
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 2,
+                        p: 6,
+                        border: "2px dashed",
+                        borderColor: "divider",
+                        borderRadius: "16px",
+                        cursor: "pointer",
+                        "&:hover": {
+                            borderColor: "#8B0000",
+                            bgcolor: "rgba(139,0,0,0.02)",
+                        },
+                    }}
+                    onClick={() => setItemModal({ open: true, item: null })}
+                >
+                    <Add sx={{ fontSize: 40, opacity: 0.3 }} />
+                    <Typography
+                        sx={{ opacity: 0.4, fontFamily: '"Cinzel", serif' }}
+                    >
+                        No items found — click to add one
+                    </Typography>
+                </Box>
+            ) : (
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 2,
+                        alignItems: "flex-start",
+                    }}
+                >
+                    {sorted.map((item) => (
+                        <AdminItemTile
+                            key={`${item.subcategory}/${item.name}`}
+                            item={item}
+                            onEdit={() => setItemModal({ open: true, item })}
+                            onDelete={() =>
+                                setDeleteModal({ open: true, item })
+                            }
+                        />
+                    ))}
+                </Box>
+            )}
+
+            <ItemFormModal
+                open={itemModal.open}
+                onClose={() => setItemModal({ open: false, item: null })}
+                onSave={saveItem}
+                initialItem={itemModal.item}
+            />
+            <EquipmentCsvImportModal
+                open={csvImportOpen}
+                onClose={() => setCsvImportOpen(false)}
+                onImport={importEquipment}
+            />
+            <ConfirmDeleteModal
+                open={deleteModal.open}
+                onClose={() => setDeleteModal({ open: false, item: null })}
+                onConfirm={handleDelete}
+                loading={deleting}
+                title='Delete Item'
+                message={`Are you sure? This will permanently delete "${deleteModal.item?.name}".`}
+            />
+        </Box>
+    )
+}
+
+// ═══════════════════════════════════════════════════════════
 // Admin Nav Panel
 // ═══════════════════════════════════════════════════════════
 function AdminNavPanel() {
@@ -3250,6 +4513,69 @@ function AdminDashboard({ email, onLogout }) {
                     )}
                 </Box>
 
+                {/* Equipment */}
+                <Box
+                    onClick={() => {
+                        setActiveView((v) =>
+                            v === "equipment" ? "cards" : "equipment",
+                        )
+                        setSelectedDeck(null)
+                        navigate("/admin")
+                        onDeckSelect()
+                    }}
+                    sx={{
+                        mx: 2,
+                        mt: 1,
+                        mb: 1,
+                        px: 1.5,
+                        py: 1,
+                        borderRadius: "10px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        border: "1px solid",
+                        borderColor:
+                            activeView === "equipment" ? "#8B0000" : "divider",
+                        bgcolor:
+                            activeView === "equipment"
+                                ? "rgba(139,0,0,0.08)"
+                                : "transparent",
+                        "&:hover": {
+                            bgcolor: "rgba(139,0,0,0.06)",
+                            borderColor: "#8B0000",
+                        },
+                        transition: "all 0.15s",
+                    }}
+                >
+                    <Typography
+                        sx={{
+                            fontFamily: '"Cinzel", serif',
+                            fontWeight: "bold",
+                            fontSize: "0.78rem",
+                            color:
+                                activeView === "equipment"
+                                    ? "#c62828"
+                                    : "inherit",
+                        }}
+                    >
+                        ⚔️ Armory
+                    </Typography>
+                    {activeView === "equipment" && (
+                        <Chip
+                            label='Active'
+                            size='small'
+                            sx={{
+                                height: 16,
+                                fontSize: "0.6rem",
+                                bgcolor: "#8B0000",
+                                color: "#fff",
+                                fontWeight: "bold",
+                            }}
+                        />
+                    )}
+                </Box>
+
                 {/* Power Decks */}
                 <Box sx={{ p: 2 }}>
                     <Box
@@ -3557,6 +4883,8 @@ function AdminDashboard({ email, onLogout }) {
                         <AdminNavPanel />
                     ) : activeView === "rules" ? (
                         <AdminRulesPanel />
+                    ) : activeView === "equipment" ? (
+                        <AdminEquipmentPanel />
                     ) : !selectedDeck ? (
                         <Box
                             sx={{

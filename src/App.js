@@ -22,6 +22,7 @@ import CampaignManager from "./pages/CampaignManager.js"
 import LiveGameView from "./pages/LiveGameView.js"
 import Admin from "./pages/Admin.js"
 import StyleGuide from "./pages/StyleGuide.js"
+import EquipmentBrowser from "./pages/EquipmentBrowser.js"
 import Sparks from "./components/Sparks/Sparks.jsx"
 import BackButton from "./components/BackButton/BackButton.js"
 import ThemeToggle from "./components/ThemeToggle/ThemeToggle.js"
@@ -106,6 +107,10 @@ function App() {
                         element={<DigitalCharacterSheet />}
                     />
                     <Route path='deck-builder' element={<DeckBuilder />} />
+                    <Route
+                        path='equipment-browser'
+                        element={<EquipmentBrowser />}
+                    />
                     <Route path='deck/:deckName' element={<DeckBuilder />} />
                     <Route path='style-guide' element={<StyleGuide />} />
                     <Route path='admin' element={<Admin />} />

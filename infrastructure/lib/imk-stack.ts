@@ -320,6 +320,59 @@ export class ImkLiveSessionsStack extends cdk.Stack {
         rulesTable.grantReadWriteData(rulesHandler) // admin writes
 
         // ============================================================
+        // DynamoDB Table for Equipment (Hunter's Arsenal)
+        // ============================================================
+        // PK: subcategory ("Weapon", "Protection", "Control", "Denial")
+        // SK: name (unique item name within subcategory)
+        const equipmentTable = new dynamodb.Table(this, "EquipmentTable", {
+            tableName: "imk-equipment",
+            partitionKey: {
+                name: "subcategory",
+                type: dynamodb.AttributeType.STRING,
+            },
+            sortKey: {
+                name: "name",
+                type: dynamodb.AttributeType.STRING,
+            },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
+            pointInTimeRecovery: true,
+        })
+
+        // GSI for querying by tier (Low Pay / High Pay)
+        equipmentTable.addGlobalSecondaryIndex({
+            indexName: "tier-index",
+            partitionKey: {
+                name: "tier",
+                type: dynamodb.AttributeType.STRING,
+            },
+            sortKey: {
+                name: "name",
+                type: dynamodb.AttributeType.STRING,
+            },
+            projectionType: dynamodb.ProjectionType.ALL,
+        })
+
+        // ── Equipment Lambda (CRUD for hunter equipment) ──────────────────────
+        const equipmentHandler = new NodejsFunction(this, "EquipmentHandler", {
+            functionName: "imk-equipment-handler",
+            entry: path.join(__dirname, "../lambda/equipment.ts"),
+            handler: "handler",
+            runtime: lambda.Runtime.NODEJS_20_X,
+            architecture: lambda.Architecture.ARM_64,
+            memorySize: 256,
+            timeout: cdk.Duration.seconds(10),
+            environment: {
+                EQUIPMENT_TABLE: equipmentTable.tableName,
+                NODE_OPTIONS: "--enable-source-maps",
+            },
+            logRetention: logs.RetentionDays.ONE_WEEK,
+            bundling: { minify: true, sourceMap: true },
+        })
+
+        equipmentTable.grantReadWriteData(equipmentHandler)
+
+        // ============================================================
         // Cognito User Pool for Admin Authentication
         // ============================================================
         const adminUserPool = new cognito.UserPool(this, "AdminUserPool", {
@@ -476,6 +529,48 @@ export class ImkLiveSessionsStack extends cdk.Stack {
             path: "/rules/{category}/{sectionId}",
             methods: [apigateway.HttpMethod.PUT, apigateway.HttpMethod.DELETE],
             integration: rulesIntegration,
+            authorizer: adminAuthorizer,
+        })
+
+        // ── Equipment routes (public reads, admin writes) ─────────
+        const equipmentIntegration =
+            new apigatewayIntegrations.HttpLambdaIntegration(
+                "EquipmentIntegration",
+                equipmentHandler,
+            )
+
+        // Public equipment reads
+        httpApi.addRoutes({
+            path: "/equipment",
+            methods: [apigateway.HttpMethod.GET],
+            integration: equipmentIntegration,
+        })
+
+        httpApi.addRoutes({
+            path: "/equipment/{subcategory}/{name}",
+            methods: [apigateway.HttpMethod.GET],
+            integration: equipmentIntegration,
+        })
+
+        // Admin-only equipment writes
+        httpApi.addRoutes({
+            path: "/equipment",
+            methods: [apigateway.HttpMethod.POST],
+            integration: equipmentIntegration,
+            authorizer: adminAuthorizer,
+        })
+
+        httpApi.addRoutes({
+            path: "/equipment/{subcategory}/{name}",
+            methods: [apigateway.HttpMethod.PUT, apigateway.HttpMethod.DELETE],
+            integration: equipmentIntegration,
+            authorizer: adminAuthorizer,
+        })
+
+        httpApi.addRoutes({
+            path: "/equipment/batch",
+            methods: [apigateway.HttpMethod.POST],
+            integration: equipmentIntegration,
             authorizer: adminAuthorizer,
         })
 
@@ -714,6 +809,11 @@ export class ImkLiveSessionsStack extends cdk.Stack {
         new cdk.CfnOutput(this, "RulesTableName", {
             value: rulesTable.tableName,
             description: "DynamoDB table name for rules database",
+        })
+
+        new cdk.CfnOutput(this, "EquipmentTableName", {
+            value: equipmentTable.tableName,
+            description: "DynamoDB table name for equipment (Hunter's Arsenal)",
         })
 
         new cdk.CfnOutput(this, "RulesApiUrl", {
