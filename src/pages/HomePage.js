@@ -134,7 +134,7 @@ const HomePage = () => {
                         fontSize: { xs: "1.25rem", sm: "1.75rem", md: "2rem" },
                     }}
                 >
-                    The hunt awaits you...
+                    A TTRPG about hunting and killing monsters. Explore the rules here. The hunt awaits you...
                 </Typography>
             </header>
 

@@ -9,7 +9,7 @@ Use booklet to outline decks and booster packs
 
 Add a shop page for d10s, "close/near sticks" for miniatures, cards, tokens, and miniatures, character sheets, books, expansions, modules. (find a good shop plugin site, maybe "Shop"???)
 
-Add monsters with powers that affect the Powers deck, like "When comabt starts all players discard their hands and redraw"
+Add monsters with powers that affect the Powers deck, like "When comabat starts all players discard their hands and redraw"
 
 Black Incense "forgotten graves" description is dumb
 Boarding axe description 2nd look

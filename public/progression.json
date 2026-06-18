@@ -20,6 +20,38 @@
                 ]
             },
             {
+                "id": "equipment-and-gear",
+                "title": "Equipment & Gear",
+                "description": "Hunters carry specialized equipment into every hunt. A hunter may carry up to 5 items at a time. Equipment comes in two tiers — Low Pay and High Pay — and is acquired between hunts based on how dangerous (and lucrative) the job was.",
+                "rules": [
+                    "Character creation: choose 1 low-tier weapon and 4 additional low-tier items.",
+                    "After a hunt with high pay: each hunter may acquire 1 high-tier item (including Trick Weapons).",
+                    "After a hunt with low pay: resupply up to 5 low-tier items.",
+                    "Maximum carry capacity is 5 items at all times."
+                ],
+                "types": [
+                    {
+                        "name": "Low Pay",
+                        "description": "Standard hunter equipment. Available at character creation and during resupply after any hunt."
+                    },
+                    {
+                        "name": "High Pay",
+                        "description": "Rare and powerful equipment, including Trick Weapons. Acquired only after hunts with high pay."
+                    }
+                ],
+                "keywords": [
+                    "equipment",
+                    "gear",
+                    "carry",
+                    "5 items",
+                    "low pay",
+                    "high pay",
+                    "trick weapons",
+                    "resupply",
+                    "character creation"
+                ]
+            },
+            {
                 "id": "insight",
                 "title": "Insight",
                 "%Source": ["@Insight"],
